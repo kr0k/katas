@@ -14,7 +14,7 @@ A team of ≤ 5 engineers must run ticketing, analytics, AI and a data platform.
    - data in **open table formats** (Parquet/Iceberg) in object storage;
    - business services as **containers** with no provider SDK in domain code (thin adapters only);
    - infrastructure declared as code with a control plane that abstracts providers (Crossplane-style compositions) so environments are reproducible elsewhere;
-   - **LLM/vision providers are separate from the cloud decision** and abstracted by the model gateway (ADR-0005).
+   - **LLM/vision providers are separate from the cloud decision** and abstracted by the inference gateway (ADR-0005).
 3. An **exit assessment** is maintained: for each managed service, the equivalent elsewhere and the estimated migration effort. Reviewed yearly.
 
 ## Alternatives considered

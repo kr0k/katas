@@ -16,7 +16,7 @@
 | **3. Healthy animals at lower cost** | 3.1 Time from first anomaly to vet review | days | ≤ 4 h | ≤ 1 h | S1 |
 | | 3.2 Veterinary cost per animal per year | baseline | −15% | −30% | S1 |
 | | 3.3 Feeding events logged automatically | 0% | 90% | 98% | S1 |
-| | 3.4 Piranha population estimate error vs. manual audit | ±30% | ±10% | ±5% | S2 |
+| | 3.4 Piranha population estimate error vs. census of record (full count at planned tank maintenance, ledger-adjusted between censuses) | ±30% (manual count) | ±10% | ±5% | S2 |
 | | 3.5 Vet override rate on AI-flagged reviews (proxy for false positives) | n/a | ≤ 40% | ≤ 25% | S1 |
 | **4. Keep everyone safe** | 4.1 Safety alert delivery p99 (local) | n/a | ≤ 5 s | ≤ 5 s | Core |
 | | 4.2 Safety incidents involving animals | 0 | 0 | 0 | Core |

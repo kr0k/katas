@@ -3,6 +3,7 @@
 > Families wander, queue, leave early, and don't come back. We want a companion that plans their day, steers them to short queues and interesting animals, and gives them a reason to return.
 
 **Moves:** OKR 1.2 (returning share 10% → 25%), 1.3 (family passes 40%), 2.2 (queue time via load spreading)
+**Phase:** 1 (FAQ answers via the gateway) → 2 (day planning with live queues and forecast) → 3 (return-visit nudges) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-4.1, FR-4.2, FR-1.6, FR-5.1, FR-5.3
 **ADRs:** [ADR-0005](../../../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md)
 
@@ -15,7 +16,7 @@ This is a language problem: a parent typing "we have a 3-year-old who's scared o
 flowchart TB
     V["👨‍👩‍👧 Visitor<br/>mobile web / kiosk"] --> BFF["API gateway"]
     BFF --> Orch["Companion orchestrator<br/>session · tools · policy"]
-    Orch --> GW["Model gateway 🤖<br/>capability: plan-visit / answer-question"]
+    Orch --> GW["Inference gateway 🤖<br/>capability: plan-visit / answer-question"]
     GW --> LLM(["LLM provider<br/>(interchangeable)"])
     Orch --> KB[("Knowledge base<br/>animals · rides · rules · hours · prices")]
     Orch --> Live["Live queues & occupancy (S3)"]
@@ -39,7 +40,7 @@ flowchart TB
 | Container | Responsibility | AI? |
 | --- | --- | --- |
 | Companion orchestrator | Session state, tool calls (KB, live data, ticketing), policy (what may be generated vs. looked up), escalation | No (orchestration) |
-| Model gateway | Resolves `plan-visit` / `answer-question` to current model bundle; tiered routing (small model for FAQ, larger for planning); budget; fallback | — |
+| Inference gateway | Resolves `plan-visit` / `answer-question` to the current model bundle; tiered routing (small model for FAQ, larger for planning); budget; fallback. Adopted OSS, see [AI platform](../../ai-platform/README.md) | — |
 | Knowledge base | Structured facts + curated narrative; the only citable source | No |
 | Output guardrails | Verifies every factual claim is traceable to a KB record or live-data call; blocks unsafe content; enforces tone and length | Partly (classifier) |
 | Return-visit nudges | Segments opted-in visitors by behaviour; personalises curated templates; respects frequency caps | Yes — LLM for wording, rules for targeting |

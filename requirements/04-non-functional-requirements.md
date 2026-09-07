@@ -7,8 +7,8 @@ We chose four. Everything else is important but does not drive structure.
 | Characteristic | Why it drives the design | Where it shows up |
 | --- | --- | --- |
 | **Resilience to connectivity loss** | Wi-Fi is patchy; the uplink will fail. Gates, safety alerts and data capture must work offline. | Edge-first design, store-and-forward, offline validation → [ADR-0001](../adrs/ADR-0001-edge-first-store-and-forward.md), [ADR-0011](../adrs/ADR-0011-offline-ticket-validation.md) |
-| **Safety** | Poisonous animals + historic rides + families. Safety paths must be deterministic and local. | FR-3.6; safety alerts bypass cloud and GenAI → [ADR-0006](../adrs/ADR-0006-edge-vs-cloud-inference.md) |
-| **Evolvability of the AI layer** | Models and providers will change faster than the estate. | Model gateway, registry, evals → [ADR-0005](../adrs/ADR-0005-model-gateway-and-provider-independence.md) |
+| **Safety** | Poisonous animals + historic rides + families. Safety paths must be deterministic and local. | FR-3.6 tier-0 rules bypass cloud and ML; FR-3.7 model advisories only add to them → [ADR-0006](../adrs/ADR-0006-edge-vs-cloud-inference.md) |
+| **Evolvability of the AI layer** | Models and providers will change faster than the estate. | Inference gateway; model governance (registry, evals, monitoring) → [ADR-0005](../adrs/ADR-0005-model-gateway-and-provider-independence.md) |
 | **Cost-efficiency** | A poor estate with a small team. Cloud and AI spend must be bounded and visible. | Tiered model routing, per-capability budgets, edge inference for high-volume streams → [ADR-0005](../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0006](../adrs/ADR-0006-edge-vs-cloud-inference.md) |
 
 ## Full NFR list
@@ -36,4 +36,4 @@ We chose four. Everything else is important but does not drive structure.
 
 ## Architectural style
 
-**Event-driven, edge-first, with bounded contexts** (Ticketing & Access, Park Operations, Animal Welfare, Guest Engagement) communicating through an event backbone. AI components are consumers and producers on the same backbone, so they inherit the same asynchrony, retry and degradation properties as everything else — this is how we keep the "architectural characteristics of the additions" consistent with the base system.
+**Event-driven, edge-first, with bounded contexts** (Ticketing & Access, Park Operations, Animal Welfare, Guest Engagement) communicating through an event backbone. The four contexts are deployed as **one modular monolith** with private schemas and an outbox; AI components are **separate** consumers and producers on the same backbone, so they inherit the same asynchrony, retry and degradation properties as everything else — this is how we keep the "architectural characteristics of the additions" consistent with the base system ([ADR-0004](../adrs/ADR-0004-event-driven-backbone.md)).

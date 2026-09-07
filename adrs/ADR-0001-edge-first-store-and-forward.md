@@ -10,11 +10,12 @@ Wi-Fi on the estate is patchy and the uplink to any cloud will fail — for minu
 ## Decision
 The estate runs a **local tier** that is sufficient for safety, access and data capture on its own; the cloud tier adds analytics, AI and visitor-facing services.
 
-1. A local **MQTT broker (HA pair)** is the hub for every device. Messages are persisted (QoS 1) and **bridged to the cloud when the uplink is up**; buffered otherwise, sized for 72 h.
-2. **Gate validation** and **safety alerting** are local services subscribing to the broker; they never call the cloud on the critical path.
-3. **Edge inference nodes** process video locally and publish features/events, so video never needs the backhaul.
+1. A local **MQTT broker (HA pair)** is the hub for every device. Messages are persisted (QoS 1) in one queue per **traffic class** (critical / telemetry / clips) and **bridged to the cloud when the uplink is up**; buffered otherwise, sized for 72 h, drained critical first.
+2. **Gate validation** and **tier-0 safety rules** are local services subscribing to the broker; they never call the cloud on the critical path.
+3. **Edge inference nodes** process video locally and publish aggregated features and event clips, so video never needs the backhaul.
 4. Cloud ingestion is **idempotent** (dedupe on device id + sequence); consumers tolerate late and out-of-order data.
 5. Every capability declares its place on a **degradation ladder** (cloud+AI → cloud → estate-only).
+6. **The downlink is designed, not assumed.** State that must reach the estate — ticket allow/revocation lists, rule and policy parameters, desired edge model versions — travels over the same bridge as **retained, sequence-numbered snapshots**, critical class first, so a reconnecting gate or rule engine has the latest state within a minute. Large artifacts (edge models) are **pulled** by edge nodes over HTTPS — resumable, rate-limited, off-hours — never pushed through MQTT ([Edge & connectivity → Downlink](../hld/core/edge-and-connectivity.md#downlink-cloud--estate)).
 
 ## Alternatives considered
 | Option | Pros | Cons | Why not |
@@ -30,8 +31,9 @@ The estate runs a **local tier** that is sufficient for safety, access and data 
 | Risk | Mitigation |
 | --- | --- |
 | Local hardware failure | HA broker pair; UPS; spare edge node; monitoring from the cloud with "last seen" alerts |
-| Buffer overflow in a long outage | 72 h sizing (telemetry is small); oldest non-critical telemetry dropped first; gate and safety events prioritised |
+| Buffer overflow in a long outage | 72 h sizing per traffic class (≈ 3 GB at 15,000/day with features aggregated at the edge); clips dropped first, telemetry oldest-first, critical never |
 | Divergence between local and cloud state | Idempotent ingest; reconciliation jobs; conflict rules documented per stream |
+| Reconnect after an outage: uplink drain starves the downlink, gates keep admitting revoked tickets | One bridge connection per direction; critical downlink snapshot delivered first; model pulls paused until the buffer is drained; game day GD-5 |
 
 ## How we will know this was right
-Gate availability during uplink outages (target 99.9%); zero telemetry loss in quarterly failover drills; safety alert p99 ≤ 5 s measured locally. Revisit if the estate gets reliable fibre and cellular redundancy — then the local tier can shrink, but safety and gates should stay local regardless.
+Gate availability during uplink outages (target 99.9%); zero telemetry loss in quarterly failover drills; safety alert p99 ≤ 5 s measured locally; revocations applied at the gates ≤ 60 s after reconnect. All four are game days GD-1, GD-3, GD-5 and GD-6 in the [resilience validation catalogue](../hld/core/resilience-validation.md). Revisit if the estate gets reliable fibre and cellular redundancy — then the local tier can shrink, but safety and gates should stay local regardless.

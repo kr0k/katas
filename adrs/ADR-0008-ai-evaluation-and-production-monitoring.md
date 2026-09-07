@@ -23,8 +23,8 @@
    - *Model:* input drift (feature/image statistics), output drift (confidence histograms, class mix), calibration on sampled human-labelled data.
    - *Business guardrails:* vet override rate, forecast MAPE vs. actuals, companion thumbs-down/escalation/ungrounded-block rate, pricing conversion drop. Each has a threshold and an **automatic rollback** to the previous production bundle plus an alert to the owner.
 5. **Non-deterministic outputs** (companion): sampled **LLM-as-judge** for factuality and safety against the KB, calibrated weekly by a human reviewing 50 sessions; judge disagreement with humans is itself monitored.
-6. **Delayed ground truth** is joined back where it exists (treatments ↔ flags; actual footfall ↔ forecast; audit counts ↔ estimates) to compute real-world accuracy monthly.
-7. **Kill switch & deterministic fallback** for every capability, testable in a game day.
+6. **Delayed ground truth** is joined back where it exists (treatments ↔ flags; actual footfall ↔ forecast; census of record and the births/deaths/transfers ledger ↔ population estimates) to compute real-world accuracy monthly. Ground truth must be measurably better than the target it scores: a ±30% visual audit cannot score a ±10% estimate, so S2 uses a census at planned tank maintenance as its reference.
+7. **Kill switch & deterministic fallback** for every capability, tested in game days GD-9 and GD-10 of the [resilience validation catalogue](../hld/core/resilience-validation.md) — the same catalogue that verifies the non-AI foundation.
 
 ## Alternatives considered
 | Option | Pros | Cons | Why not |

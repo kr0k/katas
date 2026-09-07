@@ -3,6 +3,7 @@
 > Fixed prices cannot fill quiet Wednesdays or capture the value of a sunny Sunday. The Countess needs a pricing lever with guardrails she controls.
 
 **Moves:** OKR 1.1 (visitors/day), 1.4 (revenue/visitor +15%), 1.5 (weekday/weekend ratio 0.35 → 0.5)
+**Phase:** 3 — needs one year of sales and footfall history; year 1 runs as a randomised quiet-day discount experiment — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-4.3, FR-1.1, FR-1.2, FR-5.1
 **ADRs:** [ADR-0008](../../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md)
 

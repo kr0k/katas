@@ -3,8 +3,21 @@
 ## How the HLD is organised
 
 - [`core/`](core/README.md) — the foundation every AI scenario stands on: edge devices, MQTT, backhaul, event backbone, business services, data platform.
-- [`ai-platform/`](ai-platform/README.md) — shared AI infrastructure: model gateway, registry, evaluation, monitoring. Read this for "dealing with uncertainty" and "does it work".
+- [`ai-platform/`](ai-platform/README.md) — shared AI infrastructure: inference gateway (adopted OSS) and model governance — registry, evaluation, monitoring. Read this for "dealing with uncertainty" and "does it work".
 - [`scenarios/`](scenarios/) — one folder per AI use case. Each has the same structure: *Problem → Why AI → Solution → Containers → Diagram → Data → Validation → ADRs*.
+
+## Delivery phases
+
+The full roadmap with entry gates and the build-vs-adopt table lives in the [README](../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy). How it maps onto the HLD:
+
+| Phase | `core/` | `ai-platform/` | `scenarios/` |
+| --- | --- | --- | --- |
+| 0 · Foundation | Everything: edge tier, ticketing platform integration, event backbone, business monolith, data platform, game days | — | — (data capture only) |
+| 1 · Data & rules | Anonymous counters complete | Inference gateway (adopted), registry and eval gate (thin) | S1 feeding-by-scale · S3 live dashboard · S4 FAQ |
+| 2 · Models on data | Edge compute N+1 | Monitoring, shadow mode, golden sets per capability | S1 activity anomalies + vision in shadow · S3 forecasting · S4 planning |
+| 3 · Optimisation | — | — | S2 counting · S5 pricing experiment · S4 nudges · S1 per-animal vision |
+
+Each scenario README carries a **Phase** line in its header.
 
 ## Diagram legend (used in every diagram)
 

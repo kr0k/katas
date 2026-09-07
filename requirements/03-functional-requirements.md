@@ -32,7 +32,8 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 | FR-3.3 🤖 | Detect **behavioural/health anomalies** (lethargy, abnormal movement, isolation) and raise a review for the veterinarian → [S1](../hld/scenarios/animal-welfare-monitoring/README.md) | MUST |
 | FR-3.4 🤖 | Estimate the **jumping piranha population** daily with a stated confidence interval → [S2](../hld/scenarios/piranha-population-counting/README.md) | MUST |
 | FR-3.5 | Keeper/vet app: welfare timeline per animal, review queue, feeding log, treatment record | MUST |
-| FR-3.6 | **Safety alerts** (enclosure breach, aggressive behaviour near visitors) reach staff within seconds and **do not depend on cloud or generative AI** | MUST |
+| FR-3.6 | **Tier-0 safety alerts** — deterministic rules on local sensors (enclosure door open without a keeper badge, water or climate out of band, motion in a dry zone detected by PIR/beam, gate breach) reach staff within seconds and **do not depend on cloud, machine learning or generative AI** | MUST |
+| FR-3.7 🤖 | **Tier-1 safety advisories** — model-assisted detection on camera (aggressive behaviour near visitors, animal outside its normal zone) raises an *advisory* to staff and a clip to the review queue → [S1](../hld/scenarios/animal-welfare-monitoring/README.md). Advisories **add to and never replace** tier-0 rules, and are governed as AI (confidence bands, evaluation gate) | SHOULD |
 
 ## FR-4 · Guest Engagement & Growth
 

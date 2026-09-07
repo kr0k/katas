@@ -4,10 +4,10 @@ Five-minute video describing the team's approach — to be added if we reach the
 
 Planned structure (5:00):
 1. 0:00 The Countess's problem in 30 seconds
-2. 0:30 Business-first: pain points → OKRs
-3. 1:15 Foundation: edge-first, MQTT, store-and-forward — why the park works without the cloud
-4. 2:00 AI where it earns its place: five scenarios, three kinds of AI
-5. 3:00 Reference scenario deep-dive: animal welfare with a vet in the loop
-6. 3:45 Uncertainty: model gateway, budgets, provider exit
-7. 4:20 Does it work: golden sets, shadow, guardrails, rollback
-8. 4:50 What we'd do next
+2. 0:30 Business-first: pain points → OKRs → a phased roadmap (what we build when, what we buy)
+3. 1:10 Foundation: edge-first, MQTT broker cluster, store-and-forward both ways — why the park works without the cloud; one business monolith, AI as separate consumers
+4. 1:55 AI where it earns its place: five scenarios, three kinds of AI, two safety tiers
+5. 2:45 Reference scenario deep-dive: animal welfare with a vet in the loop, per animal or per enclosure
+6. 3:30 Uncertainty: adopted inference gateway vs. our model governance; budgets; provider exit
+7. 4:05 Does it work: one thresholds table, golden sets, shadow, guardrails, rollback — and thirteen game days for the foundation
+8. 4:45 What this architecture does not do, and what we'd do next

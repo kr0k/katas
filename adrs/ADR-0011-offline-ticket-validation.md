@@ -16,6 +16,22 @@ Tickets are sold in the cloud; gates are on an estate whose uplink fails. Visito
 4. **Multi-visit passes** are validated the same way; per-day usage limits are enforced locally against the local ledger and reconciled later.
 5. Gate readers themselves hold a small cache of the public key and the last synced lists, so even a broker outage degrades to "signature-only" admission.
 
+## Edge cases the product must handle
+
+These are part of the acceptance test for the adopted platform ([ADR-0012](ADR-0012-ticketing-platform-adopt-not-build.md)) and of the build design if we end up building.
+
+| Case | Required behaviour |
+| --- | --- |
+| **Clock skew** at a gate (reader unsynced, or a ticket bought at 23:59) | Validity is checked against the **operational day** (opening to closing, not midnight) with ±2 h tolerance; readers take time from the broker; a reader unsynced for > 1 h falls back to date-only checks and raises a health event |
+| **Partial group entry** on a family pass | The pass carries a group size; the local ledger keeps a **per-day group counter ≤ group size**; members may enter separately, at any gate, within the day; gates share the counter through the broker — if the broker is down, each gate allows up to the group size and reconciliation flags the excess |
+| **Exit and re-entry** the same day | An exit scan marks the credential "out"; re-entry within the operational day is admitted without incrementing the counter; a re-entry attempt with no exit scan is treated as a possible duplicate → staff override with a reason code, not a refusal |
+| **Same credential at two gates within seconds** | Broker propagation is ~1 s; the second gate sees the "used" entry or, if it lost the race, both admissions are flagged for a staff check at the gate line |
+| **Ticket for another day** presented today | Refused with a clear message and a pointer to the ticket desk; never silently admitted |
+| **Refund or revocation during an uplink outage** | Admitted on signature until the revocation snapshot lands (≤ 60 s after reconnect); the admission appears in the exceptions report ([downlink](../hld/core/edge-and-connectivity.md#downlink-cloud--estate)) |
+| **Reader restarts mid-queue** | Local ledger and lists persist on the reader; queued entries are re-sent from the persistent session; no double count |
+
+**False-rejection metric:** valid tickets refused ÷ total presentations ≤ 0.05%, measured from staff override reason codes and reconciliation; it is the number the visitor feels.
+
 ## Alternatives considered
 | Option | Pros | Cons | Why not |
 | --- | --- | --- | --- |

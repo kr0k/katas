@@ -18,7 +18,7 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 | ID | Requirement | Priority |
 | --- | --- | --- |
 | FR-2.1 | Collect **anonymous footfall and queue-length** telemetry per zone/ride via MQTT devices | MUST |
-| FR-2.2 | Ops dashboard: live and historical popularity per zone, ride and enclosure; dwell time; queue length | MUST |
+| FR-2.2 | Ops dashboard: live and historical popularity per zone, ride and enclosure; **average dwell time per zone derived from in/out counts** (occupancy ÷ throughput — Little's law; no individual is followed, see [ADR-0009](../adrs/ADR-0009-visitor-privacy-anonymous-counting.md)); queue length | MUST |
 | FR-2.3 🤖 | Forecast visitor flow per zone at 30-min granularity for the next 7 days and **recommend staffing** → [S3](../hld/scenarios/visitor-flow-forecasting/README.md) | SHOULD |
 | FR-2.4 | Correlate investments (new ride, refurbished enclosure) with changes in popularity | SHOULD |
 | FR-2.5 | Ride telemetry (cycles, downtime, faults) feeds maintenance scheduling | COULD |

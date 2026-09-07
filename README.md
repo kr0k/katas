@@ -20,6 +20,7 @@
 - [Traceability: capability → requirement → decision](#traceability-capability--requirement--decision)
 - [Dealing with uncertainty in AI](#dealing-with-uncertainty-in-ai)
 - [Does it work? Validation & verification of AI](#does-it-work-validation--verification-of-ai)
+- [What this architecture does not do](#what-this-architecture-does-not-do)
 - [Risks](#risks)
 - [Video](#video)
 
@@ -111,7 +112,7 @@ flowchart TB
     Staff["👩‍⚕️ Vet & ops staff<br/>(dashboards, review queue)"] --> Welfare & Ops
 ```
 
-**Key:** rectangles are software components; the dashed boundary is a network zone; arrows show the main direction of data flow. A full legend and detailed views are in [`hld/`](hld/README.md).
+**Key:** as in the [HLD legend](hld/README.md#diagram-legend-used-in-every-diagram) — 🏰/☁️ boxes are deployment zones, rectangles are components we build or configure, rounded boxes are external systems, arrows show the main direction of data flow. This overview does not distinguish synchronous from asynchronous; the detailed views in [`hld/`](hld/README.md) do.
 
 ---
 
@@ -166,7 +167,7 @@ Each scenario README states its phase. The phases in `hld/` are summarised in [h
 
 | # | Scenario | AI type | Moves OKR | Human in the loop? |
 | --- | --- | --- | --- | --- |
-| S1 | [Animal welfare monitoring](hld/scenarios/animal-welfare-monitoring/README.md) *(reference)* | CV + anomaly detection | 3.1, 3.2, 3.3 | Yes — veterinarian decides |
+| S1 | [Animal welfare monitoring](hld/scenarios/animal-welfare-monitoring/README.md) *(reference)* | CV + anomaly detection, per animal or per enclosure | 3.1, 3.2, 3.3 | Yes — veterinarian decides |
 | S2 | [Piranha population counting](hld/scenarios/piranha-population-counting/README.md) | Edge CV | 3.4 | Census of record at tank maintenance; monthly visual sanity check |
 | S3 | [Visitor flow forecasting & staffing](hld/scenarios/visitor-flow-forecasting/README.md) | Classical ML | 2.1, 2.2, 2.3 | Ops manager approves rosters |
 | S4 | [Guest companion](hld/scenarios/guest-companion/README.md) | Grounded LLM | 1.2, 1.3, 2.2 | Escalation to staff |
@@ -190,9 +191,9 @@ Index with status: [`adrs/README.md`](adrs/README.md)
 | **AI-enabled** | | | |
 | Detect animal health & feeding anomalies | FR-3.2, FR-3.3 | [S1](hld/scenarios/animal-welfare-monitoring/README.md) | [ADR-0006](adrs/ADR-0006-edge-vs-cloud-inference.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) |
 | Count piranha population | FR-3.4 | [S2](hld/scenarios/piranha-population-counting/README.md) | [ADR-0006](adrs/ADR-0006-edge-vs-cloud-inference.md), [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) |
-| Understand zone popularity, forecast flows, plan staff | FR-2.2, FR-2.3 | [S3](hld/scenarios/visitor-flow-forecasting/README.md) | [ADR-0009](adrs/ADR-0009-visitor-privacy-anonymous-counting.md), [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) |
-| Guide visitors, personalise the day, drive return visits | FR-4.1, FR-4.2 | [S4](hld/scenarios/guest-companion/README.md) | [ADR-0005](adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](adrs/ADR-0010-grounded-llm-with-guardrails.md) |
-| Price family passes to demand | FR-4.3 | [S5](hld/scenarios/dynamic-family-passes/README.md) | [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) |
+| Understand zone popularity, forecast flows, plan staff | FR-2.2, FR-2.3 | [S3](hld/scenarios/visitor-flow-forecasting/README.md) | [ADR-0009](adrs/ADR-0009-visitor-privacy-anonymous-counting.md), [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0004](adrs/ADR-0004-event-driven-backbone.md) |
+| Guide visitors, personalise the day, drive return visits | FR-4.1, FR-4.2 | [S4](hld/scenarios/guest-companion/README.md) | [ADR-0005](adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](adrs/ADR-0010-grounded-llm-with-guardrails.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md) |
+| Price family passes to fill quiet days | FR-4.3 | [S5](hld/scenarios/dynamic-family-passes/README.md) | [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0004](adrs/ADR-0004-event-driven-backbone.md), [ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md) |
 | **AI operations** | | | |
 | Swap models/providers without rewriting services | NFR-EVO | [AI platform](hld/ai-platform/README.md) | [ADR-0005](adrs/ADR-0005-model-gateway-and-provider-independence.md) |
 | Prove AI works before and after release | NFR-VER | [AI platform](hld/ai-platform/README.md) | [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) |
@@ -215,7 +216,18 @@ The judges asked three questions. Short answers; details in the linked ADRs.
 
 → [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [AI platform](hld/ai-platform/README.md)
 
-**And does the foundation work?** The same question applies to the non-AI system, and "edge-first" is a claim until it has been broken on purpose. A [game-day catalogue](hld/core/resilience-validation.md) of twelve scripted faults — uplink loss for hours and beyond the buffer, broker failover at peak, a gate cut off from the broker, a ticket refunded during an outage, a safety alert with the cloud down, an edge node powered off, the event backbone gone, a provider unreachable, a kill switch, an erasure request, a model rollout on a saturated link — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five of them are the exit criterion for Phase 0.
+**And does the foundation work?** The same question applies to the non-AI system, and "edge-first" is a claim until it has been broken on purpose. A [game-day catalogue](hld/core/resilience-validation.md) of thirteen scripted faults — uplink loss for hours and beyond the buffer, broker failover at peak, a gate cut off from the broker, a ticket refunded during an outage, a safety alert with the cloud down and nobody acknowledging, an edge node powered off, the event backbone gone, a provider unreachable, a kill switch, an erasure request, a model rollout on a saturated link, a restore from backup — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five of them are the exit criterion for Phase 0.
+
+## What this architecture does not do
+
+Judges should know where the edges are. This proposal removes the estate's blindness — where people are, how animals are doing, what a Wednesday is worth — and bounds the cost of running it ([cost model](requirements/04-non-functional-requirements.md#cost-model-tco-50): ≈ €0.60 per visitor today, ≈ €0.30 at 15,000/day, most of it ticketing fees and the team, not AI). It does **not**:
+
+- **Make the business case.** Payback, the pricing strategy, the marketing that turns 5,000 visitors into 15,000 — those are decisions the Countess takes with the data this system gives her; the architecture makes them measurable, not automatic.
+- **Promise attendance.** The scenarios move OKRs 1.x by removing friction and filling quiet days; nothing here manufactures demand.
+- **Run the rides.** Ride control systems, their certification and predictive maintenance are out of scope (A10, [`TODOS.md`](TODOS.md)); rides appear as status events and queue counters only.
+- **Replace people.** The vet decides, the keeper identifies the animal, the ops manager approves the roster, management sets the base price; ≈ 17–24 staff hours a week go into that ([who does what](hld/ai-platform/README.md#humans-in-the-loop-who-does-what)).
+- **Identify anyone.** No faces, no device tracking, no re-identification of visitors — or of meerkats, yet.
+- **Do HR, payroll or physical security.** Staff data is imported and plans exported (A12); CCTV for theft is not this system.
 
 ## Risks
 

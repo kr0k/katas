@@ -46,11 +46,15 @@ flowchart LR
     LLM(["LLM / vision providers"])
     Msg(["Email / push provider"])
     Weather(["Weather & events data"])
+    TixSaaS(["Ticketing platform (SaaS)"])
+    HR(["HR / rostering system"])
 
     Visitor -- "buys tickets, uses companion" --> System
-    Countess -- "reads dashboards, sets pricing guardrails" --> System
+    Countess -- "reads dashboards, sets base price & guardrails" --> System
     Staff -- "reviews alerts, logs treatments, runs the park" --> System
-    System --> Pay
+    System <-- "sales, entries, passes / prices, erasure" --> TixSaaS
+    TixSaaS --> Pay
+    System <-- "staff, skills, availability / approved plans" --> HR
     System --> LLM
     System --> Msg
     Weather --> System
@@ -64,9 +68,11 @@ See [core/README.md](core/README.md#container-view) for the full container view 
 
 | Context | Owns | Publishes events | Consumes events |
 | --- | --- | --- | --- |
-| **Ticketing & Access** | tickets, passes, gate validations, accounts (opt-in) | `TicketPurchased`, `GateEntered`, `GateExited`, `PassRenewed` | `PriceUpdated` |
-| **Park Operations** | zones, rides, footfall, queues, staffing plans | `ZoneOccupancyUpdated`, `QueueLengthUpdated`, `RideStatusChanged`, `StaffingPlanProposed` | `GateEntered/Exited`, telemetry |
-| **Animal Welfare** | animals, enclosures, feeding, health reviews, population estimates | `FeedingRecorded`, `WelfareAnomalyDetected`, `ReviewDecided`, `PopulationEstimated`, `SafetyAlertRaised` | enclosure telemetry |
-| **Guest Engagement** | companion sessions, itineraries, nudges, pricing recommendations | `ItineraryCreated`, `NudgeSent`, `PriceRecommended` | `QueueLengthUpdated`, `TicketPurchased`, `WelfareAnomalyDetected` (e.g. "the sloth is off show today") |
+| **Ticketing & Access** (anti-corruption layer to the ticketing platform, [ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)) | tickets, passes, gate validations, accounts (opt-in) — as our events over the vendor's data | `TicketPurchased`, `GateEntered`, `GateExited`, `PassRenewed`, `PriceUpdated` | `PriceRecommended` (applies it within guardrails), `SubjectErased` |
+| **Park Operations** | zones, rides, footfall, queues, staffing plans, labour rules | `ZoneOccupancyUpdated`, `QueueLengthUpdated`, `RideStatusChanged`, `StaffingPlanApproved` | `GateEntered/Exited`, telemetry, `EnclosureStatusChanged` |
+| **Animal Welfare** | animals, enclosures, feeding, health reviews, population ledger and estimates | `FeedingRecorded`, `WelfareAnomalyDetected`, `ReviewDecided`, `EnclosureStatusChanged` (keeper decision: on/off show), `PopulationEstimated`, `SafetyAlertRaised` | enclosure telemetry |
+| **Guest Engagement** | companion sessions, itineraries, nudges, pricing recommendations, per-subject keys | `ItineraryCreated`, `NudgeSent`, `PriceRecommended`, `SubjectErased` | `QueueLengthUpdated`, `RideStatusChanged`, `TicketPurchased`, `PriceUpdated`, `EnclosureStatusChanged` (e.g. "the sloth is off show today") |
 
 Contexts communicate only through events on the backbone or through published read models — no shared databases. This matters for the AI additions: a scenario can be switched off, replaced or degraded without touching the others.
+
+**Rule: probabilistic events do not cross into visitor-facing contexts.** `WelfareAnomalyDetected` is a model's opinion; what Guest Engagement may act on is `EnclosureStatusChanged`, a keeper's decision. `PriceRecommended` is a model's opinion; what visitors see is `PriceUpdated`, after the policy engine and, where needed, management. The forecast never leaves Park Operations; `StaffingPlanApproved` does. Contract tests fail a visitor-facing context that subscribes to an AI-output topic ([ADR-0004](../adrs/ADR-0004-event-driven-backbone.md) §8).

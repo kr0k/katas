@@ -20,21 +20,27 @@ flowchart TB
         Counters["Footfall / queue counters<br/>(LiDAR/IR, anonymous)"]
         Encl["Enclosure sensors<br/>(scales, water, climate, door contacts, PIR/beam)"]
         Cams["Enclosure cameras"]
-        EdgeAI["🤖 Edge inference node(s)<br/>visitor masking · S1 features (1-min windows) · S2 counting<br/>tier-1 safety advisory"]
-        Broker["MQTT broker (HA pair)<br/>store-and-forward per traffic class<br/>retained downlink snapshots"]
+        EdgeAI["🤖 Edge inference nodes (2, N+1)<br/>visitor masking · S1 features (1-min windows) · S2 counting<br/>tier-1 safety advisory"]
+        LNS["LoRaWAN network server<br/>(join server, decode → MQTT)"]
+        Broker["MQTT broker cluster (3 nodes)<br/>replicated queues per traffic class<br/>retained downlink snapshots"]
         GateSvc["Gate validation<br/>(local, offline-capable)"]
         Rules["Tier-0 safety rules<br/>(deterministic, no ML)"]
-        StaffDev["Staff devices<br/>(local Wi-Fi/DECT)"]
+        Pager["DECT handsets / pagers<br/>(primary alert channel, ack)"]
+        StaffDev["Staff smartphones<br/>(secondary, local Wi-Fi)"]
 
         GateDev <--> GateSvc
         GateSvc -.-> Broker
         Broker -. "allow/revocation<br/>snapshots" .-> GateSvc
-        Counters -.-> Broker
+        Counters -. "LoRaWAN" .-> LNS
+        Encl -. "LoRaWAN / wired" .-> LNS
         Encl -.-> Broker
+        LNS -.-> Broker
         Cams --> EdgeAI
         EdgeAI -.-> Broker
         Broker -.-> Rules
+        Rules --> Pager
         Rules --> StaffDev
+        Pager -. "ack" .-> Broker
         EdgeAI -. "advisory" .-> StaffDev
     end
 
@@ -94,6 +100,8 @@ flowchart TB
 
     TixSaaS(["Ticketing platform (SaaS)<br/>catalogue · checkout · passes · credentials · accounts"])
     Pay(["Payment provider"])
+    HR(["HR / rostering system<br/>staff · skills · certifications · availability"])
+    Ops <-- "import staff data / export approved plans" --> HR
 
     Broker -. "uplink: MQTT bridge over cellular<br/>critical → telemetry → clips" .-> Ingest
     Ingest -. "downlink: retained snapshots + sequenced deltas" .-> Broker
@@ -109,12 +117,13 @@ Legend: see [hld/README.md](../README.md#diagram-legend-used-in-every-diagram). 
 | Container | Responsibility | Runs where | Notes |
 | --- | --- | --- | --- |
 | **Gate validation** | Verifies the ticket signature offline, checks the local used-ledger, applies allow/revocation snapshots arriving over the downlink; records entry/exit; reconciles with the cloud when connected | Estate | Vendor readers/SDK that pass [ADR-0011](../../adrs/ADR-0011-offline-ticket-validation.md), or our readers with the vendor SDK ([ADR-0012](../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md) §3) |
-| **MQTT broker (HA pair)** | Local pub/sub for all devices; persists messages per traffic class; bridges uplink when connected; holds retained downlink snapshots for reconnecting consumers | Estate | 72 h buffer sized in [Edge & connectivity](edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class); per-device certs |
-| **Edge inference node(s)** | Masks visitors in frame; extracts S1 features and aggregates them to 1-minute windows (raw 1 Hz only around events, with the clip); counts piranhas (S2); raises tier-1 safety advisories | Estate | GPU-class small server; models pulled from object storage, rate-limited and off-hours → [ADR-0006](../../adrs/ADR-0006-edge-vs-cloud-inference.md) |
-| **Tier-0 safety rules** | Deterministic, no ML, no cloud: enclosure door contact open without keeper badge; water/climate out of band; PIR/beam motion in a dry zone → staff devices within seconds | Estate | FR-3.6; NFR-AVL-3 is measured on this path only. Tier-1 model advisories (FR-3.7) come from the edge node and only add to it |
+| **MQTT broker cluster** | Local pub/sub for all devices; three nodes with replicated persistent queues, one queue and bridge connection per traffic class; bridges uplink when connected; holds retained downlink snapshots for reconnecting consumers | Estate | Cluster-capable broker class → [ADR-0002](../../adrs/ADR-0002-mqtt-and-cellular-backhaul.md) §3; 72 h buffer sized in [Edge & connectivity](edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class); 32 GB per node |
+| **LoRaWAN network server** | Join server and network/application server for battery sensors and counters: OTAA joins, per-device session keys, payload decode, republish into per-device MQTT topics; collects SF histogram and per-gateway loss | Estate | OSS container (ChirpStack class); three gateways → [ADR-0002](../../adrs/ADR-0002-mqtt-and-cellular-backhaul.md) |
+| **Edge inference nodes** | Mask visitors in frame; extract S1 features and aggregate them to 1-minute windows (raw 1 Hz only around events, with the clip); count piranhas (S2); raise tier-1 safety advisories | Estate | Two GPU-class servers sized N+1 with a degradation rule ([compute budget](edge-and-connectivity.md#edge-compute-budget)); models pulled from object storage, rate-limited and off-hours → [ADR-0006](../../adrs/ADR-0006-edge-vs-cloud-inference.md) |
+| **Tier-0 safety rules** | Deterministic, no ML, no cloud: enclosure door contact open without keeper badge; water/climate out of band; PIR/beam motion in a dry zone → DECT handsets/pagers within seconds, smartphones in parallel; acknowledgement within 60 s or escalation to head keeper, then all staff | Estate | FR-3.6; NFR-AVL-3 is measured on this path, to a human ack ([alert chain](edge-and-connectivity.md#safety-alerts-from-sensor-to-a-human)). Tier-1 model advisories (FR-3.7) come from the edge node, use the secondary channel and only add to it |
 | **IoT ingestion gateway** | Terminates the MQTT bridge in both directions: authenticates, validates schemas and de-duplicates uplink; delivers downlink snapshots | Cloud | Managed IoT service |
 | **Event backbone** | Durable topics per bounded context; schema registry whose CI check rejects personal-data fields; replayable | Cloud | Managed streaming → [ADR-0004](../../adrs/ADR-0004-event-driven-backbone.md) |
-| **Business monolith** | One deployable, four modules with private schemas and a transactional outbox to the backbone. Modules: **Ticketing & Access** (anti-corruption layer: vendor webhooks → our events; `PriceUpdated` and erasure → vendor API; gate list deltas → downlink), **Park Operations** (zone/ride model, occupancy and queue read models, staffing plans), **Animal Welfare** (animal/enclosure registry, feeding log, review queue, treatments, population ledger and estimates), **Guest Engagement** (companion sessions, itineraries, nudges, pricing recommendation orchestration, per-subject key store) | Cloud | Serverless containers; extraction criteria → [ADR-0004](../../adrs/ADR-0004-event-driven-backbone.md) |
+| **Business monolith** | One deployable, four modules with private schemas and a transactional outbox to the backbone. Modules: **Ticketing & Access** (anti-corruption layer: vendor webhooks → our events; `PriceUpdated` and erasure → vendor API; gate list deltas → downlink), **Park Operations** (zone/ride model, occupancy and queue read models incl. average dwell, staffing plans, labour-rule policy store, adapter to the HR/rostering system — A12), **Animal Welfare** (animal/enclosure registry, feeding log, review queue, treatments, population ledger and estimates), **Guest Engagement** (companion sessions, itineraries, nudges, pricing recommendation orchestration, per-subject key store) | Cloud | Serverless containers; extraction criteria → [ADR-0004](../../adrs/ADR-0004-event-driven-backbone.md) |
 | **AI consumers** | Stateless consumers that score events with our own models (S1 anomaly scoring against baselines) and publish results back | Cloud | Separate deployable: scales with event rate, released with model promotions, not with the monolith |
 | **GPU / batch workers** | Training pipelines; scheduled S3 forecasts; S5 elasticity estimation | Cloud | Managed batch/GPU; bursty, scheduled |
 | **Downlink publisher** | Publishes retained snapshots and sequenced deltas of allow/revocation lists, policy parameters (bands, prices, hours) and desired edge model versions to the bridge | Cloud | [Edge & connectivity → Downlink](edge-and-connectivity.md#downlink-cloud--estate) |
@@ -132,7 +141,7 @@ Deployment unit ≠ bounded context ([ADR-0004](../../adrs/ADR-0004-event-driven
 | AI consumers | S1 scoring (more as scenarios arrive) | Scale with event rate; restart and roll back on model promotion without touching the monolith |
 | GPU / batch workers | Training, forecasts, elasticity | Different runtime (GPU), bursty and scheduled |
 | IoT ingestion + downlink publisher | Bridge termination both ways | Managed IoT service; must keep running while the monolith deploys |
-| Edge tier | Broker pair, gate validation, tier-0 rules, edge inference nodes, LoRaWAN gateway | On the estate; reconciled by GitOps from the same repositories |
+| Edge tier | Broker cluster, gate validation, tier-0 rules, edge inference nodes, LoRaWAN network server and gateways, DECT base stations | On the estate; reconciled by GitOps from the same repositories |
 | Ticketing platform | SaaS | Adopted, not deployed ([ADR-0012](../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)) |
 
 A module leaves the monolith only when it meets an extraction criterion in ADR-0004 (independent scaling, blocking release cadence, different runtime, different owning team). Nothing at 15,000 visitors/day meets one today.
@@ -147,8 +156,8 @@ A module leaves the monolith only when it meets an extraction criterion in ADR-0
 
 ## Cross-cutting
 
-- **Identity:** visitors (optional accounts), staff (SSO, roles: keeper / vet / ops / management), devices (certificates).
+- **Identity:** visitors (optional accounts), staff (SSO, roles: keeper / vet / ops / management), devices by transport class — X.509 + mutual TLS for IP devices, DevEUI/AppKey with OTAA for LoRaWAN devices ([Edge & connectivity → Security](edge-and-connectivity.md#security-identity-by-transport-class)).
 - **Observability:** OpenTelemetry everywhere; AI calls carry `capability`, `model_version`, `confidence`, `cost` attributes.
 - **Infrastructure as code & GitOps:** everything — including model versions in the registry — is declared in Git and reconciled.
 - **Degradation ladder:** (1) cloud + AI, (2) cloud without AI (rules/heuristics), (3) estate-only (gates, safety, buffering). Every scenario names where it sits on this ladder.
-- **Resilience validation:** twelve scripted game days with expected behaviour, metric, cadence and owner → [resilience-validation.md](resilience-validation.md).
+- **Resilience validation:** thirteen scripted game days with expected behaviour, metric, cadence and owner → [resilience-validation.md](resilience-validation.md).

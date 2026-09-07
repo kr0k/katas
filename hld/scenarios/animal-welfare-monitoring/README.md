@@ -13,9 +13,20 @@ Rules handle the easy part and we use them: *feed scale unchanged 2 h after feed
 
 Safety is split the same way. **Tier-0 safety alerts** (FR-3.6) — door open without a badge, water out of band, motion in a dry zone — are deterministic rules on local sensors and never involve a model. **Tier-1 safety advisories** (FR-3.7) — aggressive behaviour near visitors, an animal outside its normal zone — come from the edge vision model, are delivered as *advisory*, and are governed like every other model output. A model may add an alert; it never replaces or delays a rule.
 
+## Per animal or per enclosure
+
+"Per-animal baselines" assume we know which animal we are looking at. For a python, a cassowary or a big cat that is trivially true; for twelve meerkats it is an open research problem (assumption A11). So the scenario runs in two modes, and every enclosure is assigned one:
+
+| Mode | Applies to | Features and baselines | Feed scale | Anomaly is raised for |
+| --- | --- | --- | --- | --- |
+| **Per animal** | Solitary animals; animals with rings, tags or RFID collars — about 35 of 55 enclosures | Per individual: activity minutes, zone occupancy, posture, social distance to others if any | Attributed to the individual (one animal per feeding station, or tag read at the scale) | The animal |
+| **Per enclosure** | Groups without reliable identity — meerkats, aviary, fish, insects | Per enclosure: group activity, dispersion, count-in-view, feeding-station activity, share of animals visible | Attributed to the enclosure: total intake vs. the enclosure's baseline | The enclosure; the keeper identifies the animal on the round |
+
+Both modes use the same pipeline, bands and review queue; only the feature extractor and the baseline key differ. Per-animal identity in groups is a Phase 3+ research spike ([`TODOS.md`](../../../TODOS.md)); if it works, group enclosures move to the first row without an architecture change.
+
 ## What the vet gets
 
-A review queue on a tablet: for each flagged animal, the clip, the sensor trace, the model's confidence and *what kind* of anomaly it suspects, the animal's baseline, and two buttons — *Confirm (with finding)* / *Dismiss (with reason)*. Everything they decide trains the next model.
+A review queue on a tablet: for each flagged animal or enclosure, the clip, the sensor trace, the model's confidence and *what kind* of anomaly it suspects, the baseline, and two buttons — *Confirm (with finding)* / *Dismiss (with reason)*. Everything they decide trains the next model.
 
 ## Solution
 
@@ -27,7 +38,7 @@ flowchart TB
         Edge["🤖 Edge inference node<br/>• visitor masking<br/>• motion/pose features → 1-min windows<br/>• clip + raw features on candidate events<br/>• tier-1 safety advisory"]
         Broker["MQTT broker"]
         Rules["Tier-0 safety rules<br/>(door open w/o badge, water out of band,<br/>PIR/beam in dry zone)"]
-        Staff["Staff devices"]
+        Staff["Staff devices<br/>(DECT/pager primary)"]
         Cam --> Edge
         Edge -. "1-min feature windows + clips (not video)" .-> Broker
         Edge -. "advisory" .-> Staff
@@ -37,8 +48,8 @@ flowchart TB
     Broker -. "bridge" .-> Bus
     subgraph Cloud["☁️ Cloud"]
         Bus["Event backbone"]
-        Ing["Welfare ingestion<br/>(per-animal time series)"]
-        Base[("Per-animal baselines<br/>& feature store")]
+        Ing["Welfare ingestion<br/>(per-animal / per-enclosure time series)"]
+        Base[("Baselines<br/>& feature store")]
         Anom["🤖 Anomaly scoring<br/>(feeding · activity · social · posture)"]
         Bands["Confidence bands"]
         Queue["Review queue 👤<br/>(vet / head keeper)"]
@@ -62,12 +73,12 @@ flowchart TB
 
 | Container | Where | Responsibility | AI? |
 | --- | --- | --- | --- |
-| Edge inference node | Estate | Masks any visitor region in frame (privacy); extracts motion/pose/position features from video at ~1 Hz — per animal where animals are solitary or tagged, per enclosure for groups — and **aggregates them to 1-minute windows** before publishing; keeps the raw 1 Hz features in a ±5 min ring buffer and ships them with a short clip when a candidate event fires. Raw video never leaves the estate. | Yes — own vision models |
-| Tier-0 safety rules | Estate | Deterministic: door contact open without keeper badge; water temperature/pH out of band; PIR/beam motion in a "no animal should be here" dry zone → alert to staff devices within seconds. No cloud, no ML (FR-3.6). | No |
-| Tier-1 safety advisory | Estate (edge node) | Vision model flags aggressive behaviour near visitor areas or an animal outside its normal zone; sends an *advisory* to staff devices and a clip to the review queue. Advisory only — never the sole alert path (FR-3.7); bands and evals per ADR-0007/0008. | Yes — own vision model |
-| Welfare ingestion | Cloud | Builds per-animal time series (feeding weight deltas, activity minutes, zone occupancy inside enclosure, social distance) from the 1-minute windows | No |
-| Per-animal baselines | Cloud | Rolling baselines per animal & season; species-level priors for new arrivals | No |
-| Anomaly scoring | Cloud | Scores each animal per hour against its baseline across four dimensions; outputs anomaly type + confidence | Yes — own tabular/time-series models |
+| Edge inference node | Estate | Masks any visitor region in frame (privacy); extracts motion/pose/position features from video at ~1 Hz — per animal or per enclosure according to the mode table — and **aggregates them to 1-minute windows** before publishing; keeps the raw 1 Hz features in a ±5 min ring buffer and ships them with a short clip when a candidate event fires. Raw video never leaves the estate. Two nodes sized N+1 ([compute budget](../../core/edge-and-connectivity.md#edge-compute-budget)). | Yes — own vision models |
+| Tier-0 safety rules | Estate | Deterministic: door contact open without keeper badge; water temperature/pH out of band; PIR/beam motion in a "no animal should be here" dry zone → DECT/pager within seconds, acknowledged or escalated. No cloud, no ML (FR-3.6). | No |
+| Tier-1 safety advisory | Estate (edge node) | Vision model flags aggressive behaviour near visitor areas or an animal outside its normal zone; sends an *advisory* to staff smartphones and a clip to the review queue. Advisory only — never the sole alert path (FR-3.7); bands and evals per ADR-0007/0008. | Yes — own vision model |
+| Welfare ingestion | Cloud | Builds per-animal or per-enclosure time series (feeding weight deltas, activity minutes, zone occupancy inside enclosure, social distance) from the 1-minute windows | No |
+| Baselines | Cloud | Rolling baselines per animal or enclosure & season; species-level priors for new arrivals | No |
+| Anomaly scoring | Cloud | Scores each animal or enclosure per hour against its baseline across four dimensions; outputs anomaly type + confidence | Yes — own tabular/time-series models |
 | Confidence bands | Cloud | Policy per species/anomaly type: high → auto-record as observation; medium → vet review with SLA; low → discard but keep for learning | No (policy) |
 | Review queue | Cloud | Prioritised by species risk and confidence; SLA 4 h (target 1 h); reason codes; full audit | Human |
 | Welfare records | Cloud | Feeding log (automatic + manual), reviews, treatments — the system of record | No |
@@ -77,7 +88,7 @@ flowchart TB
 ## Data
 
 - **Inputs:** camera features computed at ~1 Hz on the edge node and published as **1-minute windows** (activity minutes, motion mean/variance, zone-occupancy shares, social-distance statistics — ≈ 2 KB per animal or enclosure per minute); raw 1 Hz features only for ±5 min around a candidate event, shipped with the clip; feed-scale weights per feeding; water/climate per minute; door contacts and PIR/beam; keeper manual logs.
-- **Baselines:** per animal, per time-of-day, per season; species prior until 14 days of data exist.
+- **Baselines:** per animal or enclosure, per time-of-day, per season; species prior until 14 days of data exist.
 - **Labels:** vet confirmations/dismissals with reason codes; treatment outcomes as delayed ground truth ("we flagged lethargy on Monday; vet diagnosed infection on Wednesday" = true positive).
 - **Retention:** clips 90 days unless attached to a review; features 3 years; video never stored centrally.
 
@@ -85,25 +96,34 @@ flowchart TB
 1. Full: edge features + cloud scoring + vet queue + LLM summary.
 2. No LLM provider: summary is a templated report from structured data.
 3. No cloud: edge keeps extracting features and buffering; **tier-0 rules, tier-1 advisories and daily keeper rounds continue unchanged**.
-4. No edge node: sensors + tier-0 rules still work; cameras record locally; vision features and advisories resume when node is back.
+4. No edge node: the second node takes all streams at reduced frame rate; if both are down, sensors + tier-0 rules still work, cameras record locally, vision features and advisories resume when a node is back.
 
 ## Validation & verification
 
-**Before release**
-- Golden footage set per species group (≥ 200 labelled clips each: normal, feeding, lethargy, abnormal posture, social isolation), labelled by the vet.
-- Promotion thresholds: recall ≥ 0.90 on "missed meal" and "lethargy"; precision ≥ 0.60 (we accept false positives, the vet filters); calibration error ≤ 0.05 so confidence bands mean what they say.
-- Shadow run for 2 weeks alongside the current model; disagreements reviewed by the vet.
+All numbers below are copies of the [thresholds & cadences table](../../ai-platform/README.md#thresholds-and-cadences-source-of-truth); that table wins if they ever disagree.
+
+**Promotion gates, by phase.** A gate that needs "≥ 200 labelled lethargy clips" cannot be met before there are cameras. So the gates are staged, and each phase's golden set is built during the previous one:
+
+| Phase | Capability promoted | Golden set — and when it exists | Gate |
+| --- | --- | --- | --- |
+| 1 | `detect-feeding-anomaly` (rules + tabular on feed scales and sensors) | 3 months of scale logs with keeper labels — collectable in Phase 0, since scales are foundation | Recall ≥ 0.90 on "missed meal"; precision ≥ 0.60; calibration error ≤ 0.05; 2-week shadow against the rules |
+| 2a | `score-enclosure-activity`, **shadow-only** | Camera features and clips accumulate from the first day of Phase 2; keepers label candidate events as they occur (label as side-effect) | 4 weeks in shadow; agreement with keeper observations reviewed weekly; no vet-queue traffic yet |
+| 2b | `score-enclosure-activity` to the vet queue | ≥ 200 labelled clips per class (normal, feeding, lethargy, abnormal posture, social isolation) per species group, accumulated in 2a | Recall ≥ 0.90 on "lethargy"; precision ≥ 0.60; calibration ≤ 0.05; 2-week shadow |
+| 3 | Per-animal vision for solitary/tagged animals | Per-animal identity labels added to the Phase 2 set | Same thresholds per animal; identity accuracy ≥ 0.95 where tags are read |
+
+**Masking is its own capability**, gated before anything else: `mask-visitors` must show **zero unmasked person regions** on a 500-frame staged golden set (staff volunteers walking past enclosures) with over-masking ≤ 10% of animal area, and in production **zero unmasked frames stored** — any occurrence is a rollback and an incident. A monthly sample of 200 stored clips is reviewed.
 
 **In production**
 - **Vet override rate** per anomaly type (OKR 3.5) — rising override rate = drifting model or mis-set band → alert model owner, auto-tighten band.
 - **Time-to-review** SLA adherence.
 - **Delayed ground truth:** treatments logged within 7 days of a flag are joined back to compute real-world precision/recall monthly.
-- **Drift:** camera image statistics (lighting, occlusion), feature distributions per animal; seasonal recalibration of baselines.
-- **Weekly audit:** 20 random *low-confidence discarded* events reviewed by a keeper to catch false negatives.
+- **Recall audit, three ways:** weekly review of 20 random *low-confidence discarded* events (misses the model almost caught); weekly review of 10 random *unflagged hours* of footage by a keeper (misses the model never saw); monthly count of **treatments without any prior flag** (misses that cost money) — target ≤ 30% of treatments by Phase 3.
+- **Drift:** camera image statistics (lighting, occlusion), feature distributions per animal or enclosure; seasonal recalibration of baselines.
 
 **Kill switch:** the capability owner can set any anomaly type to "review everything" (band = 0) or switch off scoring entirely; rules and rounds continue.
 
 ## Trade-offs we accepted
 - **Features at edge, scoring in cloud** — adds a hop and a dependency, but keeps 110 video streams off the backhaul and lets us improve scoring models without touching edge hardware. **Aggregating to 1-minute windows** cuts feature traffic from ~200 to ~3 messages per second across the estate and the 72 h buffer from ~10 GB to ~3 GB ([capacity table](../../core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class)); hourly anomaly scoring does not need sub-minute resolution, and the raw 1 Hz trace is still shipped around events. Safety-critical detections that must be instant are rules, not models, and run locally.
+- **Per-enclosure for groups** — we lose "this meerkat ate less" for group species and gain a scenario that works on day one for every enclosure. Identity in groups is research, not roadmap.
 - **Precision sacrificed for recall** — a missed sick animal costs more than a dismissed alert. We manage the vet's load with bands, not by hiding alerts.
 - **Own models, not a vision API** — enclosure footage is unusual; general-purpose APIs are weak on "is this cassowary lethargic". Costs us training effort; buys us portability (edge deployment, no provider dependency).

@@ -16,7 +16,7 @@
    - forecasting: historical footfall with rolling-origin splits;
    - pricing: historical sales weeks;
    - companion: Q&A pairs with expected facts, planning scenarios with hard constraints, adversarial prompts.
-2. **CI evaluation gate**: a candidate bundle is scored on its golden set; promotion requires meeting **thresholds** (e.g. recall ≥ 0.90 & calibration error ≤ 0.05; detector P/R ≥ 0.95; MAPE ≤ 20%; factuality ≥ 0.95, constraint violations 0, safety refusals 100%) **and no regression** against the current production bundle.
+2. **CI evaluation gate**: a candidate bundle is scored on its golden set; promotion requires meeting the capability's **thresholds** — kept in one place, the [thresholds & cadences table](../hld/ai-platform/README.md#thresholds-and-cadences-source-of-truth) (e.g. recall ≥ 0.90 & calibration error ≤ 0.05; detector P/R ≥ 0.95; next-day MAPE ≤ 25% and better than the heuristic; factuality ≥ 0.95, constraint violations 0, safety refusals 100%) — **and no regression** against the current production bundle. **Deterministic components on AI paths** (pricing policy engine, staffing optimiser, gate rules) get **invariant suites**: property-based tests over generated inputs with a violations = 0 gate, and the same invariants checked in production by an independent validator.
 3. **Shadow mode** before live: candidate runs on live traffic in parallel; outputs compared; disagreements sampled for human review. Minimum 2 weeks for welfare/companion, 1 forecasting cycle for forecasting.
 4. **Production monitoring**, three layers:
    - *Technical:* latency, error rate, cost, token use per capability (gateway tracing).

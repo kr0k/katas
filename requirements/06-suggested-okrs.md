@@ -7,8 +7,8 @@
 | **1. Grow attendance and revenue** | 1.1 Average visitors per day | 5,000 | 8,000 | 15,000 | S5, S4 |
 | | 1.2 Returning-visitor share (visited ≥ 2× in 12 mo) | ~10% | 25% | 40% | S4 |
 | | 1.3 Family passes as share of admissions | ~20% | 40% | 50% | S4, S5 |
-| | 1.4 Revenue per visitor (admission + on-site) | baseline | +15% | +30% | S5 |
-| | 1.5 Weekday / weekend attendance ratio (fill quiet days) | 0.35 | 0.5 | 0.6 | S5, S3 |
+| | 1.4 Revenue per visitor (admission + on-site), weekly average — quiet-day discounts must not lower it | baseline | +15% | +30% | S4, S5 |
+| | 1.5 Weekday / weekend attendance ratio (fill quiet days) — S5's primary objective | 0.35 | 0.5 | 0.6 | S5, S3 |
 | **2. Run the park on data, not guesswork** | 2.1 Zones with live popularity data | 0% | 100% | 100% | Core |
 | | 2.2 p90 queue time on top-10 rides | unknown | ≤ 20 min | ≤ 15 min | S3, S4 |
 | | 2.3 Forecast accuracy, zone footfall next day (MAPE) | n/a | ≤ 25% | ≤ 15% | S3 |

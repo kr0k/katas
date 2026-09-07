@@ -28,12 +28,13 @@ Otherwise it runs **in the cloud**. Corollaries:
 
 ## Consequences
 **Positive:** backhaul carries kilobytes, not video; safety is independent of AI and cloud; privacy masking happens before anything is stored.
-**Negative:** edge hardware to buy and maintain (1–2 GPU-class nodes + spare); feature schema between edge and cloud becomes an interface to govern.
+**Negative:** edge hardware to buy and maintain — two GPU-class nodes sized **N+1** so that either alone carries all 110 streams at degraded frame rates ([compute budget](../hld/core/edge-and-connectivity.md#edge-compute-budget)); feature schema between edge and cloud becomes an interface to govern.
 
 | Risk | Mitigation |
 | --- | --- |
 | Edge model drift unnoticed | Edge publishes confidence stats and sample frames; cloud monitors them (ADR-0008) |
-| Edge node hardware failure | Spare node; cameras record locally; sensors and rules unaffected |
+| Edge node hardware failure | N+1 sizing; degradation rule (piranha tank and primary cameras first, masking never degraded); achieved-fps metric; cameras record locally; sensors and rules unaffected (GD-7) |
+| Compute budget exceeded as enclosures or models grow | Achieved fps vs. target alarmed at < 80%; third node when normal-operation share > 50% per node |
 | Feature schema change breaks cloud scoring | Versioned schema; dual-publish during transitions |
 
 ## How we will know this was right

@@ -10,6 +10,7 @@
 
 - [How to read this repository](#how-to-read-this-repository)
 - [The problem in one paragraph](#the-problem-in-one-paragraph)
+- [Why this pays back](#why-this-pays-back)
 - [Our approach: how we used AI](#our-approach-how-we-used-ai)
 - [Architecture at a glance](#architecture-at-a-glance)
 - [Delivery roadmap: what we build when, and what we buy](#delivery-roadmap-what-we-build-when-and-what-we-buy)
@@ -30,7 +31,7 @@
 
 | Folder | What is inside | Start here if you are… |
 | --- | --- | --- |
-| `requirements/` | Business goals, pain points, FRs, NFRs, assumptions, suggested OKRs, risks | …checking whether we understood the problem |
+| `requirements/` | Business goals, pain points, FRs, NFRs, assumptions, suggested OKRs, risks — and the [business case](requirements/08-business-case.md): what binds first, where 15,000 a day comes from, when the platform pays back | …checking whether we understood the problem, and whether it pays |
 | `hld/core/` | The non-AI foundation: edge, connectivity, ticketing, event backbone, data — and the game days that verify it | …checking whether the AI fits the rest of the system |
 | `hld/scenarios/` | One folder per AI use case: why, what, containers, diagram, validation | …judging innovation and suitability |
 | `hld/ai-platform/` | Shared AI platform: inference gateway (adopted) and model governance — registry, evaluation, monitoring | …judging how we handle uncertainty and verify AI |
@@ -44,6 +45,12 @@ Every AI scenario links to its ADRs; every ADR links back to the requirements it
 ## The problem in one paragraph
 
 The estate receives ~5,000 visitors/day and must reach 15,000/day within three years. Nobody knows which parts of the park are popular, so investment and staffing are guesswork. The animal collection is expensive to run — dramatically more so when animals get sick — and the jumping piranha population needs counting. Visitors rarely come back and the estate does not know why. Wi-Fi is patchy, cloud services are allowed, and there is a budget for MQTT-capable devices. Full statement: [`requirements/`](requirements/).
+
+---
+
+## Why this pays back
+
+The platform costs about 3% of today's revenue and its savings alone never pay for it; it pays back inside three years only if it is credited with roughly a third of the growth between year 2 and year 3 — growth the roadmap can only deliver from Phase 3 — so it is a **growth bet**, sized and sequenced accordingly. On the roadmap's own gates, payback lands in **years 4–6**. The arithmetic, its assumptions, and how season 1 replaces them are in [requirements/08](requirements/08-business-case.md), generated from one assumptions block by [`scripts/business_case.py`](scripts/business_case.py). The estate's physical capacity, not the software, is the first thing that binds: 15,000 a day is not feasible on the current car park, and that decision is the Countess's before the first summer.
 
 ---
 
@@ -87,8 +94,8 @@ flowchart TB
         Bus["Event backbone"]
         Ingest --> Bus
         subgraph Domains["Business monolith — one deployable, four modules"]
-            Tix["Ticketing & Access<br/>(adapter to ticketing platform)"]
-            Ops["Park Operations & Analytics"]
+            Tix["Ticketing & Access<br/>(adapter to ticketing platform & POS)"]
+            Ops["Park Operations & Analytics<br/>+ Estate daily report"]
             Welfare["Animal Welfare"]
             Guest["Guest Engagement"]
         end
@@ -107,9 +114,12 @@ flowchart TB
     end
 
     TixSaaS(["Ticketing platform<br/>(SaaS, adopted)"])
+    POS(["POS / commerce<br/>(vendor's or separate)"])
     Tix <--> TixSaaS
+    POS -. "purchases" .-> Tix
     Visitors["👨‍👩‍👧 Visitors<br/>(web & mobile)"] --> TixSaaS & Guest
     Staff["👩‍⚕️ Vet & ops staff<br/>(dashboards, review queue)"] --> Welfare & Ops
+    Countess["👑 Countess<br/>(daily report, 21:00)"] --> Ops
 ```
 
 **Key:** as in the [HLD legend](hld/README.md#diagram-legend-used-in-every-diagram) — 🏰/☁️ boxes are deployment zones, rectangles are components we build or configure, rounded boxes are external systems, arrows show the main direction of data flow. This overview does not distinguish synchronous from asynchronous; the detailed views in [`hld/`](hld/README.md) do.
@@ -123,9 +133,9 @@ Five AI scenarios, two radio technologies and an edge tier are a lot for a team 
 | Phase | Enter when | Foundation delivered | AI delivered | Verified by |
 | --- | --- | --- | --- | --- |
 | **0 · Foundation** | Day 1 | Edge tier: MQTT broker, LoRaWAN gateway, gate readers, tier-0 safety rules, staff devices. Ticketing platform adopted and integrated (ADR-0012). Event backbone, business monolith skeleton, data platform, GitOps. | None. Data capture only — every sensor and gate produces events from day one. | Game days: uplink loss, broker failover, gate offline, revocation after outage, safety alert to a human → [resilience validation](hld/core/resilience-validation.md) |
-| **1 · Data & rules** | Phase 0 in production | Anonymous counters in every zone (OKR 2.1). Feature store. Inference gateway (adopted OSS) and thin model governance (registry, eval gate). | **S1** feeding-by-scale: rules + tabular anomaly on feed scales and sensors. **S3** live occupancy dashboard (no ML). **S4** FAQ answers: small model via the gateway, grounded on the knowledge base. | Thresholds table live; golden sets started by domain owners; heuristic staffing rules in place (R7). |
-| **2 · Models on accumulated data** | ≥ 1 season of footfall and welfare data (A6, R7) | Edge compute sized N+1; visitor-masking gate. | **S1** per-enclosure activity anomalies, then camera features in shadow mode. **S3** footfall forecasting + staffing optimiser (must beat the heuristic). **S4** day planning with streaming answers. | Backtests vs. heuristic baseline; 2-week shadow runs; MAPE gate. |
-| **3 · Optimisation** | Phase 2 live + 1 year of sales and footfall | — | **S2** piranha counting against a census of record. **S5** demand-aware pricing as a year-1 randomised quiet-day experiment. **S4** return-visit nudges. **S1** per-animal vision for solitary or tagged animals. | Census comparison; A/B by date cohort; nudge control cohort. |
+| **1 · Data & rules** | Phase 0 in production | Anonymous counters in every zone (OKR 2.1). Feature store. Inference gateway (adopted OSS) and thin model governance (registry, eval gate). Spend ingestion (`PurchaseRecorded`, FR-2.6) after 14 days in shadow. [Estate daily report](hld/core/README.md#estate-daily-report) as a template (FR-2.7). | **S1** feeding-by-scale: rules + tabular anomaly on feed scales and sensors. **S3** live occupancy dashboard (no ML). **S4** FAQ answers: small model via the gateway, grounded on the knowledge base. | Thresholds table live; golden sets started by domain owners; heuristic staffing rules in place (R7); 7 consecutive green spend reconciliations; OKR 1.6 baseline measured at month 12. |
+| **2 · Models on accumulated data** | ≥ 1 season of footfall and welfare data (A6, R7) | Edge compute sized N+1; visitor-masking gate. [requirements/08](requirements/08-business-case.md) re-issued with season-1 measured values. | **S1** per-enclosure activity anomalies, then camera features in shadow mode. **S3** footfall forecasting + staffing optimiser (must beat the heuristic). **S4** day planning with streaming answers. Daily report phrasing via the S1 drafter capability, after the numeric-fidelity eval. | Backtests vs. heuristic baseline; 2-week shadow runs; MAPE gate. |
+| **3 · Optimisation** | Phase 2 live + 1 year of sales and footfall | — | **S2** piranha counting against a census of record. **S5** demand-aware pricing as a year-1 randomised quiet-day experiment. **S4** return-visit nudges and the pass-upgrade prompt (OKR 1.6 targeted from here). **S1** per-animal vision for solitary or tagged animals. | Census comparison; A/B by date cohort; nudge control cohort. |
 | **4+ · Research** | Open questions in [`TODOS.md`](TODOS.md) | — | Per-animal re-identification in group enclosures; ride maintenance analytics (FR-2.5). | Spikes with entry thresholds, not promises. |
 
 **Build vs. adopt.** The team builds what is specific to this estate and adopts everything that is a commodity:
@@ -154,6 +164,7 @@ Each scenario README states its phase. The phases in `hld/` are summarised in [h
 - [05 · Assumptions & constraints](requirements/05-assumptions-and-constraints.md)
 - [06 · Suggested OKRs](requirements/06-suggested-okrs.md)
 - [07 · Risks & mitigations](requirements/07-risks-and-mitigations.md)
+- [08 · Business case & growth: capacity, ladder, flywheel, payback](requirements/08-business-case.md)
 
 ## High Level Design
 
@@ -170,8 +181,8 @@ Each scenario README states its phase. The phases in `hld/` are summarised in [h
 | S1 | [Animal welfare monitoring](hld/scenarios/animal-welfare-monitoring/README.md) *(reference)* | CV + anomaly detection, per animal or per enclosure | 3.1, 3.2, 3.3 | Yes — veterinarian decides |
 | S2 | [Piranha population counting](hld/scenarios/piranha-population-counting/README.md) | Edge CV | 3.4 | Census of record at tank maintenance; monthly visual sanity check |
 | S3 | [Visitor flow forecasting & staffing](hld/scenarios/visitor-flow-forecasting/README.md) | Classical ML | 2.1, 2.2, 2.3 | Ops manager approves rosters |
-| S4 | [Guest companion](hld/scenarios/guest-companion/README.md) | Grounded LLM | 1.2, 1.3, 2.2 | Escalation to staff |
-| S5 | [Dynamic family passes](hld/scenarios/dynamic-family-passes/README.md) | Classical ML + rules | 1.1, 1.4, 4.1 | Pricing guardrails set by Countess |
+| S4 | [Guest companion](hld/scenarios/guest-companion/README.md) | Grounded LLM | 1.2, 1.3, 1.6, 2.2 | Escalation to staff |
+| S5 | [Dynamic family passes](hld/scenarios/dynamic-family-passes/README.md) | Classical ML + rules | 1.5, 1.1, 1.4 | Pricing guardrails set by Countess |
 
 ## Architecture Decision Records
 
@@ -188,6 +199,7 @@ Index with status: [`adrs/README.md`](adrs/README.md)
 | Validate entry with patchy connectivity | FR-1.4 | [Edge](hld/core/edge-and-connectivity.md) | [ADR-0011](adrs/ADR-0011-offline-ticket-validation.md), [ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [ADR-0001](adrs/ADR-0001-edge-first-store-and-forward.md) |
 | Collect telemetry from park & enclosures | FR-2.1, FR-3.1 | [Edge](hld/core/edge-and-connectivity.md) | [ADR-0001](adrs/ADR-0001-edge-first-store-and-forward.md), [ADR-0002](adrs/ADR-0002-mqtt-and-cellular-backhaul.md) |
 | Store and analyse estate data | FR-2.x | [Core → Data](hld/core/README.md#data-platform) | [ADR-0003](adrs/ADR-0003-cloud-provider-selection.md), [ADR-0004](adrs/ADR-0004-event-driven-backbone.md) |
+| Record on-site spend and report the day to the Countess | FR-2.6, FR-2.7 | [Core → Estate daily report](hld/core/README.md#estate-daily-report) | [ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [ADR-0004](adrs/ADR-0004-event-driven-backbone.md), [ADR-0010](adrs/ADR-0010-grounded-llm-with-guardrails.md) |
 | **AI-enabled** | | | |
 | Detect animal health & feeding anomalies | FR-3.2, FR-3.3 | [S1](hld/scenarios/animal-welfare-monitoring/README.md) | [ADR-0006](adrs/ADR-0006-edge-vs-cloud-inference.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) |
 | Count piranha population | FR-3.4 | [S2](hld/scenarios/piranha-population-counting/README.md) | [ADR-0006](adrs/ADR-0006-edge-vs-cloud-inference.md), [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) |
@@ -216,16 +228,16 @@ The judges asked three questions. Short answers; details in the linked ADRs.
 
 → [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [AI platform](hld/ai-platform/README.md)
 
-**And does the foundation work?** The same question applies to the non-AI system, and "edge-first" is a claim until it has been broken on purpose. A [game-day catalogue](hld/core/resilience-validation.md) of thirteen scripted faults — uplink loss for hours and beyond the buffer, broker failover at peak, a gate cut off from the broker, a ticket refunded during an outage, a safety alert with the cloud down and nobody acknowledging, an edge node powered off, the event backbone gone, a provider unreachable, a kill switch, an erasure request, a model rollout on a saturated link, a restore from backup — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five of them are the exit criterion for Phase 0.
+**And does the foundation work?** The same question applies to the non-AI system, and "edge-first" is a claim until it has been broken on purpose. A [game-day catalogue](hld/core/resilience-validation.md) of fifteen scripted faults — uplink loss for hours and beyond the buffer, broker failover at peak, a gate cut off from the broker, a ticket refunded during an outage, a safety alert with the cloud down and nobody acknowledging, an edge node powered off, the event backbone gone, a provider unreachable, a kill switch, an erasure request, a model rollout on a saturated link, a restore from backup, a POS webhook carrying a card number, the uplink lost minutes before the daily report — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five of them are the exit criterion for Phase 0.
 
 ## What this architecture does not do
 
 Judges should know where the edges are. This proposal removes the estate's blindness — where people are, how animals are doing, what a Wednesday is worth — and bounds the cost of running it ([cost model](requirements/04-non-functional-requirements.md#cost-model-tco-50): ≈ €0.60 per visitor today, ≈ €0.30 at 15,000/day, most of it ticketing fees and the team, not AI). It does **not**:
 
-- **Make the business case.** Payback, the pricing strategy, the marketing that turns 5,000 visitors into 15,000 — those are decisions the Countess takes with the data this system gives her; the architecture makes them measurable, not automatic.
-- **Promise attendance.** The scenarios move OKRs 1.x by removing friction and filling quiet days; nothing here manufactures demand.
+- **Guarantee the business case.** [requirements/08](requirements/08-business-case.md) shows the arithmetic and its assumptions — what binds first, where the growth comes from, when the platform pays back; the decisions and the marketing that make them true, and the parking that makes 15,000 a day physically possible, are the Countess's.
+- **Manufacture demand.** The platform measures growth from day one and drives two of its three levers — weekday fill and repeat visits — only from Phase 3; new audiences come from marketing, and the platform claims none of them.
 - **Run the rides.** Ride control systems, their certification and predictive maintenance are out of scope (A10, [`TODOS.md`](TODOS.md)); rides appear as status events and queue counters only.
-- **Replace people.** The vet decides, the keeper identifies the animal, the ops manager approves the roster, management sets the base price; ≈ 17–24 staff hours a week go into that ([who does what](hld/ai-platform/README.md#humans-in-the-loop-who-does-what)).
+- **Replace people.** The vet decides, the keeper identifies the animal, the ops manager approves the roster and the daily report, management sets the base price and the pass price; ≈ 17–25 staff hours a week go into that ([who does what](hld/ai-platform/README.md#humans-in-the-loop-who-does-what)).
 - **Identify anyone.** No faces, no device tracking, no re-identification of visitors — or of meerkats, yet.
 - **Do HR, payroll or physical security.** Staff data is imported and plans exported (A12); CCTV for theft is not this system.
 

@@ -12,6 +12,7 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 | FR-1.4 | Gates validate tickets **while the estate uplink is down**, with later reconciliation | MUST |
 | FR-1.5 | Payments are handled by a PCI-compliant third-party provider; the estate never stores card data | MUST |
 | FR-1.6 | Pass holders can opt in to an account for return-visit offers and companion features | SHOULD |
+| FR-1.7 | Ops can configure **timed-entry slots and a daily capacity cap** through the ticketing platform, fed by the S3 forecast and the [capacity check](08-business-case.md#1-capacity-reality-check); the cap applies to unsold tickets and leaves gate validation unchanged; every cap change carries a reason code and is published as `CapacityCapChanged` | SHOULD |
 
 ## FR-2 · Park Operations & Analytics
 
@@ -22,6 +23,8 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 | FR-2.3 🤖 | Forecast visitor flow per zone at 30-min granularity for the next 7 days and **recommend staffing** → [S3](../hld/scenarios/visitor-flow-forecasting/README.md) | SHOULD |
 | FR-2.4 | Correlate investments (new ride, refurbished enclosure) with changes in popularity | SHOULD |
 | FR-2.5 | Ride telemetry (cycles, downtime, faults) feeds maintenance scheduling | COULD |
+| FR-2.6 | Ingest **on-site purchases** from the POS as auditable `PurchaseRecorded` events: `transaction_id`, type (sale / refund / void / correction), net amount + tax + currency, category (F&B / retail / parking / other — **no admission category**: gate-POS ticket sales stay `TicketPurchased`, so nothing is double-counted), `pos_terminal_id`, time; the pseudonymous `visitor_id` only where the opt-in explicitly covers purchase history ([ADR-0009](../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §7), otherwise no subject; never card data (NFR-SEC-2). Reconciled daily against the vendor's end-of-day totals | MUST |
+| FR-2.7 | **Estate daily report** — one screen of "how was today" for the Countess at 21:00, a read model over existing events with every number inserted verbatim; the optional phrasing reuses the S1 daily-summary drafter under its human-approval rules → [Core](../hld/core/README.md#estate-daily-report) | SHOULD |
 
 ## FR-3 · Animal Welfare
 
@@ -48,6 +51,6 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| FR-5.1 | All AI decisions are logged with model version, inputs, confidence and outcome (auditability) | MUST |
+| FR-5.1 | All AI decisions are logged with model version, inputs, confidence and outcome — **and so are human decisions that change prices, capacity or financial parameters** (who, when, why, old and new value) (auditability) | MUST |
 | FR-5.2 | Any AI model or provider can be replaced without changing business services | MUST |
 | FR-5.3 | Visitor tracking is anonymous by default; personal data only with explicit opt-in | MUST |

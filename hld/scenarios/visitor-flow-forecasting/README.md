@@ -4,7 +4,7 @@
 
 **Moves:** OKR 2.2 (p90 queue ≤ 20 min), 2.3 (next-day MAPE ≤ 25%), 2.4 (idle staff hours −30%), 1.5 (fill weekdays)
 **Phase:** 1 (live occupancy dashboard, heuristic staffing) → 2 (forecasting + optimiser, after ≥ 1 season of data per A6/R7) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
-**Requirements:** FR-2.1, FR-2.2, FR-2.3, FR-2.4, FR-5.3
+**Requirements:** FR-2.1, FR-2.2, FR-2.3, FR-2.4, FR-5.3; feeds FR-1.7 (timed-entry cap) and shows FR-2.6 (spend per zone)
 **ADRs:** [ADR-0009](../../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md), [ADR-0008](../../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (manager approves plans), [ADR-0004](../../../adrs/ADR-0004-event-driven-backbone.md) (`StaffingPlanApproved`, not the forecast, crosses contexts)
 
 ## Two problems, two tools
@@ -48,6 +48,9 @@ flowchart LR
 
 ## Investment analytics (FR-2.4)
 Curated footfall + a register of changes (new ride opened, enclosure refurbished, price change) → before/after comparison with seasonally matched controls. Simple, transparent, and what the Countess actually needs to decide where money goes.
+
+## Capacity and spend on the dashboard (FR-1.7, FR-2.6)
+Two lines the ops dashboard gains from the [business case](../../../requirements/08-business-case.md): **spend per zone and per visitor-day** from `PurchaseRecorded` — the terminal → zone mapping lives here in Park Operations — shown next to popularity, so "popular" and "profitable" can be compared zone by zone; and the **timed-entry cap as an ops decision**. When the forecast for a day comes within 10% of the parking or gate limit ([08 §1](../../../requirements/08-business-case.md#1-capacity-reality-check)), the dashboard and the Estate daily report *propose* a cap; the ops manager sets it through the ticketing platform with a reason code, and it is published as `CapacityCapChanged`. The forecast never sets a cap itself — the same rule as for the roster.
 
 ## Validation & verification
 - **Backtesting:** rolling-origin evaluation on history; promote only when MAPE ≤ target for the horizon that matters (next day, next weekend).

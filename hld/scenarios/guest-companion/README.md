@@ -2,13 +2,19 @@
 
 > Families wander, queue, leave early, and don't come back. We want a companion that plans their day, steers them to short queues and interesting animals, and gives them a reason to return.
 
-**Moves:** OKR 1.2 (returning share 10% → 25%), 1.3 (family passes 40%), 2.2 (queue time via load spreading)
+**Moves:** OKR 1.2 (returning share of households 10% → 12% base / 25% stretch → 40%), 1.3 (passes 20% → 29% / 40% → ≥ 50%), 1.6 (season-pass renewal, with the ticketing platform), 2.2 (queue time via load spreading)
 **Phase:** 1 (FAQ answers via the gateway) → 2 (day planning with live queues and forecast) → 3 (return-visit nudges) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-4.1, FR-4.2, FR-1.6, FR-5.1, FR-5.3
 **ADRs:** [ADR-0005](../../../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (staff escalation)
 
 ## Why generative AI here (and only here)
 This is a language problem: a parent typing "we have a 3-year-old who's scared of loud rides and we need lunch by 12" needs an answer, not a filter form. An LLM turns that into a plan — but **every fact it uses comes from our structured knowledge base and live queue data**, not from the model's memory. Safety facts ("can we touch it?") are never generated; they are looked up.
+
+## Where the companion sits in the flywheel
+
+The companion is where the [flywheel](../../../requirements/08-business-case.md#3-the-membership-flywheel) starts: a family that plans its day with it has a reason to keep an account; the account is what lets a nudge say "the cassowary chick you saw is on show" and offer the quiet-day pass; the pass is what brings them back. Everything else in this scenario serves that loop. The scenario owns two of the three growth levers' *mechanics* — the nudge that fills a weekday with pass holders, and the prompt that turns today's ticket into a pass — but not their economics: the pass price is management's yearly decision and the upgrade credit is a ticketing-platform invariant (P-I7, [ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)); quiet-day offers on day tickets are S5's.
+
+**The funnel we measure.** Four rates, each with its event, make up the flywheel conversion in 08 §3: companion adoption (`ItineraryCreated` ÷ households admitted), opt-in (accounts ÷ companion households), nudge reach (`NudgeSent` with an open ÷ accounts) and return (`GateEntered` of the household within 12 months of a nudge). They are **business guardrails** in the [thresholds table](../../ai-platform/README.md#thresholds-and-cadences-source-of-truth) — alert only, no model rollback — and the weekday visits of nudged pass holders vs. a control cohort is how the third lever is credited.
 
 ## Solution
 
@@ -31,10 +37,11 @@ flowchart TB
 ```
 
 ## What it does
-- **Plan the day:** builds an itinerary from constraints (children's ages, interests, time, accessibility) using forecast and live queues; re-plans when a ride closes or a queue spikes.
+- **Plan the day:** builds an itinerary from constraints (children's ages, interests, time, accessibility) using forecast and live queues; re-plans when a ride closes or a queue spikes; **steers lunch times** ("the terrace café is quiet until 12:30") because F&B seating is the second constraint to bind ([08 §1](../../../requirements/08-business-case.md#1-capacity-reality-check)).
 - **Answer questions:** grounded on the knowledge base — "Where is the axolotl?", "Is the Ferris wheel OK for a 4-year-old?", "When is the piranha feeding?" — with citations to the source fact.
 - **Offline-tolerant:** the itinerary and map are cached on the device; when Wi-Fi is patchy the visitor still has their plan; live re-planning resumes on reconnect.
-- **Return nudges (opt-in):** "The cassowary chick you saw is on show from Saturday", "You saw 31 of 55 enclosures — finish your collection", "Quiet-day family pass this Wednesday". Content templates are curated; the LLM personalises within them.
+- **Upgrade to a pass, today:** shown only to day-ticket holders without a pass (from the pass state the orchestrator already fetches), with today's ticket price credited — the credit is executed by the ticketing platform (P-I7); idempotency key = ticket id; offline the prompt reads "available at the exit and at the gate POS"; the same offer is repeated at the gate POS and in a next-day nudge, credit valid 7 days.
+- **Return nudges (opt-in):** "The cassowary chick you saw is on show from Saturday", "You saw 31 of 55 enclosures — finish your collection", "Quiet-day family offer this Wednesday" (S5's standing or experimental offer, surfaced here), "Turn today's ticket into a season pass — today's price credited until Sunday". Content templates are curated; the LLM personalises within them; frequency caps apply.
 
 ## Containers
 | Container | Responsibility | AI? |
@@ -62,7 +69,7 @@ Every promotion runs a **load test at 500 concurrent sessions** (a Saturday peak
 ## Validation & verification
 - **Eval suite:** 300+ question/answer pairs with expected facts; 100 planning scenarios with hard constraints (must not include closed rides, must respect age limits); 100 adversarial prompts (jailbreaks, "can I feed the piranhas", medical questions) requiring refusal/escalation; **100 indirect-injection cases** where the instruction hides in a ride description, a live-status field or text the visitor pastes — resistance must be 100%; an **ungrounded-block false-positive gate**: on 300 questions the KB can answer, the guardrail may block ≤ 5%, otherwise the companion is safe but useless; an **offline itinerary end-to-end test** (device goes offline → cached plan and map still work → re-plan on reconnect); the load test above. Promotion: factuality ≥ 0.95, constraint violations 0, safety refusals 100%, injection resistance 100%, false positives ≤ 5%, latency budgets met.
 - **Production:** sampled LLM-as-judge on factuality + weekly human review of 50 sessions; thumbs-down rate; escalation rate; "answer not grounded" blocks by guardrails (each one is a KB gap or a model regression); latency per request class.
-- **Business signal:** itinerary adherence (did they go where suggested?), queue time for companion users vs. non-users, return rate of nudged vs. control cohort (A/B).
+- **Business signal:** itinerary adherence (did they go where suggested?), queue time for companion users vs. non-users, return rate of nudged vs. control cohort (A/B), weekday visits of nudged pass holders vs. control (the lever the platform is credited with in [08 §4](../../../requirements/08-business-case.md#4-does-the-platform-pay-back)); the four funnel rates reported monthly as business guardrails (alert only).
 - All thresholds: [thresholds & cadences table](../../ai-platform/README.md#thresholds-and-cadences-source-of-truth).
 
 ## Degradation ladder

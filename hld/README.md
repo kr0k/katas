@@ -13,9 +13,9 @@ The full roadmap with entry gates and the build-vs-adopt table lives in the [REA
 | Phase | `core/` | `ai-platform/` | `scenarios/` |
 | --- | --- | --- | --- |
 | 0 · Foundation | Everything: edge tier, ticketing platform integration, event backbone, business monolith, data platform, game days | — | — (data capture only) |
-| 1 · Data & rules | Anonymous counters complete | Inference gateway (adopted), registry and eval gate (thin) | S1 feeding-by-scale · S3 live dashboard · S4 FAQ |
-| 2 · Models on data | Edge compute N+1 | Monitoring, shadow mode, golden sets per capability | S1 activity anomalies + vision in shadow · S3 forecasting · S4 planning |
-| 3 · Optimisation | — | — | S2 counting · S5 pricing experiment · S4 nudges · S1 per-animal vision |
+| 1 · Data & rules | Anonymous counters complete · spend ingestion (`PurchaseRecorded`) · [Estate daily report](core/README.md#estate-daily-report) as a template | Inference gateway (adopted), registry and eval gate (thin) | S1 feeding-by-scale · S3 live dashboard · S4 FAQ |
+| 2 · Models on data | Edge compute N+1 · daily report phrased by the S1 drafter capability · [requirements/08](../requirements/08-business-case.md) re-issued with season-1 values | Monitoring, shadow mode, golden sets per capability | S1 activity anomalies + vision in shadow · S3 forecasting · S4 planning |
+| 3 · Optimisation | — | — | S2 counting · S5 pricing experiment · S4 nudges and pass-upgrade prompt · S1 per-animal vision |
 
 Each scenario README carries a **Phase** line in its header.
 
@@ -46,13 +46,13 @@ flowchart LR
     LLM(["LLM / vision providers"])
     Msg(["Email / push provider"])
     Weather(["Weather & events data"])
-    TixSaaS(["Ticketing platform (SaaS)"])
+    TixSaaS(["Ticketing & POS platform (SaaS)<br/>or a separate POS behind the same anti-corruption layer"])
     HR(["HR / rostering system"])
 
     Visitor -- "buys tickets, uses companion" --> System
-    Countess -- "reads dashboards, sets base price & guardrails" --> System
+    Countess -- "reads the daily report and dashboards, sets base price, pass price & guardrails" --> System
     Staff -- "reviews alerts, logs treatments, runs the park" --> System
-    System <-- "sales, entries, passes / prices, erasure" --> TixSaaS
+    System <-- "sales, entries, passes, purchases / prices, caps, erasure" --> TixSaaS
     TixSaaS --> Pay
     System <-- "staff, skills, availability / approved plans" --> HR
     System --> LLM
@@ -68,9 +68,9 @@ See [core/README.md](core/README.md#container-view) for the full container view 
 
 | Context | Owns | Publishes events | Consumes events |
 | --- | --- | --- | --- |
-| **Ticketing & Access** (anti-corruption layer to the ticketing platform, [ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)) | tickets, passes, gate validations, accounts (opt-in) — as our events over the vendor's data | `TicketPurchased`, `GateEntered`, `GateExited`, `PassRenewed`, `PriceUpdated` | `PriceRecommended` (applies it within guardrails), `SubjectErased` |
-| **Park Operations** | zones, rides, footfall, queues, staffing plans, labour rules | `ZoneOccupancyUpdated`, `QueueLengthUpdated`, `RideStatusChanged`, `StaffingPlanApproved` | `GateEntered/Exited`, telemetry, `EnclosureStatusChanged` |
-| **Animal Welfare** | animals, enclosures, feeding, health reviews, population ledger and estimates | `FeedingRecorded`, `WelfareAnomalyDetected`, `ReviewDecided`, `EnclosureStatusChanged` (keeper decision: on/off show), `PopulationEstimated`, `SafetyAlertRaised` | enclosure telemetry |
+| **Ticketing & Access** (anti-corruption layer to the ticketing platform, [ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)) | tickets, passes, **on-site purchases**, gate validations, capacity cap and timed-entry slots, accounts (opt-in) — as our events over the vendor's data | `TicketPurchased`, `GateEntered` (with `persons_admitted`), `GateExited`, `PassRenewed`, `PurchaseRecorded` (an auditable commerce event: transaction id, type, net + tax + currency, category, terminal, time, optional pseudonymous visitor id — FR-2.6), `PriceUpdated`, `CapacityCapChanged` (ops decision with reason code) | `PriceRecommended` (applies it within guardrails), `SubjectErased` |
+| **Park Operations** | zones, rides, footfall, queues, staffing plans, labour rules, **the Estate daily report** (a read model — it publishes no event) | `ZoneOccupancyUpdated`, `QueueLengthUpdated`, `RideStatusChanged`, `StaffingPlanApproved` | `GateEntered/Exited`, telemetry, `EnclosureStatusChanged`; for the daily report: `TicketPurchased`, `PassRenewed`, `PurchaseRecorded`, `CapacityCapChanged`, `ReviewDecided`, `TreatmentStarted/Closed` — facts and human decisions, never model output |
+| **Animal Welfare** | animals, enclosures, feeding, health reviews, treatments, population ledger and estimates | `FeedingRecorded`, `WelfareAnomalyDetected`, `ReviewDecided`, `TreatmentStarted`, `TreatmentClosed`, `EnclosureStatusChanged` (keeper decision: on/off show), `PopulationEstimated`, `SafetyAlertRaised` | enclosure telemetry |
 | **Guest Engagement** | companion sessions, itineraries, nudges, pricing recommendations, per-subject keys | `ItineraryCreated`, `NudgeSent`, `PriceRecommended`, `SubjectErased` | `QueueLengthUpdated`, `RideStatusChanged`, `TicketPurchased`, `PriceUpdated`, `EnclosureStatusChanged` (e.g. "the sloth is off show today") |
 
 Contexts communicate only through events on the backbone or through published read models — no shared databases. This matters for the AI additions: a scenario can be switched off, replaced or degraded without touching the others.

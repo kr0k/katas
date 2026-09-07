@@ -81,8 +81,8 @@ flowchart TB
 | Anomaly scoring | Cloud | Scores each animal or enclosure per hour against its baseline across four dimensions; outputs anomaly type + confidence | Yes — own tabular/time-series models |
 | Confidence bands | Cloud | Policy per species/anomaly type: high → auto-record as observation; medium → vet review with SLA; low → discard but keep for learning | No (policy) |
 | Review queue | Cloud | Prioritised by species risk and confidence; SLA 4 h (target 1 h); reason codes; full audit | Human |
-| Welfare records | Cloud | Feeding log (automatic + manual), reviews, treatments — the system of record | No |
-| Daily summary drafter | Cloud | Drafts the morning welfare briefing from structured records via the inference gateway; a keeper approves before it is shown to management | Yes — LLM (non-critical) |
+| Welfare records | Cloud | Feeding log (automatic + manual), reviews, treatments — the system of record; treatments are published as `TreatmentStarted` / `TreatmentClosed` so the Estate daily report can count animals under treatment without seeing anomaly scores | No |
+| Daily summary drafter | Cloud | Drafts the morning welfare briefing from structured records via the inference gateway; a keeper approves before it is shown to management. The same capability, as `summarise-estate-day`, phrases the [Estate daily report](../../core/README.md#estate-daily-report) (FR-2.7) under the same rules: numbers inserted verbatim, a human approves before it is sent | Yes — LLM (non-critical) |
 | Retraining pipeline | Cloud | Vet decisions + clips → labelled dataset → new candidate model → eval gate → registry | — |
 
 ## Data

@@ -24,6 +24,6 @@ The 72nd Countess Von Digitalis, newly and unexpectedly in charge of a large, sp
 
 ## What "success" looks like from the Countess's chair
 
-A daily view that answers: *How many people came, where did they go, what did they spend, are the animals well, and what should we change tomorrow?* — with AI doing the pattern-finding and humans making the decisions.
+A daily view that answers: *How many people came, where did they go, what did they spend, are the animals well, and what should we change tomorrow?* — with AI doing the pattern-finding and humans making the decisions. That view is the [Estate daily report](../hld/core/README.md#estate-daily-report) (FR-2.7): one screen at 21:00, numbers verbatim, one recommendation for tomorrow.
 
-Measurable version: [06 · Suggested OKRs](06-suggested-okrs.md).
+Measurable version: [06 · Suggested OKRs](06-suggested-okrs.md). The arithmetic behind G2 — where 15,000 a day comes from, what binds first, and whether the platform pays back — is in [08 · Business case & growth](08-business-case.md).

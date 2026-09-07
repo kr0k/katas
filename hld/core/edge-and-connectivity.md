@@ -6,7 +6,7 @@ Patchy Wi-Fi is the constraint that shapes everything on the estate. This docume
 
 | Device class | Examples | Protocol | Volume | Power / link |
 | --- | --- | --- | --- | --- |
-| **Gate readers** | QR/NFC at 4–6 entry points | MQTT over Wi-Fi/Ethernet to local broker | ~3,000 scans/h at opening | Wired where possible |
+| **Gate readers** | QR/NFC at 4–6 entry points | MQTT over Wi-Fi/Ethernet to local broker | ≈ 5,900 scans in the peak hour of a peak day (≈ 29,000 visitor-days, [capacity check](../../requirements/08-business-case.md#1-capacity-reality-check)); an average day is far lower | Wired where possible |
 | **Anonymous counters** | LiDAR / thermal / IR beam counters at zone boundaries and queue lines | MQTT (small payloads) | 1 msg / min / device (in/out deltas), ~150 devices; queue-line counters that need 30 s resolution are PoE | Battery + LoRaWAN, or PoE |
 | **Enclosure sensors** | feed scales, water quality (pH, temp, turbidity), climate, door contacts, PIR/beam dry-zone detectors | MQTT (small payloads) | 1 msg / min / sensor, ~300 sensors | LoRaWAN or Wi-Fi; door contacts and PIR/beam wired |
 | **Cameras** | 1–2 per enclosure, IR for nocturnal | RTSP to edge node (never MQTT, never cloud) | 55–110 streams | Wired PoE |
@@ -177,11 +177,11 @@ Metric: per-gateway packet loss and SF histogram, collected by the network serve
 
 ## Capacity check at 15,000 visitors/day, by traffic class
 
-Assumptions: 450 sensors and counters at 1–2 msg/min (≈ 15 msg/s in total); S1 feature windows for 200 animals (per-animal mode — we size for the larger of 200 animals or 55 enclosures); 100 S1 candidate events/day; ~500 devices sending an hourly heartbeat; payload sizes from a prototype; managed IoT ingestion at ≈ $1 per million messages (typical list price, ±50%).
+Assumptions: 450 sensors and counters at 1–2 msg/min (≈ 15 msg/s in total); S1 feature windows for 200 animals (per-animal mode — we size for the larger of 200 animals or 55 enclosures); 100 S1 candidate events/day; ~500 devices sending an hourly heartbeat; payload sizes from a prototype; managed IoT ingestion at ≈ $1 per million messages (typical list price, ±50%). **Volume, buffer and ingestion columns are for an average day** at 15,000 visitor-days; a peak day (≈ 29,400 visitor-days, [requirements/08 §1](../../requirements/08-business-case.md#1-capacity-reality-check)) doubles the gate scans — ≈ 15 MB more in the critical class, still trivial — and the rate cell shows it.
 
 | Class | Source | Rate | Msg size | Volume / day | 72 h buffer | Ingestion msgs / month | Ingestion cost / month |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Critical | 30,000 gate scans, ~100 alerts and advisories with acks, 12,000 heartbeats | avg 0.5/s, peak 1/s at opening | 0.5 KB | 21 MB | 63 MB | 1.3 M | ≈ $1 |
+| Critical | 30,000 gate scans, ~100 alerts and advisories with acks, 12,000 heartbeats | avg 0.5/s; peak day: up to 59,000 scans, 1.6/s in the peak hour | 0.5 KB | 21 MB | 63 MB | 1.3 M | ≈ $1 |
 | Telemetry — sensors & counters | 450 devices, ≈ 15 msg/s | 15/s | 0.2 KB | 260 MB | 0.8 GB | 39 M | ≈ $40 |
 | Telemetry — S1 feature windows (1-min) | 200 × 1/min | 3.3/s | 2 KB | 576 MB | 1.7 GB | 8.6 M | ≈ $9 |
 | Clips | 100 events × (10 s clip ≈ 1.25 MB + ±5 min raw features ≈ 120 KB) | 100/day | 1.4 MB | 140 MB | 0.4 GB | 0.003 M | ≈ $0 (stored as objects) |
@@ -190,7 +190,7 @@ Assumptions: 450 sensors and counters at 1–2 msg/min (≈ 15 msg/s in total); 
 
 The counterfactual row is an order of magnitude worse on every column, which is why edge aggregation is a design decision in S1, not an optimisation to be done later.
 
-- Gate scans: ~15,000 in + 15,000 out; peak 3,000/h → 1/s. Trivial for the broker.
+- Gate scans: ≈ 15,000 in + 15,000 out on an average day; a peak day ≈ 29,400 in + out with ≈ 5,900 scans in the peak hour → 1.6/s. Trivial for the broker; the gate *lanes*, not the messaging, are the constraint at that rate (requirements/08 §1).
 - Video: 110 streams × 2 Mbps ≈ 220 Mbps on the camera VLAN, processed locally. Never crosses the backhaul.
 - Backhaul: ≈ 1.0 GB/day ≈ 0.1 Mbps average uplink; clip bursts of a few Mbps; downlink model pulls capped at 30% of link. Fits cellular with margin.
 - Buffer: ≈ 3 GB per 72 h. Provision 32 GB SSD per broker node, replicated across nodes, with per-class quotas as in the traffic-class table.

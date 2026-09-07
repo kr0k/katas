@@ -11,6 +11,8 @@ Checks
 4. Every FR marked with the AI emoji in requirements/03 links to a scenario.
 5. Every FR-x.y / NFR-XXX-n / A-n / R-n / GD-n / ADR-nnnn id referenced anywhere
    is defined somewhere (requirements, game-day catalogue, adrs/).
+6. The generated tables in requirements/08 and the numbers derived from them in
+   requirements/06 and the README match scripts/business_case.py (its --check).
 
 Exit code 0 when clean, 1 when anything is wrong. Stdlib only.
 """
@@ -20,6 +22,9 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import business_case  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 MD_FILES = sorted(p for p in ROOT.rglob("*.md") if ".git" not in p.parts and ".venv" not in p.parts)
@@ -152,17 +157,22 @@ def check_ids_defined() -> None:
                         problems.append(f"{rel(f)}:{ln}: {ident} is referenced but not defined")
 
 
+def check_business_case() -> None:
+    problems.extend(business_case.check())
+
+
 def main() -> int:
     check_links()
     check_adr_index()
     check_scenario_symmetry()
     check_ai_frs_link_scenarios()
     check_ids_defined()
+    check_business_case()
     if problems:
         print("\n".join(sorted(set(problems))))
         print(f"\n{len(set(problems))} problem(s)")
         return 1
-    print(f"OK: {len(MD_FILES)} markdown files, links/anchors, ADR index, scenario symmetry, FR links, ids")
+    print(f"OK: {len(MD_FILES)} markdown files, links/anchors, ADR index, scenario symmetry, FR links, ids, business case")
     return 0
 
 

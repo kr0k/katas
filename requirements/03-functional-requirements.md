@@ -1,0 +1,52 @@
+# 03 · Functional Requirements
+
+Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requirements are marked 🤖 and link to their scenario.
+
+## FR-1 · Ticketing & Access
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| FR-1.1 | Visitors can buy single tickets and **family passes** online (web, mobile) and at the gate | MUST |
+| FR-1.2 | Family passes cover a configurable group (e.g. 2 adults + up to 3 children) and can be **multi-visit / seasonal** | MUST |
+| FR-1.3 | Tickets are delivered as QR/NFC credentials that work **without the visitor having connectivity** | MUST |
+| FR-1.4 | Gates validate tickets **while the estate uplink is down**, with later reconciliation | MUST |
+| FR-1.5 | Payments are handled by a PCI-compliant third-party provider; the estate never stores card data | MUST |
+| FR-1.6 | Pass holders can opt in to an account for return-visit offers and companion features | SHOULD |
+
+## FR-2 · Park Operations & Analytics
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| FR-2.1 | Collect **anonymous footfall and queue-length** telemetry per zone/ride via MQTT devices | MUST |
+| FR-2.2 | Ops dashboard: live and historical popularity per zone, ride and enclosure; dwell time; queue length | MUST |
+| FR-2.3 🤖 | Forecast visitor flow per zone at 30-min granularity for the next 7 days and **recommend staffing** → [S3](../hld/scenarios/visitor-flow-forecasting/README.md) | SHOULD |
+| FR-2.4 | Correlate investments (new ride, refurbished enclosure) with changes in popularity | SHOULD |
+| FR-2.5 | Ride telemetry (cycles, downtime, faults) feeds maintenance scheduling | COULD |
+
+## FR-3 · Animal Welfare
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| FR-3.1 | Collect enclosure telemetry: camera streams, feed scale weights, water quality, temperature/humidity | MUST |
+| FR-3.2 🤖 | Detect **feeding anomalies** (missed meals, reduced intake) per animal/enclosure → [S1](../hld/scenarios/animal-welfare-monitoring/README.md) | MUST |
+| FR-3.3 🤖 | Detect **behavioural/health anomalies** (lethargy, abnormal movement, isolation) and raise a review for the veterinarian → [S1](../hld/scenarios/animal-welfare-monitoring/README.md) | MUST |
+| FR-3.4 🤖 | Estimate the **jumping piranha population** daily with a stated confidence interval → [S2](../hld/scenarios/piranha-population-counting/README.md) | MUST |
+| FR-3.5 | Keeper/vet app: welfare timeline per animal, review queue, feeding log, treatment record | MUST |
+| FR-3.6 | **Safety alerts** (enclosure breach, aggressive behaviour near visitors) reach staff within seconds and **do not depend on cloud or generative AI** | MUST |
+
+## FR-4 · Guest Engagement & Growth
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| FR-4.1 🤖 | **Guest companion**: a conversational assistant (mobile/web, kiosks) that plans a family's day, suggests the next stop based on live queues, and answers questions about animals and rides → [S4](../hld/scenarios/guest-companion/README.md) | SHOULD |
+| FR-4.2 🤖 | Personalised **return-visit nudges** (new animal born, seasonal event, unfinished "collection") for opted-in visitors → [S4](../hld/scenarios/guest-companion/README.md) | SHOULD |
+| FR-4.3 🤖 | **Demand-aware family pass pricing** within guardrails set by the estate → [S5](../hld/scenarios/dynamic-family-passes/README.md) | COULD |
+| FR-4.4 | Post-visit feedback collection and theme analysis | COULD |
+
+## FR-5 · Platform & Governance (cross-cutting)
+
+| ID | Requirement | Priority |
+| --- | --- | --- |
+| FR-5.1 | All AI decisions are logged with model version, inputs, confidence and outcome (auditability) | MUST |
+| FR-5.2 | Any AI model or provider can be replaced without changing business services | MUST |
+| FR-5.3 | Visitor tracking is anonymous by default; personal data only with explicit opt-in | MUST |

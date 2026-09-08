@@ -5,7 +5,7 @@
 **Related:** ADR-0003, ADR-0006, ADR-0008, ADR-0010
 
 ## Context
-The judges' questions in full: *the best model today may not be the best tomorrow; what if the provider changes prices; what if the provider shuts down.* We also have a cost ceiling (AI ≤ 2% of revenue) and a small team. And we have three kinds of AI — classical ML we own, vision models we own, and generative models we rent — that must be governed the same way.
+Three questions the brief puts to any AI layer: *the best model today may not be the best tomorrow; what if the provider changes prices; what if the provider shuts down.* We also have a cost ceiling (AI ≤ 2% of revenue) and a small team. And we have three kinds of AI — classical ML we own, vision models we own, and generative models we rent — that must be governed the same way.
 
 Two different problems hide under the phrase "model gateway": a **runtime proxy** in front of hosted models (routing, budgets, fallback, tracing) and the **governance** of every model we run (registry, evaluation, monitoring) — including edge vision models and batch forecasters that no HTTP proxy ever sees. Treating them as one component would either push our own models through a proxy that adds nothing, or leave them ungoverned. Routing proxies for hosted models are also a solved problem with mature open-source options; building one is not where five engineers should spend their time.
 

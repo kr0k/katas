@@ -5,7 +5,7 @@
 **Related:** ADR-0004, ADR-0005
 
 ## Context
-A team of ≤ 5 engineers must run ticketing, analytics, AI and a data platform. Managed services are the only realistic path. But the judges — rightly — ask what happens when a provider changes terms, and we do not want the estate's future tied to one vendor's roadmap.
+A team of ≤ 5 engineers must run ticketing, analytics, AI and a data platform. Managed services are the only realistic path. But a provider can change its terms, and the estate's future should not be tied to one vendor's roadmap.
 
 ## Decision
 1. Use **one major cloud provider** for the cloud tier (compute, managed streaming, managed databases, object storage, managed IoT ingestion, managed model hosting for our own models). One provider keeps operations simple and IAM/observability uniform. *Our reference choice is AWS, based on team familiarity; the architecture does not depend on it.*

@@ -9,9 +9,16 @@
 
 ## Why AI, and why not just rules?
 
-Rules handle the easy part and we use them: *feed scale unchanged 2 h after feeding time → missed meal*; *water temperature outside band → alert*. Rules cannot tell that a snake has moved 40% less than its own two-week baseline, that a bird is isolating from the group, or that a lizard's posture has changed. Those are pattern-recognition problems over video and time series — computer vision plus per-animal anomaly detection. **Generative AI plays no role in detection**; it is used only to draft the daily welfare summary for humans.
+Rules handle the easy part, and we use them: *feed scale unchanged 2 h after feeding time → missed meal*; *water temperature outside band → alert*.
 
-Safety is split the same way. **Tier-0 safety alerts** (FR-3.6) — door open without a badge, water out of band, motion in a dry zone — are deterministic rules on local sensors and never involve a model. **Tier-1 safety advisories** (FR-3.7) — aggressive behaviour near visitors, an animal outside its normal zone — come from the edge vision model, are delivered as *advisory*, and are governed like every other model output. A model may add an alert; it never replaces or delays a rule.
+Rules cannot tell that a snake has moved 40% less than its own two-week baseline, that a bird is isolating from the group, or that a lizard's posture has changed — pattern recognition over video and time series, so computer vision plus per-animal anomaly detection. **Generative AI plays no role in detection**; it only drafts the daily welfare summary for humans.
+
+Safety splits the same way:
+
+- **Tier-0 alerts** (FR-3.6) — door open without a badge, water out of band, motion in a dry zone — are deterministic rules on local sensors, with no model involved.
+- **Tier-1 advisories** (FR-3.7) — aggressive behaviour near visitors, an animal outside its normal zone — come from the edge vision model, arrive as advisories, and are governed like every other model output.
+
+A model may add an alert; it never replaces or delays a rule.
 
 ## Per animal or per enclosure
 
@@ -123,7 +130,7 @@ All numbers below are copies of the [thresholds & cadences table](../../ai-platf
 **Kill switch:** the capability owner can set any anomaly type to "review everything" (band = 0) or switch off scoring entirely; rules and rounds continue.
 
 ## Trade-offs we accepted
-- **Features at edge, scoring in cloud** — adds a hop and a dependency, but keeps 110 video streams off the backhaul and lets us improve scoring models without touching edge hardware. **Aggregating to 1-minute windows** cuts feature traffic from ~200 to ~3 messages per second across the estate and the 72 h buffer from ~10 GB to ~3 GB ([capacity table](../../core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class)); hourly anomaly scoring does not need sub-minute resolution, and the raw 1 Hz trace is still shipped around events. Safety-critical detections that must be instant are rules, not models, and run locally.
+- **Features at edge, scoring in cloud** — one more hop and one more dependency, in exchange for keeping 110 video streams off the backhaul and improving scoring models without touching edge hardware. Aggregating to 1-minute windows cuts feature traffic from ~200 to ~3 messages per second and the 72 h buffer from ~10 GB to ~3 GB ([capacity table](../../core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class)); hourly anomaly scoring needs no sub-minute resolution, and the raw 1 Hz trace still ships around events. Detections that must be instant are rules running locally, not models.
 - **Per-enclosure for groups** — we lose "this meerkat ate less" for group species and gain a scenario that works on day one for every enclosure. Identity in groups is research, not roadmap.
 - **Precision sacrificed for recall** — a missed sick animal costs more than a dismissed alert. We manage the vet's load with bands, not by hiding alerts.
 - **Own models, not a vision API** — enclosure footage is unusual; general-purpose APIs are weak on "is this cassowary lethargic". Costs us training effort; buys us portability (edge deployment, no provider dependency).

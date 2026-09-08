@@ -1,8 +1,8 @@
 # Resilience validation: game days
 
-The AI has evaluation gates and shadow runs ([ADR-0008](../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md)). The non-AI foundation gets the same discipline: we break it on purpose, on a schedule, and measure. "Gates keep working when the uplink is down" is a claim until a game day has shown it.
+The AI has evaluation gates and shadow runs ([ADR-0008](../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md)); the foundation gets the same discipline, on a schedule.
 
-A **game day** is a scripted fault injected under production-like conditions — on the staging estate rig in Phase 0, in production off-hours from Phase 1 — with a named owner, an expected behaviour, a metric and a pass threshold. A failed threshold opens a P1 task; the catalogue is versioned with the architecture and reviewed whenever an ADR changes.
+A **game day** is a scripted fault injected under production-like conditions — the staging estate rig in Phase 0, production off-hours from Phase 1 — with a named owner, expected behaviour, a metric and a pass threshold. A failed threshold opens a P1 task. The catalogue is versioned with the architecture and reviewed whenever an ADR changes.
 
 ## Catalogue
 

@@ -1,6 +1,6 @@
 # Edge & Connectivity
 
-Patchy Wi-Fi is the constraint that shapes everything on the estate. This document is the detailed view.
+Patchy Wi-Fi shapes everything on the estate. This is the detailed view.
 
 ## Device classes and how they talk
 
@@ -62,7 +62,7 @@ sequenceDiagram
 
 ## Sensor health: dead, stuck and drifting
 
-450 sensors and counters is the population where the *most likely* daily fault is not an outage but **one device quietly lying**. A heartbeat catches a dead sensor. It does not catch the failure that matters more: a feed scale wedged at 4.20 kg, a pH probe fouled and flat, a counter that stopped incrementing while still publishing. Both look healthy to the broker, and a flat feed scale reads to S1 exactly like an animal that has stopped eating.
+Across 450 sensors and counters, the most likely daily fault is not an outage but one device quietly lying: a feed scale wedged at 4.20 kg, a pH probe fouled and flat, a counter that stopped incrementing while still publishing. A heartbeat catches a dead sensor, not a stuck one — and to S1 a flat feed scale looks exactly like an animal that has stopped eating.
 
 Three states, three detectors, one event:
 
@@ -72,16 +72,16 @@ Three states, three detectors, one event:
 | **Stuck** | Zero variance in the reading while messages keep arriving — identical payload value for N consecutive reports, N per device class (feed scales 60, water quality 30, climate 120, counters: no increment during open hours with footfall present in the zone) | Per class, as above | `DeviceHealthChanged(stuck)` |
 | **Drifting** | Reading diverges from the enclosure's redundant signal or from its own seasonal baseline beyond a per-class band; for counters, the hourly in/out reconciliation against gate totals already in [ADR-0009](../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §2 | Rolling 24 h | `DeviceHealthChanged(drifting)` — advisory, not exclusion |
 
-Detection runs **on the broker, in the tier-0 rule engine's runtime** — it needs no cloud, no model and no history beyond a per-device ring buffer, and it must keep working during an uplink outage, which is exactly when a stuck sensor is hardest to notice. `DeviceHealthChanged` is a **critical-class** event, so it reaches the cloud ahead of telemetry.
+Detection runs on the broker, inside the tier-0 rule engine's runtime: no cloud, no model, no history beyond a per-device ring buffer. It has to keep working during an uplink outage, which is when a stuck sensor is hardest to notice. `DeviceHealthChanged` is critical class, so it reaches the cloud ahead of telemetry.
 
-**What consumes it:**
+What consumes it:
 
-- **The feature store excludes a dead or stuck device's readings** from features and baselines, and marks the affected window rather than interpolating over it. A model is never asked to explain a flat line that came from hardware.
-- **S1 suppresses anomalies whose only evidence is an unhealthy device**, and says so in the review queue ("feed scale FS-19 stuck since 06:10 — no intake signal available") instead of raising a welfare anomaly the vet cannot act on. This is the same principle as R15's "an anomaly on a single sensor never triggers a tier-0 alert alone", applied to the model path.
-- **Tier-0 rules keep firing.** A stuck water probe removes a *signal*, so the rule's absence of an alert is itself alerted on ("no valid water reading for enclosure 7") — a rule that cannot evaluate is a fault, not a pass. Door contacts and PIR/beam detectors are tested by their own supervision pulse, because a dry-zone detector that never fires is indistinguishable from a quiet dry zone.
-- **Ops gets a ticket** with the device, its zone and the state; time-to-repair per device class is a tracked metric, and a device stuck twice in a quarter is replaced rather than reset.
+- **Feature store** excludes a dead or stuck device's readings from features and baselines and marks the affected window instead of interpolating over it.
+- **S1** suppresses anomalies whose only evidence is an unhealthy device and says so in the review queue ("feed scale FS-19 stuck since 06:10 — no intake signal available"), the model-path version of R15's rule that a single sensor never triggers a tier-0 alert alone.
+- **Tier-0 rules** keep firing. A stuck water probe removes a signal, so the missing alert is itself alerted on ("no valid water reading for enclosure 7") — a rule that cannot evaluate is a fault, not a pass. Door contacts and PIR/beam detectors carry a supervision pulse, since a dry-zone detector that never fires is indistinguishable from a quiet dry zone.
+- **Ops** gets a ticket with device, zone and state. Time-to-repair per device class is tracked; a device stuck twice in a quarter is replaced, not reset.
 
-**Metrics:** devices by health state (target: dead + stuck = 0 during opening hours), mean time to detect per class, mean time to repair, and *anomalies suppressed by device health* — a rise in the last one is either a hardware batch problem or a detector tuned too loosely. Game day **GD-16** injects all three states.
+**Metrics:** devices by health state (target: dead + stuck = 0 during opening hours), mean time to detect per class, mean time to repair, and anomalies suppressed by device health — a rise there means either a hardware batch problem or a detector tuned too loosely. Game day GD-16 injects all three states.
 
 ## Downlink: cloud → estate
 
@@ -126,7 +126,7 @@ Rules:
 
 ## Safety alerts: from sensor to a human
 
-A tier-0 alert that reaches a phone nobody is looking at has not reached anyone. NFR-AVL-3 is therefore measured **to a human acknowledgement**, not to a device.
+NFR-AVL-3 is measured to a **human acknowledgement**, not to a device: an alert on a phone nobody is looking at has not arrived.
 
 | Step | Channel | Budget |
 | --- | --- | --- |
@@ -211,11 +211,11 @@ Assumptions: 450 sensors and counters at 1–2 msg/min (≈ 15 msg/s in total); 
 | **Total** | | **≈ 19 msg/s** | | **≈ 1.0 GB** | **≈ 3.0 GB** | **≈ 49 M** | **≈ $50** |
 | *Counterfactual: raw 1 Hz features per animal, no aggregation* | *200 × 1/s* | *200/s* | *0.2 KB* | *3.5 GB* | *10 GB* | *520 M* | *≈ $520* |
 
-The counterfactual row is an order of magnitude worse on every column, which is why edge aggregation is a design decision in S1, not an optimisation to be done later.
+The counterfactual row is an order of magnitude worse on every column, which is why edge aggregation is a design decision in S1 rather than a later optimisation.
 
 - Gate scans: ≈ 15,000 in + 15,000 out on an average day at one person per scan; a peak day ≈ 29,400 in + out scans at the blended 2 persons per scan, with ≈ 2,940 scans in the peak hour → 0.8/s. Trivial for the broker, and the lanes hold too (requirements/08 §1).
 - Video: 110 streams × 2 Mbps ≈ 220 Mbps on the camera VLAN, processed locally. Never crosses the backhaul.
 - Backhaul: ≈ 1.0 GB/day ≈ 0.1 Mbps average uplink; clip bursts of a few Mbps; downlink model pulls capped at 30% of link. Fits cellular with margin.
 - Buffer: ≈ 3 GB per 72 h. Provision 32 GB SSD per broker node, replicated across nodes, with per-class quotas as in the traffic-class table.
 
-The system is not bandwidth- or throughput-bound; it is **connectivity-reliability-bound**, which is exactly what store-and-forward solves — provided features are aggregated at the edge and LoRaWAN devices stay inside the transport rule.
+The system is not bandwidth- or throughput-bound but **connectivity-reliability-bound**, which store-and-forward solves — provided features are aggregated at the edge and LoRaWAN devices stay inside the transport rule.

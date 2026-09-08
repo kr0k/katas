@@ -912,10 +912,10 @@ def expected_tokens(a: Assumptions = A) -> list[tuple[Path, str, str]]:
         (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a))} a year at {n(a.run_rate[3])} visitors/day"),
         (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a, cached=False))}"),
         (AIP, r"^## What the generative capabilities cost", f"≈ €{visitor_facing_per_visit(a):.2f} per companion household visit"),
-        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_day_cost(a, ladder(a)[3].peak))} of generative spend against ≈ {eur_round(llm_day_cost(a))}"),
+        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_day_cost(a, ladder(a)[3].peak))} against ≈ {eur_round(llm_day_cost(a))} on an average day"),
         (AIP, r"^## What the generative capabilities cost", f"**{llm_day_cost(a, ladder(a)[3].peak) / llm_day_cost(a):.1f}×**"),
-        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a) / 12)} on the yearly average"),
-        (AIP, r"^## What the generative capabilities cost", f"rises by ≈ {eur_round(llm_escalation_sensitivity(a))}"),
+        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_day_cost(a, ladder(a)[3].peak) * 30)} against ≈ {eur_round(llm_total(a) / 12)} for an average month"),
+        (AIP, r"^## What the generative capabilities cost", f"rises ≈ {eur_round(llm_escalation_sensitivity(a))}"),
         (DOC_04, r"^\| Hosted LLMs ", f"≈ {eur_round(llm_total(a))}/yr"),
         (S4, r"^\*\*Cost budget by request class", f"≈ **€{visitor_facing_per_visit(a):.2f} per companion household visit**"),
         # architecture evaluation — the figures its scenarios and sensitivity points rest on

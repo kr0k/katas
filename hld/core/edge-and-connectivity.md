@@ -49,7 +49,7 @@ sequenceDiagram
         C-->>B: ack → message released
     else Uplink down
         Note over B: Retain ≥ 24 h (sized for 72 h)
-        B->>B: keep queuing; local consumers still served
+        B->>B: keep queuing — local consumers still served
     end
     Note over C: Idempotent ingest: dedupe on (device_id, boot_id, seq)
 ```

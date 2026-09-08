@@ -14,3 +14,14 @@ jobs:
         run: uv run scripts/lint_docs.py
       - name: Business-case model self-test (anchors + invariants)
         run: uv run scripts/business_case.py --self-test
+
+  mermaid:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Render every mermaid block with the real parser
+        run: uv run scripts/check_mermaid.py

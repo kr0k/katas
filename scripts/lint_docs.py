@@ -12,7 +12,10 @@ Checks
 5. Every FR-x.y / NFR-XXX-n / A-n / R-n / GD-n / ADR-nnnn id referenced anywhere
    is defined somewhere (requirements, game-day catalogue, adrs/).
 6. No sentence of 12+ words appears twice anywhere in the corpus.
-7. The generated tables in the appendix models and the numbers derived from them in
+7. No mermaid block contains a ';' outside quotes — GitHub refuses to render it.
+   scripts/check_mermaid.py renders every block with the real parser when Node is
+   available; this check needs no Node.
+8. The generated tables in the appendix models and the numbers derived from them in
    requirements/06 and the README match scripts/business_case.py (its --check).
 
 Exit code 0 when clean, 1 when anything is wrong. Stdlib only.
@@ -158,6 +161,40 @@ def check_ids_defined() -> None:
                         problems.append(f"{rel(f)}:{ln}: {ident} is referenced but not defined")
 
 
+MERMAID_QUOTED_RE = re.compile(r'"[^"]*"')
+
+
+def check_mermaid_traps() -> None:
+    """Catch the mermaid syntax that GitHub refuses to render.
+
+    GitHub renders mermaid client-side and replaces a broken diagram with a parse
+    error, which no link check sees. `scripts/check_mermaid.py` runs the real parser
+    when Node is available; this covers the traps we have actually hit, with no
+    dependency on it.
+    """
+    for f in MD_FILES:
+        in_block = False
+        block_start = 0
+        for ln, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):
+            stripped = line.strip()
+            if stripped.startswith("```mermaid"):
+                in_block, block_start = True, ln
+                continue
+            if in_block and stripped == "```":
+                in_block = False
+                continue
+            if not in_block:
+                continue
+            # A semicolon separates statements in mermaid, so one inside an unquoted
+            # label or message ends the statement early: the rest of the line is then
+            # parsed as a new statement and the whole diagram fails.
+            if ";" in MERMAID_QUOTED_RE.sub("", line):
+                problems.append(
+                    f"{rel(f)}:{ln}: ';' outside quotes in the mermaid block at line {block_start}"
+                    " — mermaid reads it as a statement separator and the diagram will not render"
+                )
+
+
 SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?;])\s+")
 INLINE_MD_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
 
@@ -200,12 +237,13 @@ def main() -> int:
     check_ai_frs_link_scenarios()
     check_ids_defined()
     check_duplicate_prose()
+    check_mermaid_traps()
     check_business_case()
     if problems:
         print("\n".join(sorted(set(problems))))
         print(f"\n{len(set(problems))} problem(s)")
         return 1
-    print(f"OK: {len(MD_FILES)} markdown files, links/anchors, ADR index, scenario symmetry, FR links, ids, no duplicated prose, business case")
+    print(f"OK: {len(MD_FILES)} markdown files, links/anchors, ADR index, scenario symmetry, FR links, ids, no duplicated prose, mermaid, business case")
     return 0
 
 

@@ -6,11 +6,9 @@ This is a financial model, not an architectural artifact. It reaches the archite
 
 **Headline.** 15,000 visitors a day is not feasible on the estate's current parking and lunch seating. The platform's savings never pay for it alone; on the roadmap's own gates it pays back in years 4–7, and inside three years under no scenario in §4.
 
-**Headline.** 15,000 visitors a day is not feasible on the estate's current parking and lunch seating. The platform's savings never pay for it alone; on the roadmap's own gates it pays back in years 4–7, and inside three years under no scenario in §4.
-
 **Scope.** This is the platform's business case — what the system in this repository costs, what it can be credited with, when it pays back. It is not an estate P&L: the estate's profitability (G1) rests on decisions taken outside the software (parking, seating, pricing, marketing, staffing), listed with orders of magnitude in §5; the P&L follows when those have prices (§6).
 
-Every number is conditional on the ticketing-vendor evaluation ([TODOS.md](../TODOS.md), a Phase 0 prerequisite): without a capacity API and an upgrade credit, the flywheel's second lever becomes a desk process and the payback window moves right. The fallback matrix says by how much.
+Every number is conditional on the ticketing-vendor evaluation — finding 4 of [requirements/08](../requirements/08-business-case.md#the-four-findings), with the per-criterion cost in the fallback matrix ([TODOS.md](../TODOS.md)).
 
 ## 0. How to read the numbers
 
@@ -77,7 +75,7 @@ Which constraint binds, at what attendance, and in which year:
 | Not assessed | egress and emergency evacuation capacity, toilets, kitchen throughput, access roads and local choke points | no figures in this document | — | Open until the Phase 0 site survey (A14); any of them can bind before the rows above |
 <!-- /business-case:capacity -->
 
-**Levers by scenario, and their limits.** A daily cap and timed-entry slots (FR-1.7, [ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)) are an ops decision applied through the ticketing platform, published as `CapacityCapChanged`, with gate validation unchanged. But a cap acts on **unsold tickets**, and pass holders — two-fifths of visits by year 3 — hold no date-specific ticket, so on capacity-managed days they reserve a free timed slot instead, with unreserved passes admitted only below the cap (an ADR-0012 criterion; the reservation rides on the signed credential and validates offline per ADR-0011). S4 nudges say "reserve your Saturday slot".
+**Levers by scenario, and their limits.** A daily cap and timed-entry slots (FR-1.7, [ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)) are an ops decision applied through the ticketing platform, published as `CapacityCapChanged`, with gate validation unchanged. But a cap acts on **unsold tickets**, and pass holders — two-fifths of visits by year 3 — hold no date-specific ticket, so capacity-managed days need slot reservations for them as well ([mechanics](ticketing-rules.md#timed-entry-and-daily-cap-fr-17)). S4 nudges say "reserve your Saturday slot".
 
 Alongside that: S5's quiet-day offers move day-ticket demand off the peaks, S4 steers lunch times and under-used outlets, and live zone occupancy (S3) lets ops cap a single zone on the day. A cap redistributes arrivals or turns them away; whether displaced demand returns on a quiet day is what the S4/S5 measurements will test, and it is not a number in this model.
 
@@ -115,7 +113,7 @@ The two overlap — pass-holding repeaters are the main weekday fillers — whic
 
 The membership trade is explicit: pass visits grow to 41% of visits, revenue per visitor-day falls by design, revenue per unique household rises +28%, total contribution grows ×2.2. So is the dilution: new households arrive faster than the flywheel converts them, so the repeat share climbs slowly until year 3, and the "new households marketing must bring" row is what the ladder costs. §5 says what catchment that implies.
 
-**What the model gives the OKRs.** The 12-month "base" cells of OKRs 1.1, 1.2, 1.3 and 1.5 in [06](../requirements/06-suggested-okrs.md) are the year-1 values below; the original targets stay as "stretch", and the gap between them is what marketing and a stronger flywheel must close. The 36-month targets are untouched; where the model's year-3 value falls short, 06 says so in a note — it does for 1.2 and 1.3.
+**What the model gives the OKRs.** The 12-month "base" cells of OKRs 1.1, 1.2, 1.3 and 1.5 in [06](../requirements/06-suggested-okrs.md) are the year-1 values below; the original targets stay as "stretch", and the gap is what marketing and a stronger flywheel have to close (OKR 1.2). The 36-month targets are untouched; where the model's year-3 value falls short, 06 says so in a note — it does for 1.2 and 1.3.
 
 <!-- business-case:okr-base -->
 | Key result | Current (model) | 12-month base (Y1 run rate / year) | 36-month model (Y3) |
@@ -207,7 +205,7 @@ The result is stated as a sensitivity in incremental visits rather than shares o
 | Savings only | €180k | €221k vs. €3.34M | never |
 <!-- /business-case:sensitivity -->
 
-**Headline.** On the roadmap's own gates the platform pays back in **years 4–7** — not inside the brief's three years under any row, and in year 4 only if credited with roughly 600,000 incremental visitor-days a year at full rate, 36% of the year-2-to-year-3 growth.
+**Verdict.** On the roadmap's own gates the platform pays back in **years 4–7** — not inside the brief's three years under any row, and in year 4 only if credited with roughly 600,000 incremental visitor-days a year at full rate, 36% of the year-2-to-year-3 growth.
 
 Savings are real but small: about 14% of running cost, never enough to pay the platform back on their own. Safety is not priced at all, though one prevented incident with a poisonous animal or an 18th-century ride is the business (G6). The two lines a CFO can pull to shorten the window are the ticketing fee, the largest scaling cost, and the team, ≈ 38% of OPEX at the target run rate.
 
@@ -244,7 +242,7 @@ The platform is ≈ 3% of revenue today and ≈ 1.6% at target. The investments 
 | Required catchment at 20% yearly penetration of households with children within ≈ 2 h (→ postcode survey at the gate, ticketing addresses) | ≈ **3.2M households** — the scale of a large metropolitan area or a tourist region, a site fact the estate must confirm (R18) |
 <!-- /business-case:catchment -->
 
-This is also the honest reading of the README's "[What this architecture does not do](../README.md#what-this-architecture-does-not-do)": the platform measures growth from day one and drives two of its three levers from Phase 3; the parking, the seats, the prices and the marketing are the Countess's.
+Which is the same boundary the README draws in "[What this architecture does not do](../README.md#what-this-architecture-does-not-do)": the parking, the seats, the prices and the marketing are the Countess's.
 
 ## 6. Owner, trigger and re-issue
 

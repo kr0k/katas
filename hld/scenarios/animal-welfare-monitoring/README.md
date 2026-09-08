@@ -15,7 +15,7 @@ Rules cannot tell that a snake has moved 40% less than its own two-week baseline
 
 Safety splits the same way:
 
-- **Tier-0 alerts** (FR-3.6) — door open without a badge, water out of band, motion in a dry zone — are deterministic rules on local sensors, with no model involved.
+- **Tier-0 alerts** are the deterministic rules of FR-3.6 on local sensors, with no model involved.
 - **Tier-1 advisories** (FR-3.7) — aggressive behaviour near visitors, an animal outside its normal zone — come from the edge vision model, arrive as advisories, and are governed like every other model output.
 
 A model may add an alert; it never replaces or delays a rule.

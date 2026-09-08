@@ -23,7 +23,7 @@ Patchy Wi-Fi shapes everything on the estate. This is the detailed view.
 
 ## Broker
 
-The estate broker is a **cluster-capable MQTT broker with replicated persistent sessions and queues** (EMQX / HiveMQ / VerneMQ class), not a single-writer broker behind a floating IP. Three nodes: one on each of the two edge servers, a third small witness node on the LoRaWAN network server host, all on UPS. Clients connect through one DNS name; a node failure is a reconnect, not a data loss. Details and the alternatives rejected are in [ADR-0002](../../adrs/ADR-0002-mqtt-and-cellular-backhaul.md).
+A cluster, not a single writer behind a floating IP — the choice and its rejected alternatives are [ADR-0002](../../adrs/ADR-0002-mqtt-and-cellular-backhaul.md) §3. Physically: three nodes, one on each edge server plus a small witness node on the LoRaWAN network server host, all on UPS. Clients connect through one DNS name, so a node failure is a reconnect rather than a data loss.
 
 ## Traffic classes
 

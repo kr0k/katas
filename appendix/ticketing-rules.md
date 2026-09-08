@@ -21,7 +21,7 @@ Every night the day's totals are reconciled against the vendor's end-of-day figu
 
 ### Timed entry and daily cap (FR-1.7)
 
-The default cap is GitOps policy config under the management role. A day-level change by the ops manager — usually proposed by the daily report from the S3 forecast — carries a reason code, goes through the vendor's cap API, and is published as `CapacityCapChanged` (who / when / why / old / new).
+The default cap is GitOps policy config under the management role. A day-level change by the ops manager — usually proposed by the daily report from the S3 forecast — carries a reason code, goes through the vendor's cap API, and is published as `CapacityCapChanged` with the audit fields fixed in [hld/core](../hld/core/README.md#ticketing--access-additions-purchases-cap-and-upgrade-credit).
 
 - The cap applies to **unsold tickets only**; gate validation is untouched.
 - Pass holders hold no date-specific ticket, so on capacity-managed days they **reserve a free timed slot**. The reservation travels as an attribute of the signed credential and is validated offline like the signature ([ADR-0011](../adrs/ADR-0011-offline-ticket-validation.md)); an unreserved pass is admitted only while the downlink cap snapshot has room.

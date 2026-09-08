@@ -186,7 +186,7 @@ At-least-once delivery means every consumer eventually sees a duplicate: after a
 
 **Effects that leave the transaction.** A vendor API call, e-mail or push cannot join a local transaction. Sequence: write the inbox row as *in-flight* with an idempotency key derived from `event_id` and commit; make the external call with that key; commit *done*. A crash between the call and the second commit repeats the call with the same key and the receiver collapses it — hence "accepts an idempotency key on writes" as a vendor criterion ([ADR-0012](../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)). An external effect can therefore happen twice only if the receiver ignores the key, which the fallback matrix covers.
 
-**Enforcement.** The fitness function that forbids cross-module schema access also fails a subscription handler that writes without an inbox row in the same transaction. Every consumer's tests replay their fixture stream twice and assert identical read-model state and side-effect counts. GD-8 measures `idempotency violations = 0` after an outage and replay; GD-11 covers the erasure tombstone.
+**Enforcement.** The CI check is stated in [ADR-0004](../../adrs/ADR-0004-event-driven-backbone.md) §8. On top of it, every consumer's tests replay their fixture stream twice and assert identical read-model state and side-effect counts; GD-8 measures `idempotency violations = 0` after an outage and replay, and GD-11 covers the erasure tombstone.
 
 ## Ticketing & Access additions: purchases, cap and upgrade credit
 

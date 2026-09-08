@@ -11,7 +11,8 @@ Checks
 4. Every FR marked with the AI emoji in requirements/03 links to a scenario.
 5. Every FR-x.y / NFR-XXX-n / A-n / R-n / GD-n / ADR-nnnn id referenced anywhere
    is defined somewhere (requirements, game-day catalogue, adrs/).
-6. The generated tables in requirements/08 and the numbers derived from them in
+6. No sentence of 12+ words appears twice anywhere in the corpus.
+7. The generated tables in the appendix models and the numbers derived from them in
    requirements/06 and the README match scripts/business_case.py (its --check).
 
 Exit code 0 when clean, 1 when anything is wrong. Stdlib only.
@@ -157,6 +158,37 @@ def check_ids_defined() -> None:
                         problems.append(f"{rel(f)}:{ln}: {ident} is referenced but not defined")
 
 
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?;])\s+")
+INLINE_MD_RE = re.compile(r"\[([^\]]*)\]\([^)]*\)")
+
+
+def check_duplicate_prose() -> None:
+    """No sentence of 12+ words may appear twice in the corpus.
+
+    Copy-paste is how the same fact ends up with two owners and then drifts. A fact
+    belongs in one place; everywhere else links to it.
+    """
+    seen: dict[str, tuple[Path, int]] = {}
+    for f in MD_FILES:
+        for ln, line in prose_lines(f):
+            text = INLINE_MD_RE.sub(r"\1", line)
+            text = re.sub(r"[`*_>#|]", " ", text)
+            text = re.sub(r"\s+", " ", text).strip()
+            for sentence in SENTENCE_SPLIT_RE.split(text):
+                words = sentence.lower().split()
+                if len(words) < 12:
+                    continue
+                key = " ".join(words)
+                if key in seen:
+                    first = seen[key]
+                    problems.append(
+                        f"{rel(f)}:{ln}: sentence repeated from {rel(first[0])}:{first[1]} "
+                        f"— keep the fact in one place and link to it: \"{sentence[:60]}...\""
+                    )
+                else:
+                    seen[key] = (f, ln)
+
+
 def check_business_case() -> None:
     problems.extend(business_case.check())
 
@@ -167,12 +199,13 @@ def main() -> int:
     check_scenario_symmetry()
     check_ai_frs_link_scenarios()
     check_ids_defined()
+    check_duplicate_prose()
     check_business_case()
     if problems:
         print("\n".join(sorted(set(problems))))
         print(f"\n{len(set(problems))} problem(s)")
         return 1
-    print(f"OK: {len(MD_FILES)} markdown files, links/anchors, ADR index, scenario symmetry, FR links, ids, business case")
+    print(f"OK: {len(MD_FILES)} markdown files, links/anchors, ADR index, scenario symmetry, FR links, ids, no duplicated prose, business case")
     return 0
 
 

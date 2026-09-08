@@ -7,9 +7,9 @@ GitHub renders mermaid itself and shows a parse error in place of the diagram, w
 no link or anchor check can catch. This runs the real parser (@mermaid-js/mermaid-cli)
 over each block and reports the file and line where a block starts.
 
-Needs Node — `npx` on PATH. Exits 2 when Node is missing, so a caller can choose
-whether that is a failure; lint_docs.py has a stdlib check for the traps we have
-actually hit and does not depend on this script.
+Needs Node and a Chromium that Puppeteer can launch. Exits 2 when Node or the browser
+is missing, so an environment problem is distinguishable from a broken diagram;
+lint_docs.py has a stdlib check for the traps we have actually hit and needs neither.
 """
 
 from __future__ import annotations
@@ -53,15 +53,21 @@ def main(argv: list[str]) -> int:
         print("no mermaid blocks")
         return 0
 
-    failures = []
+    failures: list[str] = []
+    browser_failures = 0
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
+        # Chromium runs as root in CI containers, where its own sandbox refuses to start.
+        config = tmpdir / "puppeteer.json"
+        config.write_text('{"args": ["--no-sandbox", "--disable-setuid-sandbox"]}', encoding="utf-8")
+
         for f, line, source in found:
             rel = f.relative_to(ROOT)
             src = tmpdir / f"{str(rel).replace('/', '__')}__L{line}.mmd"
             src.write_text(source, encoding="utf-8")
             proc = subprocess.run(
-                ["npx", "--yes", MERMAID_CLI, "-i", str(src), "-o", str(src.with_suffix(".svg"))],
+                ["npx", "--yes", MERMAID_CLI, "-p", str(config),
+                 "-i", str(src), "-o", str(src.with_suffix(".svg"))],
                 capture_output=True,
                 text=True,
             )
@@ -70,9 +76,16 @@ def main(argv: list[str]) -> int:
                     (l.strip() for l in proc.stderr.splitlines() if "error" in l.lower()),
                     proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else "unknown error",
                 )
+                if "launch the browser" in detail or "Could not find Chrome" in detail:
+                    browser_failures += 1
                 failures.append(f"{rel}:{line}: {detail}")
             elif "--keep" in argv:
                 shutil.copy(src.with_suffix(".svg"), ROOT / src.with_suffix(".svg").name)
+
+    if browser_failures == len(found):
+        print("every block failed to launch a browser — this is the environment, not the diagrams.")
+        print("Install one with:  npx --yes puppeteer browsers install chrome")
+        return 2
 
     for problem in failures:
         print(problem)

@@ -23,5 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install a Chromium for Puppeteer
+        run: npx --yes puppeteer browsers install chrome
       - name: Render every mermaid block with the real parser
         run: uv run scripts/check_mermaid.py

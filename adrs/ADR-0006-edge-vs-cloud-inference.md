@@ -22,7 +22,7 @@ Otherwise it runs **in the cloud**. Corollaries:
 ## Alternatives considered
 | Option | Pros | Cons | Why not |
 | --- | --- | --- | --- |
-| Everything in the cloud | One place to run and monitor models | Video cannot be shipped; safety depends on uplink; privacy exposure | Physically impossible for video; fails NFR-AVL-3 |
+| Everything in the cloud, on **sampled frames** (e.g. 1 frame / 10 s per stream — fractions of a Mbps, which the backhaul would carry) | One place to run and monitor models; no GPU CAPEX (≈ €16k); a model update is a registry change rather than an artifact pull over a rate-limited downlink | Masking would happen *after* the frame leaves the estate, breaking NFR-PRV-2 by construction. Tier-1 advisories and piranha counting stop during an uplink outage (NFR-AVL-3, R1). At 1 frame / 10 s the signals S1 needs — posture and movement over seconds — are gone | Privacy and offline continuity, not bandwidth: this is the serious version of the alternative, and it fails on those two |
 | Everything on the edge | Maximum independence | GPU fleet on-site; slow iteration; hard to monitor; LLMs impractical | Operability, cost |
 | Policy-based split (chosen) | Each model where it fits; safety stays deterministic and local | Two deployment targets; feature-extraction contract between edge and cloud must be versioned | — |
 

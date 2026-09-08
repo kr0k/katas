@@ -238,7 +238,7 @@ The proposal removes the estate's blindness — where people are, how animals ar
 - **Guarantee the business case.** [requirements/08](requirements/08-business-case.md) shows the arithmetic and its assumptions; the decisions and marketing that make them true, and the parking that makes 15,000 a day physically possible, are the Countess's.
 - **Manufacture demand.** The platform measures growth from day one and drives two of its three levers — weekday fill and repeat visits — only from Phase 3. New audiences come from marketing, and the platform claims none of them.
 - **Run the rides.** Ride control systems, their certification and predictive maintenance are out of scope (A10, [requirements/05](requirements/05-assumptions-and-constraints.md#out-of-scope)); rides appear as status events and queue counters, feeding the forecast, the companion and the daily report.
-- **Replace people.** The vet decides, the keeper identifies the animal, the ops manager approves the roster and the daily report, management sets prices; ≈ 17–25 staff hours a week go into that ([who does what](hld/ai-platform/README.md#humans-in-the-loop-who-does-what)).
+- **Replace people.** The vet decides, the keeper identifies the animal, the ops manager approves the roster and the daily report, management sets prices; ≈ 17–26 staff hours a week go into that ([who does what](hld/ai-platform/README.md#humans-in-the-loop-who-does-what)).
 - **Identify anyone.** No faces, no device tracking, no re-identification of visitors — or of meerkats, yet.
 - **Do HR, payroll or physical security.** Staff data is imported and plans exported (A12); CCTV for theft is not this system.
 

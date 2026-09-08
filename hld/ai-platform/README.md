@@ -64,7 +64,7 @@ flowchart LR
 Business services request a **capability** (`detect-feeding-anomaly`, `plan-visit`, `forecast-zone-footfall`), never a model. The **capability resolver** — the only runtime code we write here — looks the capability up in the registry and sends the request down its runtime path. For hosted models that path is the **inference gateway**, an open-source LLM gateway (LiteLLM, Portkey, Kong AI Gateway class) configured from Git. It applies:
 
 - **Routing policy:** tiered (small/cheap model first; escalate to a larger one on low confidence or explicit need), or fixed for capabilities where determinism matters.
-- **Budgets:** per-capability monthly budget; alerts at 70/90%; at 100% switch to the downgrade path rather than fail.
+- **Budgets:** per-capability monthly budget; alerts at 70/90%; at 100% switch to the downgrade path rather than fail. The budget is the *last* line: an anonymous caller is stopped by the BFF's inference quota first (NFR-SEC-3), so abuse cannot degrade the service for paying visitors.
 - **Fallback chain:** provider A → provider B → open-weight model on **managed hosting** (not self-hosted — R9) → non-AI fallback (returned as a typed "no AI available" response the service knows how to handle: a rule, a template, or a documented human procedure).
 - **Tracing:** every call emits `capability`, `model_version`, `latency`, `tokens`, `cost`, `confidence` to OpenTelemetry.
 - **Guardrails:** input/output schema validation, PII scrubbing on the way out to external providers, output filters for the companion.
@@ -90,7 +90,7 @@ Generative spend is the one platform cost that grows with success — five-fold 
 
 | Figure | Consequence for the design |
 | --- | --- |
-| ≈ €34,300 a year at 15,000 visitors/day (≈ €0.04 per companion household visit) | Fits the €50k line in the [cost model](../../requirements/04-non-functional-requirements.md#cost-model-tco-50); ≈ 0.04% of revenue against NFR-COST-1's 2% ceiling. Squeezing AI spend buys nothing |
+| ≈ €34,300 a year at 15,000 visitors/day — ≈ €0.04 per companion household visit, ≈ €0.01 per visitor-day | Inside the €50k line in the [cost model](../../requirements/04-non-functional-requirements.md#cost-model-tco-50) with a 46% overrun absorbed, at ≈ 0.04% of revenue against NFR-COST-1's 2% ceiling. Squeezing AI spend buys nothing; a worst-case price move is caught by the per-capability budget rather than by the line |
 | Planning and re-planning ≈ 90% of the bill | Routing is tiered, and a re-plan touches only the affected stops |
 | ≈ €67,100 without the FAQ cache and prompt caching | The caches are a design condition, not an optimisation — the same shape as the [ingestion counterfactual](../core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class) |
 | Peak day 2.0× an average one | Load is bounded by households present, not by concurrency, so the budget is seasonal rather than a flat twelfth |
@@ -170,9 +170,10 @@ Hours per week by role and phase, all of them roles the estate already has. **La
 | Keepers | Feeding exceptions; census at maintenance (2 × 4 h/yr); monthly visual audit (30 min) | 1 h/wk | 1 h/wk | 2 h/wk | Ledger entries |
 | Ops manager | Approve/edit rosters; own forecast thresholds; approve the Estate daily report's wording between 20:30 and 21:00 (Phases 2–3, +1 h/wk) | 1 h/wk (heuristics) | 3 h/wk | 3 h/wk | Roster edits; report approve / skip |
 | Guest team | Review 50 sessions; curate knowledge base; triage thumbs-down | 3 + 5 h/wk | 4 + 5 h/wk | 4 + 5 h/wk | Reviews, KB fixes |
+| Guest team + a contracted translator | **Approve the safety, allergen and price fields per language** (NFR-LNG-1) — a bounded set that changes only when a rule, a price or an animal changes, not a per-answer task | — | 2 h/wk while a language is added, then ≈ 1 h/mo | ≈ 1 h/mo per language | Explicit approval per field and language |
 | Management | Out-of-guardrail price approvals; experiment readout | — | — | 1 h/wk | Approval reason codes |
 | Platform engineers (of the 5) | Model promotions, game days, on-call; re-issue of [requirements/08](../../requirements/08-business-case.md) with the ops manager (1 day/yr, from Phase 2 entry) | 1 day/quarter + rota | same + 1 day/yr | same + 1 day/yr | — |
-| **Total estate-staff hours on AI** | | **≈ 17 h/wk** | **≈ 24 h/wk** | **≈ 25 h/wk** | |
+| **Total estate-staff hours on AI** | | **≈ 17 h/wk** | **≈ 26 h/wk** | **≈ 25 h/wk** | Phase 2 carries the language-approval spike; it falls away once a language is live |
 
 Workload per role is a tracked metric; a phase gate slips before a role is overloaded (R13, NFR-OPS-1).
 
@@ -194,4 +195,4 @@ Workload per role is a tracked metric; a phase gate slips before a role is overl
 | The gateway itself is a dependency | It is adopted OSS with declarative config; the resolver isolates services; only hosted generative capabilities depend on it — vision, counting and forecasting never do. |
 | How do we know it works? | Nothing is promoted without passing its golden set; shadow before live; guardrails with auto-rollback after — all numbers in one table. |
 | How do we know it *stopped* working? | Drift monitors + business-metric guardrails + human override rate, alerting the capability owner. |
-| Who does all the reviewing? | Existing estate roles, ≈ 17–25 h/week in total, with labels captured as a side-effect of their normal decisions. |
+| Who does all the reviewing? | Existing estate roles, ≈ 17–26 h/week in total, with labels captured as a side-effect of their normal decisions. |

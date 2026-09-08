@@ -30,7 +30,7 @@
 
 **Output:** an alternatives table in the ADR, a go/no-go on the build-it-ourselves fallback, and a **fallback matrix** — for each criterion no vendor meets, what changes in Phase 0 scope, staffing and the TCO table. For example: no POS export → daily totals per outlet and A13's fallback; no upgrade credit → the flywheel's second lever becomes a desk process; no cap API → the cap is enforced by closing online sales by hand.
 
-**Why:** Adopt-not-build was accepted on criteria, not on market facts. The business-case review added six criteria the market may not offer together; if the combination is rare, the fallback triggers and changes Phase 0, R9 and the payback arithmetic in requirements/08.
+**Why:** Adopt-not-build was accepted on criteria, not on market facts, and six of the thirteen may not be offered together. If the combination is rare the fallback triggers, changing Phase 0 scope, R9 and the payback arithmetic.
 
 **Context:** ADR-0011 becomes a product requirement; requirements/08 §1 and §3 depend on the cap and the credit. 2-3 days; feeds the TCO table and the season-1 re-issue of requirements/08.
 

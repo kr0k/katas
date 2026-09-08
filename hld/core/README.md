@@ -132,7 +132,7 @@ Legend: see [hld/README.md](../README.md#diagram-legend-used-in-every-diagram). 
 | **AI consumers** | Stateless consumers that score events with our own models (S1 anomaly scoring against baselines) and publish results back | Cloud | Separate deployable: scales with event rate, released with model promotions, not with the monolith |
 | **GPU / batch workers** | Training pipelines; scheduled S3 forecasts; S5 elasticity estimation | Cloud | Managed batch/GPU; bursty, scheduled |
 | **Downlink publisher** | Publishes retained snapshots and sequenced deltas of allow/revocation lists, policy parameters (bands, prices, hours) and desired edge model versions to the bridge | Cloud | [Edge & connectivity → Downlink](edge-and-connectivity.md#downlink-cloud--estate) |
-| **API gateway / BFF** | AuthN/Z, rate limiting, aggregation for web/mobile/dashboards | Cloud | |
+| **API gateway / BFF** | AuthN/Z, aggregation for web/mobile/dashboards, and the **inference quota** that keeps an anonymous caller from spending the companion's budget (NFR-SEC-3) | Cloud | Roles: keeper / vet / ops / management ([cross-cutting](#cross-cutting)) |
 | **Data platform** | Lakehouse: raw → curated → features; knowledge base for the companion; object storage for signed model artifacts | Cloud | Open table format for portability |
 | **Ticketing platform (SaaS)** | External: catalogue, checkout and payments, passes, credentials, opt-in accounts, timed-entry slots, daily cap and pass-holder reservations, upgrade credit vouchers, sales reconciliation | Vendor | [ADR-0012](../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md); PCI scope stays here |
 | **POS / commerce** | External: F&B, retail and parking sales on the estate; per-transaction webhooks or export with the FR-2.6 fields; end-of-day totals for reconciliation | Vendor (the ticketing platform's own POS, or a separate system — A13) | Behind the same anti-corruption layer; never card data (NFR-SEC-2); R16 |
@@ -153,7 +153,7 @@ Deployment unit ≠ bounded context ([ADR-0004](../../adrs/ADR-0004-event-driven
 
 | Unit | Contains | Why it is separate |
 | --- | --- | --- |
-| Business monolith | Four context modules, outbox relay, APIs behind the BFF | One thing to deploy and watch for a team of five; transactions stay inside a module; modules talk through events or published interfaces only |
+| Business monolith | Four context modules, outbox relay, APIs behind the BFF | One thing to deploy and watch for a team of five; transactions stay inside a module; modules talk through events on the backbone or published read models only |
 | AI consumers | S1 scoring (more as scenarios arrive) | Scale with event rate; restart and roll back on model promotion without touching the monolith |
 | GPU / batch workers | Training, forecasts, elasticity | Different runtime (GPU), bursty and scheduled |
 | IoT ingestion + downlink publisher | Bridge termination both ways | Managed IoT service; must keep running while the monolith deploys |
@@ -169,6 +169,23 @@ A module leaves the monolith only when it meets an extraction criterion in ADR-0
 - **Feature store:** the same features served to training and to online inference (footfall lags, weather, calendar, per-animal baselines) so models are not trained on one thing and served another.
 - **Knowledge base:** structured facts (animals, rides, opening hours, safety rules, prices) plus curated narrative content; the *only* source the companion may cite → [ADR-0010](../../adrs/ADR-0010-grounded-llm-with-guardrails.md).
 - **Personal data: none here by construction.** Events carry pseudonymous subject ids, never names, contacts or device identifiers; the schema registry's CI check enforces it ([ADR-0004](../../adrs/ADR-0004-event-driven-backbone.md) §6). The few unavoidable personal fields are encrypted with a per-subject key and **crypto-shredded** on erasure; a `SubjectErased` event removes the subject from read models, the feature store and golden sets ([ADR-0009](../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §7).
+
+## Topic contract
+
+The inbox below makes a consumer safe against a duplicate. What makes it safe against *reordering*, *loss* and *a message it can never process* is the contract each topic publishes, enforced by the schema registry.
+
+| Topic | Partition key | Ordering guaranteed to a consumer | Retention | Poison message |
+| --- | --- | --- | --- | --- |
+| Device telemetry (sensor readings, feature windows, clips) | `device_id` | Per device only — never global. Consumers are written for late and out-of-order arrival ([ADR-0001](../../adrs/ADR-0001-edge-first-store-and-forward.md) §4) | 30 days hot, then bronze | 3 retries with backoff → DLQ per subscription; the device's health row goes amber |
+| `GateEntered`, `GateExited` | `credential_id` | Per credential, which is what the group counter and re-entry rule need. Two turnstiles on one pass are ordered against each other, and nothing else is | **13 months** — a full season plus one, so a read model can be rebuilt from the log rather than from a backup | 3 retries → DLQ; the day's admissions go *provisional* rather than wrong |
+| `TicketPurchased`, `PurchaseRecorded`, `PassRenewed` | `transaction_id` | Per transaction. Daily totals are order-independent by construction (a sum), so a reordered refund still lands correctly | 13 months, and reconciled nightly against the vendor's books | 3 retries → DLQ; reconciliation reports the gap as an exception |
+| `CapacityCapChanged`, `PriceUpdated`, `StaffingPlanApproved` (human decisions) | `date` (cap, price) / `plan_id` | Per date, so last-write-wins is decidable. Concurrent edits publish both events and warn ([cap mechanics](../../appendix/ticketing-rules.md)) | **Indefinite** — this is the audit trail for FR-5.1 | Never dropped: a human decision that cannot be applied pages the owner |
+| AI outputs (`WelfareAnomalyDetected`, `PriceRecommended`, forecasts) | `subject_id` (animal, enclosure, zone) | Per subject. A newer score for the same subject supersedes an older one, and consumers key on `(subject, bundle_version)` | 90 days — long enough for shadow comparison and drift review | 3 retries → DLQ; the capability's kill switch is the fallback ([ADR-0008](../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) §7) |
+| `SubjectErased` | `subject_id` | Per subject, and applied as a tombstone rather than a window ([inbox](#consumer-side-idempotency-the-inbox)) | Indefinite (the fact of erasure, never its content) | Never dropped: retried until every consumer acknowledges, then audited by GD-11 |
+
+**Rules that follow from the table.** No consumer may assume global ordering; a subscription that needs it is a design error caught in review. Every subscription declares its DLQ and an owner, and a DLQ that is non-empty for 24 h is an alert, not a backlog. `GateEntered` and the commerce topics are retained longer than any read model needs precisely so that **the log, not a database backup, is the replay source** for a rebuild (NFR-DR-2).
+
+**Trace context travels in the envelope.** Every event carries `trace_id` and `span_id` alongside `event_id` and `occurred_at`, injected at the producer and continued by each consumer, so one visitor action stays one trace across the bridge, the backbone, the monolith and an AI consumer — the gap ADR-0004 names in its consequences. The schema registry rejects an envelope without them.
 
 ## Consumer-side idempotency: the inbox
 

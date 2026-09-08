@@ -126,6 +126,7 @@ class Assumptions:
     promotions_per_year: int = 4        # companion bundles promoted per year
     shadow_weeks: int = 2               # each promotion runs 2 weeks in shadow (ADR-0008 §3)
     ai_revenue_cap: float = 0.02        # NFR-COST-1 — AI spend ≤ this share of revenue
+    llm_opex_line: float = 50_000       # the hosted-LLM OPEX line this spend must fit (requirements/04)
 
     # Savings (contribution), from Phase 2 (OKR 3.2 and 2.4 targets)
     vet_cost: float = 300_000
@@ -583,6 +584,15 @@ def llm_total(a: Assumptions = A, cached: bool = True) -> float:
     return sum(r[3] for r in llm_rows(a, cached))
 
 
+def llm_headroom(a: Assumptions = A) -> float:
+    """How far the token estimate can overrun before it leaves the OPEX line.
+
+    Claiming the line absorbs the whole ±50% price band was wrong: it absorbs less,
+    and only arithmetic catches the difference.
+    """
+    return a.llm_opex_line / llm_total(a) - 1
+
+
 def visitor_facing_per_visit(a: Assumptions = A) -> float:
     """Generative cost of the four visitor-facing request classes, per companion household visit."""
     return sum(r[3] for r in llm_rows(a)[:4]) / companion_households(a)
@@ -924,6 +934,8 @@ def expected_tokens(a: Assumptions = A) -> list[tuple[Path, str, str]]:
         (APP_LLM, r"^# Appendix", f"**{llm_day_cost(a, ladder(a)[3].peak) / llm_day_cost(a):.1f}×**"),
         (APP_LLM, r"^# Appendix", f"≈ {eur_round(llm_day_cost(a, ladder(a)[3].peak) * 30)} against ≈ {eur_round(llm_total(a) / 12)} for an average month"),
         (APP_LLM, r"^# Appendix", f"rises ≈ {eur_round(llm_escalation_sensitivity(a))}"),
+        (APP_LLM, r"^# Appendix", f"absorbs a {pct(llm_headroom(a))} overrun"),
+        (APP_LLM, r"^# Appendix", f"≈ €{visitor_facing_per_visit(a) / a.party_size:.2f} per visitor-day"),
         # the AI-platform summary quotes the two figures a reader needs there
         (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a))} a year at {n(a.run_rate[3])} visitors/day"),
         (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a, cached=False))}"),
@@ -1020,6 +1032,8 @@ def invariants(a: Assumptions) -> None:
     assert llm_escalation_sensitivity(a) > 0, "escalating more answers to the large tier cannot be cheaper"
     rr_V = a.run_rate[3] * a.open_days
     assert llm_total(a) < a.ai_revenue_cap * ladder(a)[3].gross * rr_V / ladder(a)[3].V, "planned AI spend must sit under the NFR-COST-1 cap"
+    assert llm_total(a) < a.llm_opex_line, "the OPEX line must cover the planned token spend"
+    assert llm_headroom(a) > 0
 
 
 def self_test(a: Assumptions = A) -> None:
@@ -1035,6 +1049,7 @@ def self_test(a: Assumptions = A) -> None:
     # one hand-computable generative call: 1,500 full + 4,500 cached input, 800 output, large tier
     assert round(call_cost(a.tok_plan, a.price_large, 1, True, a), 6) == round((1_500 * 3.0 + 4_500 * 0.3 + 800 * 15.0) / 1e6, 6)
     assert round(companion_households(a)) == 771_429
+    assert round(llm_headroom(a) * 100) == 46  # the line absorbs 46%, not the full ±50% band
     # invariants under three assumption sets
     for alt in (a, PESSIMISTIC, OPTIMISTIC):
         invariants(alt)

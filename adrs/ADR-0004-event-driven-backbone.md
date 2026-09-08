@@ -8,7 +8,7 @@
 Four bounded contexts (Ticketing & Access, Park Operations, Animal Welfare, Guest Engagement), telemetry arriving asynchronously from an intermittently connected estate, and AI components that must be added, replaced or switched off without disturbing the rest. The AI additions have to share the architectural characteristics of the base system.
 
 ## Decision
-1. Contexts communicate through a **durable, replayable event backbone** (managed streaming; topics per context; schema registry). No shared databases.
+1. Contexts communicate through a **durable, replayable event backbone** (managed streaming; topics per context; schema registry). No shared databases. Each topic publishes a contract — partition key, the ordering a consumer may rely on, retention and poison-message handling — in [hld/core → topic contract](../hld/core/README.md#topic-contract); **no consumer may assume global ordering**, and retention on the gate and commerce topics is set so the log rather than a database backup is the replay source for a rebuild.
 2. Events are **facts** (`GateEntered`, `PurchaseRecorded`, `FeedingRecorded`, `TreatmentStarted`, `WelfareAnomalyDetected`, `PriceRecommended`), versioned with a schema registry; consumers are tolerant to additive change. A commerce fact carries what an auditor needs — transaction id, type (sale / refund / void / correction), net, tax, currency — so a read model can be reconciled against the vendor's books (FR-2.6).
 3. **AI components are ordinary consumers and producers** on the backbone. A scoring model consumes `FeedingRecorded` and produces `WelfareAnomalyDetected`; it can be replaced by a new version (or a rule) without producers or other consumers noticing.
 4. **Synchronous calls** are reserved for user-facing request/response (BFF → services) and for the inference gateway (a service asks a question and needs an answer now).
@@ -28,7 +28,7 @@ Four bounded contexts (Ticketing & Access, Park Operations, Animal Welfare, Gues
 
 ## Consequences
 **Positive:** adding an AI consumer is a deployment, not a change request; outages are isolated; history is replayable to backtest new models on real data; the business tier is one deployable a small team can watch.
-**Negative:** every consumer owns an inbox table and must write it inside the effect's transaction; eventual consistency must be explained to users ("dashboard may lag 60 s"); debugging spans the monolith, AI consumers and the edge; schema governance is real work; the monolith couples module release cadence until a module is extracted.
+**Negative:** every consumer owns an inbox table and must write it inside the effect's transaction; eventual consistency must be explained to users ("dashboard may lag 60 s"); debugging spans the monolith, AI consumers and the edge, which is why trace context travels in the event envelope and the registry rejects an event without it; schema governance is real work; the monolith couples module release cadence until a module is extracted.
 
 | Risk | Mitigation |
 | --- | --- |
@@ -36,7 +36,7 @@ Four bounded contexts (Ticketing & Access, Park Operations, Animal Welfare, Gues
 | Duplicate/out-of-order events | Idempotent consumers keyed on event id — for device events derived from `(device_id, boot_id, seq)` at ingestion ([ADR-0001](ADR-0001-edge-first-store-and-forward.md) §4); **inbox row in the same transaction as the effect**, enforced by the same fitness function as the outbox (§8, [table](../hld/core/README.md#consumer-side-idempotency-the-inbox)); per-source ordering guarantees only |
 | A probabilistic AI event leaks into a visitor-facing context | §9 rule; consumer-driven contract tests fail on a visitor-facing context subscribing to an AI-output topic |
 | Hidden coupling via event content | Events carry ids and facts, not another context's internal model; consumer-driven contract tests |
-| Module boundaries erode inside the monolith | Fitness function in CI: no cross-schema access, no imports across modules except published interfaces; extraction criteria reviewed quarterly |
+| Module boundaries erode inside the monolith | Fitness function in CI: no cross-schema access, no imports across modules except published read models; extraction criteria reviewed quarterly |
 | Personal data leaks into an event | Schema-registry CI check with `pii` tags and deny-list; erasure end-to-end test in the game-day catalogue (GD-11) |
 
 ## How we will know this was right

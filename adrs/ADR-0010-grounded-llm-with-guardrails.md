@@ -21,11 +21,12 @@ A conversational companion is the most visible use of generative AI and the one 
 | Open-ended chatbot with a system prompt | Quick, fluent | Hallucinated facts; safety depends on the model's mood | R5 |
 | Fine-tune a model on estate content | Knows the estate | Facts change daily (queues, closures); retraining lag; still hallucinates | Freshness |
 | Rule-based FAQ bot only | Fully predictable | Cannot plan a day from free text; poor experience | Misses FR-4.1's value |
+| **Multi-step agent loop** — the model plans, calls tools iteratively and re-plans until it is satisfied | Day planning with a closure and a queue spike is a multi-constraint re-planning problem, which is what an agent loop is for; fewer orchestration paths written by hand | Non-determinism moves from the *answer* into the *control flow*: the guardrail contract of §3 must then hold over an unbounded number of steps, and each step is another indirect-injection surface (§3d). The NFR-PRF-1 budgets are per answer, not per loop, and tokens per session stop being bounded — both matter at 500 concurrent sessions. Our eval suite scores answers; scoring a *trajectory* is a different instrument we do not have. | **Deferred, not rejected.** Today the orchestrator holds the loop: a fixed retrieve → compose → guardrail → re-plan-affected-stops path with a bounded step count, so latency, cost and injection surface are all bounded by construction. Revisit when trajectory-level evals exist for it — the capability boundary (ADR-0005 §2) means the swap needs no service change |
 | Grounded generation + guardrails (chosen) | Fluent and verifiable | Retrieval quality is now a dependency; guardrails add latency | — |
 
 ## Consequences
 **Positive:** every answer is traceable to a source; safety facts cannot be corrupted by the model; KB gaps surface as measurable "ungrounded" blocks.
-**Negative:** answers are only as good as the KB — curation is ongoing work; latency budgets differ by request class (FAQ p95 ≤ 3 s; planning streamed, full plan ≤ 15 s) and the guardrails add to them.
+**Negative:** the orchestrator, not the model, owns the planning loop, so every new planning move is our code rather than the model's initiative; answers are only as good as the KB — curation is ongoing work; latency budgets differ by request class (FAQ p95 ≤ 3 s; planning streamed, full plan ≤ 15 s) and the guardrails add to them.
 
 | Risk | Mitigation |
 | --- | --- |

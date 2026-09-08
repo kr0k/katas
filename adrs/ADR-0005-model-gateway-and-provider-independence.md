@@ -28,7 +28,7 @@ Two different problems hide under the phrase "model gateway": a **runtime proxy*
 | Option | Pros | Cons | Why not |
 | --- | --- | --- | --- |
 | Call provider SDKs directly from services | Fastest to start | Every provider change touches every service; no unified cost view; no fallback discipline | Fails NFR-EVO-1 on day one |
-| Adopt one provider's "agent platform" end to end | Rich tooling, managed evals | Prompts, evals and orchestration become provider-shaped; exit is a rewrite; price/shutdown risk concentrated | Contradicts the judges' concern |
+| Adopt one provider's "agent platform" end to end | Rich tooling, managed evals | Prompts, evals and orchestration become provider-shaped; exit is a rewrite; price/shutdown risk concentrated | Concentrates R4 in the layer this ADR exists to keep replaceable |
 | Build our own gateway | Exactly our needs, nothing more | Routing, budgets, retries, fallbacks and tracing rebuilt by a team of five; a critical component to run and patch | OSS gateways already do this well; our differentiator is the eval suites, not the proxy |
 | Self-host open-weight models only | No provider risk | Team of 5 runs GPU infrastructure (R9); quality gap for planning/dialogue; cost at low utilisation | Operability; open weights are the fallback, on managed hosting |
 | One gateway for every model, including edge and batch | One concept to explain | Edge vision and batch forecasters gain nothing from an HTTP proxy and cannot use one; forces governance into a runtime component | Split runtime from governance instead |

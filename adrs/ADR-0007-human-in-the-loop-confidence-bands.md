@@ -27,11 +27,11 @@ Vision and anomaly models produce probabilities, not diagnoses. Acting on every 
 
 ## Consequences
 **Positive:** vet time spent on genuinely ambiguous cases; the model improves from real decisions; every AI-influenced action is explainable after the fact.
-**Negative:** requires calibration testing at promotion (ADR-0008); reviewers need training and consistent reason codes; SLAs need staffing.
+**Negative:** requires calibration testing at promotion, per band and not only in aggregate (ADR-0008); reviewers need training and consistent reason codes; SLAs need staffing.
 
 | Risk | Mitigation |
 | --- | --- |
-| Model miscalibrated → bands meaningless | Calibration error is a promotion gate; bands re-derived per model version |
+| Model miscalibrated → bands meaningless | Calibration error is a promotion gate — **ECE over 10 equal-mass bins, plus a per-band check** so an aggregate cannot hide an optimistic medium band, and confidence is a post-hoc-calibrated quantity shipped in the bundle, not a raw model score ([how the gated metrics are defined](../hld/ai-platform/README.md#how-the-gated-metrics-are-defined)); bands re-derived per model version |
 | Reviewer inconsistency | Reason-code taxonomy; periodic agreement check on a shared sample |
 | Queue backlog at peak | Priority by species risk; escalation to head keeper; band tightened temporarily by policy |
 

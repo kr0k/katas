@@ -60,6 +60,29 @@ sequenceDiagram
 - Local consumers (gate service, tier-0 rules, dashboards' local cache) subscribe to the same broker, so the estate keeps working while the bridge queues.
 - Storage is **replicated across broker nodes**: a message is acknowledged to the device only once a second node has it, so the loss of one node's disk loses nothing (NFR-DR-3). Sized per the [capacity table](#capacity-check-at-15000-visitorsday-by-traffic-class) below — ≈ 3 GB per 72 h at 15,000 visitors/day, 32 GB provisioned per node.
 
+## Sensor health: dead, stuck and drifting
+
+450 sensors and counters is the population where the *most likely* daily fault is not an outage but **one device quietly lying**. A heartbeat catches a dead sensor. It does not catch the failure that matters more: a feed scale wedged at 4.20 kg, a pH probe fouled and flat, a counter that stopped incrementing while still publishing. Both look healthy to the broker, and a flat feed scale reads to S1 exactly like an animal that has stopped eating.
+
+Three states, three detectors, one event:
+
+| State | Detector | Window | Effect |
+| --- | --- | --- | --- |
+| **Dead** | No message and no heartbeat | 3 × the device's reporting interval (min 5 min); LoRaWAN devices 3 × interval + one duty-cycle period | `DeviceHealthChanged(dead)` |
+| **Stuck** | Zero variance in the reading while messages keep arriving — identical payload value for N consecutive reports, N per device class (feed scales 60, water quality 30, climate 120, counters: no increment during open hours with footfall present in the zone) | Per class, as above | `DeviceHealthChanged(stuck)` |
+| **Drifting** | Reading diverges from the enclosure's redundant signal or from its own seasonal baseline beyond a per-class band; for counters, the hourly in/out reconciliation against gate totals already in [ADR-0009](../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §2 | Rolling 24 h | `DeviceHealthChanged(drifting)` — advisory, not exclusion |
+
+Detection runs **on the broker, in the tier-0 rule engine's runtime** — it needs no cloud, no model and no history beyond a per-device ring buffer, and it must keep working during an uplink outage, which is exactly when a stuck sensor is hardest to notice. `DeviceHealthChanged` is a **critical-class** event, so it reaches the cloud ahead of telemetry.
+
+**What consumes it:**
+
+- **The feature store excludes a dead or stuck device's readings** from features and baselines, and marks the affected window rather than interpolating over it. A model is never asked to explain a flat line that came from hardware.
+- **S1 suppresses anomalies whose only evidence is an unhealthy device**, and says so in the review queue ("feed scale FS-19 stuck since 06:10 — no intake signal available") instead of raising a welfare anomaly the vet cannot act on. This is the same principle as R15's "an anomaly on a single sensor never triggers a tier-0 alert alone", applied to the model path.
+- **Tier-0 rules keep firing.** A stuck water probe removes a *signal*, so the rule's absence of an alert is itself alerted on ("no valid water reading for enclosure 7") — a rule that cannot evaluate is a fault, not a pass. Door contacts and PIR/beam detectors are tested by their own supervision pulse, because a dry-zone detector that never fires is indistinguishable from a quiet dry zone.
+- **Ops gets a ticket** with the device, its zone and the state; time-to-repair per device class is a tracked metric, and a device stuck twice in a quarter is replaced rather than reset.
+
+**Metrics:** devices by health state (target: dead + stuck = 0 during opening hours), mean time to detect per class, mean time to repair, and *anomalies suppressed by device health* — a rise in the last one is either a hardware batch problem or a detector tuned too loosely. Game day **GD-16** injects all three states.
+
 ## Downlink: cloud → estate
 
 The bridge carries state *down* as well, and it shares one cellular link with a buffer that may be draining after an outage. Three things need to reach the estate:

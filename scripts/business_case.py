@@ -53,6 +53,7 @@ EDGE = ROOT / "hld/core/edge-and-connectivity.md"
 AIP = ROOT / "hld/ai-platform/README.md"
 S4 = ROOT / "hld/scenarios/guest-companion/README.md"
 S5 = ROOT / "hld/scenarios/dynamic-family-passes/README.md"
+EVAL = ROOT / "hld/architecture-evaluation.md"
 
 YEARS = ("Y0 (today)", "Y1", "Y2", "Y3 (target)")
 
@@ -98,6 +99,30 @@ class Assumptions:
     depreciation_years: int = 5
     opex_fixed: float = 580_000        # team, cellular, maintenance, base cloud and LLM
     opex_per_visitor_day: float = 0.165  # ticketing fee 0.15 + cloud and LLM scaling 0.015
+
+    # Generative-AI cost (hld/ai-platform → what the generative capabilities cost).
+    # Token counts are per call as (input, of which cacheable session prefix, output).
+    # Prices are list-price bands per million tokens for a small and a large model
+    # tier, provider-neutral (ADR-0005), ±50%, replaced by quotes.
+    faq_per_visit: float = 6.0
+    faq_cache_hit: float = 0.50         # answered from the daily FAQ cache, no model call
+    faq_escalation: float = 0.15        # of model-served FAQ answers, escalated to the large tier
+    replans_per_visit: float = 2.0
+    tok_faq: tuple = (2_000, 400, 150)
+    tok_plan: tuple = (6_000, 4_500, 800)
+    tok_replan: tuple = (4_000, 3_500, 300)
+    tok_nudge: tuple = (1_500, 0, 200)
+    tok_judge: tuple = (3_000, 0, 100)
+    tok_report: tuple = (4_000, 0, 500)
+    judge_sample: float = 0.02          # share of answers scored by the LLM judge (ADR-0008 §5)
+    nudges_per_account_year: float = 6.0
+    reports_per_day: float = 3.0        # welfare daily + estate day draft and final
+    price_small: tuple = (0.15, 0.60)   # € per million input / output tokens
+    price_large: tuple = (3.00, 15.00)
+    cache_read_share: float = 0.10      # cached input costs this share of the input price
+    promotions_per_year: int = 4        # companion bundles promoted per year
+    shadow_weeks: int = 2               # each promotion runs 2 weeks in shadow (ADR-0008 §3)
+    ai_revenue_cap: float = 0.02        # NFR-COST-1 — AI spend ≤ this share of revenue
 
     # Savings (contribution), from Phase 2 (OKR 3.2 and 2.4 targets)
     vet_cost: float = 300_000
@@ -154,6 +179,13 @@ def eur(x: float) -> str:
     if abs(x) >= 1_000:
         return f"€{x / 1_000:.0f}k"
     return f"€{x:.2f}"
+
+
+def eur_round(x: float) -> str:
+    """Euros to the nearest hundred above €1k — the precision a ±50% price band deserves."""
+    if abs(x) < 1_000:
+        return f"€{round(x):,}"
+    return f"€{round(x, -2):,.0f}"
 
 
 def eur_m(x: float) -> str:
@@ -500,6 +532,78 @@ def required_catchment(a: Assumptions = A) -> float:
     return cohorts(a)[3].H / a.catchment_penetration
 
 
+# --------------------------------------------------------------------------- generative-AI cost
+def call_cost(tok: tuple, price: tuple, calls: float, cached: bool, a: Assumptions = A) -> float:
+    """Cost of `calls` calls of one request class. Cached input is billed at a share of the input price."""
+    inp, cacheable, out = tok
+    if not cached:
+        cacheable = 0
+    full = inp - cacheable
+    per_call = full * price[0] + cacheable * price[0] * a.cache_read_share + out * price[1]
+    return calls * per_call / 1_000_000
+
+
+def companion_households(a: Assumptions = A, visitor_days: float | None = None) -> float:
+    """Households using the companion over `visitor_days` (default: a year at the target run rate)."""
+    if visitor_days is None:
+        visitor_days = a.run_rate[3] * a.open_days
+    return visitor_days / a.party_size * a.adoption[2]
+
+
+def llm_rows(a: Assumptions = A, cached: bool = True) -> list[tuple[str, float, str, float]]:
+    """(request class, calls per year, tier, € per year) at the target run rate."""
+    using = companion_households(a)
+    hit = a.faq_cache_hit if cached else 0.0
+    faq = using * a.faq_per_visit * (1 - hit)
+    faq_small, faq_large = faq * (1 - a.faq_escalation), faq * a.faq_escalation
+    plans, replans = using, using * a.replans_per_visit
+    accounts = using * a.opt_in[2]
+    nudges = accounts * a.nudges_per_account_year
+    judged = (faq + plans + replans) * a.judge_sample
+    reports = a.reports_per_day * a.open_days
+    rows = [
+        ("`answer-question` — FAQ, small tier", faq_small, "small", call_cost(a.tok_faq, a.price_small, faq_small, cached, a)),
+        ("`answer-question` — escalated on low confidence", faq_large, "large", call_cost(a.tok_faq, a.price_large, faq_large, cached, a)),
+        ("`plan-visit` — the day plan", plans, "large", call_cost(a.tok_plan, a.price_large, plans, cached, a)),
+        ("`plan-visit` — re-plan on a closure or a queue spike", replans, "large", call_cost(a.tok_replan, a.price_large, replans, cached, a)),
+        ("Nudge wording (Phase 3)", nudges, "small", call_cost(a.tok_nudge, a.price_small, nudges, cached, a)),
+        ("LLM-as-judge on a sample", judged, "large", call_cost(a.tok_judge, a.price_large, judged, cached, a)),
+        ("`summarise-*` report drafters", reports, "large", call_cost(a.tok_report, a.price_large, reports, cached, a)),
+    ]
+    visitor_facing = sum(r[3] for r in rows[:4])
+    shadow = visitor_facing * a.promotions_per_year * a.shadow_weeks / 52
+    rows.append(("Shadow runs before promotion", 0.0, "as production", shadow))
+    return rows
+
+
+def llm_total(a: Assumptions = A, cached: bool = True) -> float:
+    return sum(r[3] for r in llm_rows(a, cached))
+
+
+def visitor_facing_per_visit(a: Assumptions = A) -> float:
+    """Generative cost of the four visitor-facing request classes, per companion household visit."""
+    return sum(r[3] for r in llm_rows(a)[:4]) / companion_households(a)
+
+
+def llm_day_cost(a: Assumptions = A, visitor_days: float | None = None) -> float:
+    """Visitor-facing generative cost of one day of `visitor_days` (default: an average day at target)."""
+    if visitor_days is None:
+        visitor_days = a.run_rate[3]
+    using = companion_households(a, visitor_days)
+    faq = using * a.faq_per_visit * (1 - a.faq_cache_hit)
+    return (
+        call_cost(a.tok_faq, a.price_small, faq * (1 - a.faq_escalation), True, a)
+        + call_cost(a.tok_faq, a.price_large, faq * a.faq_escalation, True, a)
+        + call_cost(a.tok_plan, a.price_large, using, True, a)
+        + call_cost(a.tok_replan, a.price_large, using * a.replans_per_visit, True, a)
+    )
+
+
+def llm_escalation_sensitivity(a: Assumptions = A, escalation: float = 0.40) -> float:
+    """FAQ cost per year if the escalated share rises to `escalation` (a first-time-family Saturday)."""
+    return llm_total(replace(a, faq_escalation=escalation)) - llm_total(a)
+
+
 # --------------------------------------------------------------------------- tables
 def table(header: list[str], rows: list[list[str]]) -> str:
     out = ["| " + " | ".join(header) + " |", "|" + "---|" * len(header)]
@@ -670,6 +774,35 @@ def t_catchment(a: Assumptions = A) -> str:
     )
 
 
+def t_llm_cost(a: Assumptions = A) -> str:
+    def tok(x: tuple) -> str:
+        inp, cacheable, out = x
+        return f"{n(inp)} / {n(cacheable)} / {n(out)}"
+
+    toks = {
+        "`answer-question` — FAQ, small tier": a.tok_faq,
+        "`answer-question` — escalated on low confidence": a.tok_faq,
+        "`plan-visit` — the day plan": a.tok_plan,
+        "`plan-visit` — re-plan on a closure or a queue spike": a.tok_replan,
+        "Nudge wording (Phase 3)": a.tok_nudge,
+        "LLM-as-judge on a sample": a.tok_judge,
+        "`summarise-*` report drafters": a.tok_report,
+    }
+    rows = []
+    for label, calls, tier, cost in llm_rows(a):
+        rows.append([label, n(calls) if calls else "—", tok(toks[label]) if label in toks else "—", tier, eur_round(cost)])
+    rows.append(["**Total, planned spend at the target run rate**", "", "", "", f"**{eur_round(llm_total(a))} / yr**"])
+    rows.append([
+        "*Counterfactual: no FAQ cache, no prompt caching*",
+        f"*{n(companion_households(a) * a.faq_per_visit + companion_households(a) * (1 + a.replans_per_visit))}*",
+        "*same tokens, none cached*", "*same*", f"*{eur_round(llm_total(a, cached=False))} / yr*",
+    ])
+    return table(
+        ["Request class (capability)", f"Calls / yr at {n(a.run_rate[3])}/day", "Tokens per call: in / of which cached / out", "Tier", "€ / yr"],
+        rows,
+    )
+
+
 TABLES = {
     "run-rate": t_run_rate,
     "volume": t_volume,
@@ -681,17 +814,26 @@ TABLES = {
     "catchment": t_catchment,
 }
 
+AIP_TABLES = {
+    "llm-cost": t_llm_cost,
+}
+
+# Which document carries which generated blocks.
+BLOCK_FILES = ((DOC_08, TABLES), (AIP, AIP_TABLES))
+
 MARK = "<!-- business-case:{name} -->"
 END = "<!-- /business-case:{name} -->"
 
 
-def render_all(a: Assumptions = A) -> str:
-    return "\n\n".join(f"{MARK.format(name=key)}\n{f(a)}\n{END.format(name=key)}" for key, f in TABLES.items())
+def render_all(a: Assumptions = A, tables: dict | None = None) -> str:
+    tables = TABLES if tables is None else tables
+    return "\n\n".join(f"{MARK.format(name=key)}\n{f(a)}\n{END.format(name=key)}" for key, f in tables.items())
 
 
-def replace_blocks(text: str, a: Assumptions = A) -> tuple[str, list[str]]:
+def replace_blocks(text: str, a: Assumptions = A, tables: dict | None = None) -> tuple[str, list[str]]:
+    tables = TABLES if tables is None else tables
     missing = []
-    for name, f in TABLES.items():
+    for name, f in tables.items():
         start, end = MARK.format(name=name), END.format(name=name)
         pat = re.compile(re.escape(start) + r".*?" + re.escape(end), re.S)
         if not pat.search(text):
@@ -766,6 +908,23 @@ def expected_tokens(a: Assumptions = A) -> list[tuple[Path, str, str]]:
         (EDGE, r"^- Gate scans: ", f"≈ {n(y3.peak)} in + out"),
         (EDGE, r"^- Gate scans: ", f"≈ {n(peak_hour_scans)} scans in the peak hour → {peak_hour_scans / 3600:.1f}/s"),
         (AIP, r"^\| \*\*Business guardrails\*\* ", f"{eur(a.on_site)} on-site spend per visitor-day"),
+        # generative-AI cost, quoted in three places
+        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a))} a year at {n(a.run_rate[3])} visitors/day"),
+        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a, cached=False))}"),
+        (AIP, r"^## What the generative capabilities cost", f"≈ €{visitor_facing_per_visit(a):.2f} per companion household visit"),
+        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_day_cost(a, ladder(a)[3].peak))} of generative spend against ≈ {eur_round(llm_day_cost(a))}"),
+        (AIP, r"^## What the generative capabilities cost", f"**{llm_day_cost(a, ladder(a)[3].peak) / llm_day_cost(a):.1f}×**"),
+        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a) / 12)} on the yearly average"),
+        (AIP, r"^## What the generative capabilities cost", f"rises by ≈ {eur_round(llm_escalation_sensitivity(a))}"),
+        (DOC_04, r"^\| Hosted LLMs ", f"≈ {eur_round(llm_total(a))}/yr"),
+        (S4, r"^\*\*Cost budget by request class", f"≈ **€{visitor_facing_per_visit(a):.2f} per companion household visit**"),
+        # architecture evaluation — the figures its scenarios and sensitivity points rest on
+        (EVAL, r"^\| \| Generative growth ", f"≈ €{visitor_facing_per_visit(a):.2f} per companion household visit"),
+        (EVAL, r"^\| \| Generative growth ", f"a peak day is {llm_day_cost(a, ladder(a)[3].peak) / llm_day_cost(a):.1f}×"),
+        (EVAL, r"^\| SP-3 ", f"{eur_round(llm_total(a))} with it, {eur_round(llm_total(a, cached=False))} without"),
+        (EVAL, r"^\| SP-4 ", f"{n(a.gate_lanes * a.scans_per_lane_hour)} scans/h against ≈ {n(ladder(a)[3].peak_hour / a.persons_per_scan)} in the peak hour"),
+        (EVAL, r"^- \*\*Gate lane capacity", f"{a.gate_lanes} lanes × {n(a.scans_per_lane_hour)} scans/h = {n(a.gate_lanes * a.scans_per_lane_hour)} against ≈ {n(ladder(a)[3].peak_hour / a.persons_per_scan)}"),
+        (EVAL, r"^- \*\*Runaway generative cost", f"a peak day that is {llm_day_cost(a, ladder(a)[3].peak) / llm_day_cost(a):.1f}×"),
         (S4, r"^\*\*Moves:\*\* ", f"{pct(y0.c.p)} → {pct(y1.c.p)} base / 25% stretch → 40% target, model ≈ {pct(y3.c.p)}"),
         (S4, r"^\*\*Moves:\*\* ", f"{pct(y0.pass_share)} → {pct(y1.pass_share)} / 40% → ≥ 50% target, model ≈ {pct(y3.pass_share)}"),
         (S5, r"^\*\*Moves:\*\* ", f"{ratio_str(y0.r)} → {ratio_str(y1.r)} base / 0.5 stretch → {ratio_str(y3.r)}"),
@@ -774,14 +933,19 @@ def expected_tokens(a: Assumptions = A) -> list[tuple[Path, str, str]]:
 
 def check(a: Assumptions = A) -> list[str]:
     problems: list[str] = []
-    if not DOC_08.exists():
-        return [f"{DOC_08.relative_to(ROOT)}: missing"]
-    text = DOC_08.read_text(encoding="utf-8")
-    regenerated, missing = replace_blocks(text, a)
-    for name in missing:
-        problems.append(f"requirements/08-business-case.md: marker block '{name}' not found")
-    if regenerated != text:
-        problems.append("requirements/08-business-case.md: generated tables are stale — run `uv run scripts/business_case.py --write`")
+    for path, tables in BLOCK_FILES:
+        if not path.exists():
+            problems.append(f"{path.relative_to(ROOT)}: missing")
+            continue
+        rel = path.relative_to(ROOT)
+        text = path.read_text(encoding="utf-8")
+        regenerated, missing = replace_blocks(text, a, tables)
+        for name in missing:
+            problems.append(f"{rel}: marker block '{name}' not found")
+        if regenerated != text:
+            problems.append(f"{rel}: generated tables are stale — run `uv run scripts/business_case.py --write`")
+    if problems:
+        return problems
     for path, locator, token in expected_tokens(a):
         if not path.exists():
             problems.append(f"{path.relative_to(ROOT)}: missing")
@@ -832,8 +996,17 @@ def invariants(a: Assumptions) -> None:
     assert ramp == sorted(ramp) and ramp[a.attribution_start_month - 1] == 0 and ramp[-1] == 1.0
     cost = [simulate(0, a)[1]]
     assert all(x >= 0 for x in cost)
-    text, missing = replace_blocks(render_all(a), a)
-    assert not missing and text == render_all(a), "table generation must be idempotent"
+    for _path, tables in BLOCK_FILES:
+        text, missing = replace_blocks(render_all(a, tables), a, tables)
+        assert not missing and text == render_all(a, tables), "table generation must be idempotent"
+    # generative-AI cost: caching can only help, and the plan must dominate a FAQ answer
+    assert llm_total(a) < llm_total(a, cached=False), "caching must not cost more than no caching"
+    assert llm_total(a) > 0 and all(cost >= 0 for *_, cost in llm_rows(a))
+    assert call_cost(a.tok_plan, a.price_large, 1, True, a) > call_cost(a.tok_faq, a.price_small, 1, True, a)
+    assert llm_day_cost(a, a.run_rate[3] * a.peak_factor) > llm_day_cost(a), "a bigger day cannot cost less"
+    assert llm_escalation_sensitivity(a) > 0, "escalating more answers to the large tier cannot be cheaper"
+    rr_V = a.run_rate[3] * a.open_days
+    assert llm_total(a) < a.ai_revenue_cap * ladder(a)[3].gross * rr_V / ladder(a)[3].V, "planned AI spend must sit under the NFR-COST-1 cap"
 
 
 def self_test(a: Assumptions = A) -> None:
@@ -846,6 +1019,9 @@ def self_test(a: Assumptions = A) -> None:
     assert capacity(a)[0].holds_until == 15_000
     assert [round(v) for v in yearly_volume(a)] == [1_500_000, 1_725_000, 2_400_000, 3_675_000]
     assert round(cohorts(a)[0].H) == 357_143 and round(cohorts(a)[0].R) == 35_714
+    # one hand-computable generative call: 1,500 full + 4,500 cached input, 800 output, large tier
+    assert round(call_cost(a.tok_plan, a.price_large, 1, True, a), 6) == round((1_500 * 3.0 + 4_500 * 0.3 + 800 * 15.0) / 1e6, 6)
+    assert round(companion_households(a)) == 771_429
     # invariants under three assumption sets
     for alt in (a, PESSIMISTIC, OPTIMISTIC):
         invariants(alt)
@@ -866,15 +1042,17 @@ def main(argv: list[str]) -> int:
         print("business case: tables and cross-referenced numbers match the model")
         return 0
     if "--write" in argv:
-        text = DOC_08.read_text(encoding="utf-8")
-        new, missing = replace_blocks(text)
-        if missing:
-            print("missing marker blocks: " + ", ".join(missing))
-            return 1
-        DOC_08.write_text(new, encoding="utf-8")
-        print(f"wrote {len(TABLES)} tables into {DOC_08.relative_to(ROOT)}")
+        for path, tables in BLOCK_FILES:
+            text = path.read_text(encoding="utf-8")
+            new, missing = replace_blocks(text, A, tables)
+            if missing:
+                print(f"{path.relative_to(ROOT)}: missing marker blocks: " + ", ".join(missing))
+                return 1
+            path.write_text(new, encoding="utf-8")
+            print(f"wrote {len(tables)} table(s) into {path.relative_to(ROOT)}")
         return 0
-    print(render_all())
+    for _path, tables in BLOCK_FILES:
+        print(render_all(A, tables))
     return 0
 
 

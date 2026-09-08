@@ -30,5 +30,6 @@ The judges cannot talk to us, so we state what we assumed. Each assumption is ta
 
 ## Out of scope
 - Ride control systems and their certification.
+- **Ride maintenance analytics (FR-2.5), deliberately.** The 40 historic rides are half the attraction, and they are in the architecture — `RideStatusChanged` and queue counters feed the forecast, the staffing plan, the companion ("is the Ferris wheel OK for a 4-year-old") and the daily report — but they get **no AI in this submission**. Two reasons, in order: A10 means the instrumentation predictive maintenance needs (vibration spectra, load cycles at rate) mostly cannot be fitted to heritage machinery, so the data would not exist; and ride *safety* is certified mechanical inspection, which a model may not influence even advisorily (the tier-0 / tier-1 split of FR-3.6–3.7 has no equivalent here — there is no tier-1 for a ride). What remains once safety is excluded is downtime and scheduling analytics on cycle counters, which is worth doing and worth doing **later**: Phase 4+, entered on a spike with a threshold, not a promise ([roadmap](../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy), [`TODOS.md`](../TODOS.md)).
 - Payroll and HR beyond importing staff/skills/availability and exporting staffing plans (A12).
 - Physical security (CCTV for theft) — only animal enclosure cameras are in scope.

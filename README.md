@@ -36,6 +36,7 @@
 | `hld/scenarios/` | One folder per AI use case: why, what, containers, diagram, validation | …judging innovation and suitability |
 | `hld/ai-platform/` | Shared AI platform: inference gateway (adopted) and model governance — registry, evaluation, monitoring | …judging how we handle uncertainty and verify AI |
 | `adrs/` | Architecture Decision Records with alternatives and trade-offs | …looking for the "why" behind any choice |
+| [`hld/architecture-evaluation.md`](hld/architecture-evaluation.md) | The ATAM-style evaluation: quality-attribute scenarios with response measures, the styles we rejected, sensitivity and trade-off points, risks and non-risks | …asking whether the characteristics were evaluated or just named |
 | `video/` | Semi-final video (if we get there) | |
 
 Every AI scenario links to its ADRs; every ADR links back to the requirements it serves. The [traceability table](#traceability-capability--requirement--decision) is the shortcut. `uv run scripts/lint_docs.py` checks links, ids, traceability and every number derived from the business-case model; GitHub Actions runs it on every push.
@@ -173,6 +174,7 @@ Each scenario README states its phase. The phases in `hld/` are summarised in [h
 - [Edge & connectivity in detail: traffic classes, store-and-forward, downlink, capacity](hld/core/edge-and-connectivity.md)
 - [Resilience validation: the game-day catalogue](hld/core/resilience-validation.md)
 - [AI platform: inference gateway, model governance](hld/ai-platform/README.md)
+- [Architecture evaluation: utility tree, styles considered, sensitivity and trade-off points](hld/architecture-evaluation.md)
 
 ## AI scenarios
 
@@ -228,7 +230,7 @@ The judges asked three questions. Short answers; details in the linked ADRs.
 
 → [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [AI platform](hld/ai-platform/README.md)
 
-**And does the foundation work?** The same question applies to the non-AI system, and "edge-first" is a claim until it has been broken on purpose. A [game-day catalogue](hld/core/resilience-validation.md) of fifteen scripted faults — uplink loss for hours and beyond the buffer, broker failover at peak, a gate cut off from the broker, a ticket refunded during an outage, a safety alert with the cloud down and nobody acknowledging, an edge node powered off, the event backbone gone, a provider unreachable, a kill switch, an erasure request, a model rollout on a saturated link, a restore from backup, a POS webhook carrying a card number, the uplink lost minutes before the daily report — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five of them are the exit criterion for Phase 0.
+**And does the foundation work?** The same question applies to the non-AI system, and "edge-first" is a claim until it has been broken on purpose. A [game-day catalogue](hld/core/resilience-validation.md) of sixteen scripted faults — uplink loss for hours and beyond the buffer, broker failover at peak, a gate cut off from the broker, a ticket refunded during an outage, a safety alert with the cloud down and nobody acknowledging, an edge node powered off, the event backbone gone, a provider unreachable, a kill switch, an erasure request, a model rollout on a saturated link, a restore from backup, a POS webhook carrying a card number, the uplink lost minutes before the daily report, a feed scale wedged at a plausible weight while it keeps heart-beating — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five of them are the exit criterion for Phase 0.
 
 ## What this architecture does not do
 

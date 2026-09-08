@@ -16,11 +16,11 @@
    - forecasting: historical footfall with rolling-origin splits;
    - pricing: historical sales weeks;
    - companion: Q&A pairs with expected facts, planning scenarios with hard constraints, adversarial prompts.
-2. **CI evaluation gate**: a candidate bundle is scored on its golden set; promotion requires meeting the capability's **thresholds** — kept in one place, the [thresholds & cadences table](../hld/ai-platform/README.md#thresholds-and-cadences-source-of-truth) (e.g. recall ≥ 0.90 & calibration error ≤ 0.05; detector P/R ≥ 0.95; next-day MAPE ≤ 25% and better than the heuristic; factuality ≥ 0.95, constraint violations 0, safety refusals 100%) — **and no regression** against the current production bundle. **Deterministic components on AI paths** (pricing policy engine, staffing optimiser, gate rules) get **invariant suites**: property-based tests over generated inputs with a violations = 0 gate, and the same invariants checked in production by an independent validator.
+2. **CI evaluation gate**: a candidate bundle is scored on its golden set; promotion requires meeting the capability's **thresholds** — kept in one place, the [thresholds & cadences table](../hld/ai-platform/README.md#thresholds-and-cadences-source-of-truth) (e.g. recall ≥ 0.90 & calibration error ≤ 0.05 — **ECE over 10 equal-mass bins, checked per confidence band as well as in aggregate**, with the reliability diagram kept as a build artifact ([definitions](../hld/ai-platform/README.md#how-the-gated-metrics-are-defined)); detector P/R ≥ 0.95; next-day MAPE ≤ 25% and better than the heuristic; factuality ≥ 0.95, constraint violations 0, safety refusals 100%) — **and no regression** against the current production bundle. **Deterministic components on AI paths** (pricing policy engine, staffing optimiser, gate rules) get **invariant suites**: property-based tests over generated inputs with a violations = 0 gate, and the same invariants checked in production by an independent validator.
 3. **Shadow mode** before live: candidate runs on live traffic in parallel; outputs compared; disagreements sampled for human review. Minimum 2 weeks for welfare/companion, 1 forecasting cycle for forecasting.
 4. **Production monitoring**, three layers:
    - *Technical:* latency, error rate, cost, token use per capability (gateway tracing).
-   - *Model:* input drift (feature/image statistics), output drift (confidence histograms, class mix), calibration on sampled human-labelled data.
+   - *Model:* input drift (feature/image statistics), output drift (confidence histograms, class mix), calibration on sampled human-labelled data — the same ECE definition and the same per-band check as the gate, so the two numbers are comparable.
    - *Business guardrails:* vet override rate, forecast MAPE vs. actuals, companion thumbs-down/escalation/ungrounded-block rate, pricing conversion drop. Each has a threshold and an **automatic rollback** to the previous production bundle plus an alert to the owner.
 5. **Non-deterministic outputs** (companion): sampled **LLM-as-judge** for factuality and safety against the KB, calibrated weekly by a human reviewing 50 sessions; judge disagreement with humans is itself monitored.
 6. **Delayed ground truth** is joined back where it exists (treatments ↔ flags; actual footfall ↔ forecast; census of record and the births/deaths/transfers ledger ↔ population estimates) to compute real-world accuracy monthly. Ground truth must be measurably better than the target it scores: a ±30% visual audit cannot score a ±10% estimate, so S2 uses a census at planned tank maintenance as its reference.
@@ -29,7 +29,7 @@
 ## Alternatives considered
 | Option | Pros | Cons | Why not |
 | --- | --- | --- | --- |
-| Manual QA before release only | Low effort | Non-deterministic systems drift after release; no signal in production | Fails the judges' question |
+| Manual QA before release only | Low effort | Non-deterministic systems drift after release; no signal in production | Fails NFR-VER-1: nothing watches the model after release |
 | Rely on provider dashboards | Zero build | Provider-shaped, not capability-shaped; gone when the provider goes; no business guardrails | Independence |
 | Full MLOps platform product | Rich | Cost and learning curve for a team of 5; still needs our golden sets and guardrails | Start lean; revisit at scale |
 | Golden sets + gate + shadow + guardrails (chosen) | Fits all three AI kinds; owned by domain leads | Golden-set curation is ongoing work | — |

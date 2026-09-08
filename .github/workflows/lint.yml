@@ -1,0 +1,16 @@
+name: lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Links, ids, traceability and business-case numbers
+        run: uv run scripts/lint_docs.py
+      - name: Business-case model self-test (anchors + invariants)
+        run: uv run scripts/business_case.py --self-test

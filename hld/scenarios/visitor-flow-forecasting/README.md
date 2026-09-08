@@ -32,6 +32,10 @@ flowchart LR
     Fc -. "expected queues" .-> Guest["Guest companion (S4)"]
     Plan -. "StaffingPlanApproved" .-> Bus
     Plan -. "approved plan" .-> HR
+    Bus -.-> Spend[("Spend per zone<br/>(PurchaseRecorded, terminal → zone)")]
+    Spend --> Dash
+    Fc -. "forecast within 10% of a limit" .-> Cap["Cap proposal 👤<br/>ops manager sets cap + reason code"]
+    Cap -. "CapacityCapChanged" .-> Tix(["Ticketing platform<br/>cap · slots · pass-holder reservations"])
 ```
 
 ## Containers

@@ -2,7 +2,7 @@
 
 > Families wander, queue, leave early, and don't come back. We want a companion that plans their day, steers them to short queues and interesting animals, and gives them a reason to return.
 
-**Moves:** OKR 1.2 (returning share of households 10% → 12% base / 25% stretch → 40%), 1.3 (passes 20% → 29% / 40% → ≥ 50%), 1.6 (season-pass renewal, with the ticketing platform), 2.2 (queue time via load spreading)
+**Moves:** OKR 1.2 (returning share of households 10% → 10% base / 25% stretch → 40% target, model ≈ 32%), 1.3 (passes 20% → 19% / 40% → ≥ 50% target, model ≈ 41%), 1.6 (season-pass renewal, with the ticketing platform), 2.2 (queue time via load spreading)
 **Phase:** 1 (FAQ answers via the gateway) → 2 (day planning with live queues and forecast) → 3 (return-visit nudges) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-4.1, FR-4.2, FR-1.6, FR-5.1, FR-5.3
 **ADRs:** [ADR-0005](../../../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (staff escalation)
@@ -14,7 +14,7 @@ This is a language problem: a parent typing "we have a 3-year-old who's scared o
 
 The companion is where the [flywheel](../../../requirements/08-business-case.md#3-the-membership-flywheel) starts: a family that plans its day with it has a reason to keep an account; the account is what lets a nudge say "the cassowary chick you saw is on show" and offer the quiet-day pass; the pass is what brings them back. Everything else in this scenario serves that loop. The scenario owns two of the three growth levers' *mechanics* — the nudge that fills a weekday with pass holders, and the prompt that turns today's ticket into a pass — but not their economics: the pass price is management's yearly decision and the upgrade credit is a ticketing-platform invariant (P-I7, [ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)); quiet-day offers on day tickets are S5's.
 
-**The funnel we measure.** Four rates, each with its event, make up the flywheel conversion in 08 §3: companion adoption (`ItineraryCreated` ÷ households admitted), opt-in (accounts ÷ companion households), nudge reach (`NudgeSent` with an open ÷ accounts) and return (`GateEntered` of the household within 12 months of a nudge). They are **business guardrails** in the [thresholds table](../../ai-platform/README.md#thresholds-and-cadences-source-of-truth) — alert only, no model rollback — and the weekday visits of nudged pass holders vs. a control cohort is how the third lever is credited.
+**The cohort we measure.** Four rates, each with its event, make up the flywheel conversion in 08 §3: companion adoption (`ItineraryCreated` ÷ households admitted), opt-in (accounts ÷ companion households), nudge reach (`NudgeSent` with a click ÷ accounts — clicks, not e-mail opens, which privacy proxies inflate) and return (`GateEntered` of the household within 12 months of a nudge). Two more depend on the account this scenario creates: pass conversion (repeaters holding a pass) and account retention (repeaters without a pass coming back the next year — measurable only because the account exists). All are **business guardrails** in the [thresholds table](../../ai-platform/README.md#thresholds-and-cadences-source-of-truth) — alert only, no model rollback — and the weekday visits of nudged pass holders vs. a control cohort is how the third lever is credited.
 
 ## Solution
 
@@ -27,11 +27,11 @@ flowchart TB
     Orch --> KB[("Knowledge base<br/>animals · rides · rules · hours · prices")]
     Orch --> Live["Live queues & occupancy (S3)"]
     Orch --> Fc["Expected queues (S3 forecast)"]
-    Orch --> Tix["Ticketing (pass status)"]
+    Orch --> Tix["Ticketing (pass status ·<br/>upgrade voucher P-I7 · slot reservation)"]
     Orch --> Guard["Output guardrails<br/>facts check · safety · tone"]
     Guard --> V
     Orch -.-> Ev["Events: ItineraryCreated,<br/>AnimalViewed, RideDone"]
-    Ev -.-> Nudge["Return-visit nudges 🤖<br/>(opt-in only)"]
+    Ev -.-> Nudge["Return-visit nudges 🤖<br/>(opt-in only: animal on show · quiet-day offer<br/>· voucher reminder · reserve a slot)"]
     Nudge --> Msg(["Email / push"])
     Esc["👤 Staff escalation"] --- Orch
 ```
@@ -40,8 +40,8 @@ flowchart TB
 - **Plan the day:** builds an itinerary from constraints (children's ages, interests, time, accessibility) using forecast and live queues; re-plans when a ride closes or a queue spikes; **steers lunch times** ("the terrace café is quiet until 12:30") because F&B seating is the second constraint to bind ([08 §1](../../../requirements/08-business-case.md#1-capacity-reality-check)).
 - **Answer questions:** grounded on the knowledge base — "Where is the axolotl?", "Is the Ferris wheel OK for a 4-year-old?", "When is the piranha feeding?" — with citations to the source fact.
 - **Offline-tolerant:** the itinerary and map are cached on the device; when Wi-Fi is patchy the visitor still has their plan; live re-planning resumes on reconnect.
-- **Upgrade to a pass, today:** shown only to day-ticket holders without a pass (from the pass state the orchestrator already fetches), with today's ticket price credited — the credit is executed by the ticketing platform (P-I7); idempotency key = ticket id; offline the prompt reads "available at the exit and at the gate POS"; the same offer is repeated at the gate POS and in a next-day nudge, credit valid 7 days.
-- **Return nudges (opt-in):** "The cassowary chick you saw is on show from Saturday", "You saw 31 of 55 enclosures — finish your collection", "Quiet-day family offer this Wednesday" (S5's standing or experimental offer, surfaced here), "Turn today's ticket into a season pass — today's price credited until Sunday". Content templates are curated; the LLM personalises within them; frequency caps apply.
+- **Upgrade to a pass:** shown only to day-ticket holders without a pass whose ticket was scanned in today (from the pass state the orchestrator already fetches); tapping it issues a **credit voucher** for today's ticket price, redeemable against a season pass within 7 days — the rules are the ticketing platform's (P-I7, [ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)); idempotency key = ticket id; offline the prompt reads "available at the exit and at the gate POS"; the next-day nudge reminds about the outstanding voucher, it does not create a new one.
+- **Return nudges (opt-in):** "The cassowary chick you saw is on show from Saturday", "You saw 31 of 55 enclosures — finish your collection", "Quiet-day family offer this Wednesday" (S5's standing or experimental offer, surfaced here), "Your upgrade voucher is valid until Sunday", "Saturday is a capacity-managed day — reserve your pass holders' slot" (FR-1.7). Content templates are curated; the LLM personalises within them; frequency caps apply.
 
 ## Containers
 | Container | Responsibility | AI? |

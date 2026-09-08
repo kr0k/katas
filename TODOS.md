@@ -28,7 +28,7 @@
 
 ### Ticketing platform vendor evaluation — prerequisite for Phase 0
 
-**What:** Landscape review of 3-5 attraction-ticketing products against the full criteria table of the "Ticketing platform: adopt, not build" ADR: offline gate validation with signed credentials, local ledger and reconciliation; season/family passes with a group counter; `GateEntered` with `persons_admitted`; webhooks/events within seconds; price API with checkout lock; **timed-entry slots and a daily cap with an API returning effective cap and sold count**; **POS included or per-transaction export/webhook with the FR-2.6 fields**; **same-day upgrade credit** (once per ticket, valid today, void on refund, 7-day validity); **signed webhooks with replay protection**; **vendor sandbox** covering webhooks, cap API and credit; GDPR export/delete; open-data exit; PCI scope at the vendor; price at 15,000/day. Output: alternatives table in the ADR, go/no-go on the "build it ourselves" fallback, and a **fallback matrix**: for each criterion no vendor meets, what changes in Phase 0 scope, staffing and the TCO table (e.g. no POS export → daily totals per outlet and A13's fallback; no upgrade credit → the flywheel's second lever becomes a manual desk process; no cap API → cap enforced by closing online sales manually).
+**What:** Landscape review of 3-5 attraction-ticketing products against the full criteria table of the "Ticketing platform: adopt, not build" ADR: offline gate validation with signed credentials, local ledger and reconciliation; season/family passes with a group counter; `GateEntered` with `persons_admitted`; webhooks/events within seconds; price API with checkout lock; **timed-entry slots and a daily cap with an API returning effective cap and sold count, plus pass-holder slot reservations on capacity-managed days carried in the credential**; **POS included or per-transaction export/webhook with the FR-2.6 fields**; **upgrade credit voucher** (once per ticket scanned in today, redeemable within 7 days, void on refund, pass starts on the visit date); **signed webhooks** (HMAC-SHA256, signed-at window, re-signed retries with backoff on 429, key rotation); **vendor sandbox** covering webhooks incl. replay and backlog, cap/reservation API and voucher; GDPR export/delete; open-data exit; PCI scope at the vendor; price at 15,000/day. Output: alternatives table in the ADR, go/no-go on the "build it ourselves" fallback, and a **fallback matrix**: for each criterion no vendor meets, what changes in Phase 0 scope, staffing and the TCO table (e.g. no POS export → daily totals per outlet and A13's fallback; no upgrade credit → the flywheel's second lever becomes a manual desk process; no cap API → cap enforced by closing online sales manually).
 
 **Why:** Adopt-not-build was accepted on criteria, not on market facts. The business-case review added six criteria the market may not offer together; if the combination is rare, the fallback triggers and changes Phase 0, R9 and the payback arithmetic in requirements/08.
 
@@ -49,6 +49,32 @@
 **Effort:** S
 **Priority:** P3 (becomes P1 before the Phase 1 build)
 **Depends on:** requirements/08 and the hld/core report section landing (done).
+
+## Business case
+
+### Exit survey design for the anonymous repeat estimate
+
+**What:** Specify the quarterly exit survey that requirements/05 A14 and requirements/06 ¹ rely on: questions (visited in the last 12 months? group size? how did you arrive?), sample size and stratification (≈ 400 answers per quarter for ±5 points on the repeat share; by day type and ticket type), staffing at the exits, and how the self-reported estimate is combined with identified households (pass or account) into one repeat-share figure with a stated error.
+
+**Why:** Anonymous day-ticket visitors cannot be linked across visits, so the survey is the only source of the repeat share for roughly half the guests in year 1 and of the party size (A9). Without a sampling design the "~10%" carries no interval and the season-1 re-issue of requirements/08 would feed noise into the cohort model.
+
+**Context:** The same questionnaire yields car share and parking turns for A14. Bias towards loyal respondents must be estimated (e.g. by comparing the identified-household subsample with the survey). Hours go into the human-roles table.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** requirements/08 §0 definitions (done); Phase 0 exit staffing.
+
+### Estate-level P&L at the Y3 run rate
+
+**What:** One table in `scripts/business_case.py`, alongside the platform payback: revenue from the cohort model minus every cost in requirements/08 §5 — parking or park-and-ride, F&B seating, gate lanes, marketing at a measured customer-acquisition cost per channel, step staffing at the estate's FTE cost, and the platform — once the site survey and procurement have turned the orders of magnitude into prices.
+
+**Why:** requirements/08 is deliberately the platform's payback, not an estate P&L; but the Countess's question (G1) is whether the estate pays at 15,000 a day, and that question needs an owner and a trigger rather than a footnote.
+
+**Context:** Inputs: price per parking space or park-and-ride contract, price per F&B seat, FTE cost, CAC by channel, vendor fees from the evaluation. Trigger: Phase 2 entry, together with the season-1 re-issue of requirements/08 (§6). Risk: read as a promise of profit — label it a scenario with the same assumption → measured-by discipline.
+
+**Effort:** M
+**Priority:** P3
+**Depends on:** LoRaWAN/site survey TODO; ticketing vendor evaluation TODO; season-1 measured values.
 
 ## Infrastructure
 

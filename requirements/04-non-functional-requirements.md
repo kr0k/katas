@@ -20,7 +20,7 @@ We chose four. Everything else is important but does not drive structure.
 | NFR-AVL-3 | Safety alert delivery **to a human** | ≤ 5 s from sensor to a DECT handset/pager on the local network, no cloud dependency; **acknowledged by a human within 60 s** or escalated (head keeper, then all staff); measured end to end to the acknowledgement; unacknowledged alerts per day = 0 |
 | NFR-RES-1 | Telemetry buffering during uplink loss | ≥ 24 h at edge without data loss (sized for 72 h, per traffic class) |
 | NFR-RES-2 | Degraded mode | Every AI capability has a **non-AI fallback** — a rule-based system or a documented human procedure; loss of AI never blocks a core function |
-| NFR-SCL-1 | Peak load | 15,000 visitors/day on average; a peak day ≈ 29,000 with ≈ 5,900 gate scans in the peak hour ([capacity check](08-business-case.md#1-capacity-reality-check)); 40 rides + 55 enclosures streaming telemetry |
+| NFR-SCL-1 | Peak load | 15,000 visitors/day on average; a peak day ≈ 29,400 visitor-days with ≈ 5,900 arrivals and ≈ 2,940 gate scans in the peak hour (2 persons per scan, A14 — [capacity check](08-business-case.md#1-capacity-reality-check)); 40 rides + 55 enclosures streaming telemetry |
 | NFR-SCL-2 | Camera ingest | 55 enclosures × 1–2 cameras; pre-filtered at edge; only 1-minute feature windows and event clips leave the estate |
 | NFR-PRF-1 | Companion response time, **by request class** | FAQ answer: p95 ≤ 3 s complete. Day planning: first token ≤ 2 s, first stop suggestion ≤ 5 s, full plan ≤ 15 s (p95, streamed); re-plan after a closure ≤ 5 s. Verified by a load test at 500 concurrent sessions before each promotion |
 | NFR-PRF-2 | Dashboard freshness | Live view ≤ 60 s behind reality when uplink is up |

@@ -38,7 +38,7 @@
 | `adrs/` | Architecture Decision Records with alternatives and trade-offs | …looking for the "why" behind any choice |
 | `video/` | Semi-final video (if we get there) | |
 
-Every AI scenario links to its ADRs; every ADR links back to the requirements it serves. The [traceability table](#traceability-capability--requirement--decision) is the shortcut.
+Every AI scenario links to its ADRs; every ADR links back to the requirements it serves. The [traceability table](#traceability-capability--requirement--decision) is the shortcut. `uv run scripts/lint_docs.py` checks links, ids, traceability and every number derived from the business-case model; GitHub Actions runs it on every push.
 
 ---
 
@@ -50,7 +50,7 @@ The estate receives ~5,000 visitors/day and must reach 15,000/day within three y
 
 ## Why this pays back
 
-The platform costs about 3% of today's revenue and its savings alone never pay for it; it pays back inside three years only if it is credited with roughly a third of the growth between year 2 and year 3 — growth the roadmap can only deliver from Phase 3 — so it is a **growth bet**, sized and sequenced accordingly. On the roadmap's own gates, payback lands in **years 4–6**. The arithmetic, its assumptions, and how season 1 replaces them are in [requirements/08](requirements/08-business-case.md), generated from one assumptions block by [`scripts/business_case.py`](scripts/business_case.py). The estate's physical capacity, not the software, is the first thing that binds: 15,000 a day is not feasible on the current car park, and that decision is the Countess's before the first summer.
+The platform costs about 3% of today's revenue and its savings alone never pay for it. On the roadmap's own gates, payback lands in **years 4–7** — in year 4 only if the platform is credited with 36% of the growth between year 2 and year 3, growth the roadmap can only deliver from Phase 3 — so it is a **growth bet**, sized and sequenced accordingly, and **conditional on the ticketing-vendor evaluation** ([TODOS.md](TODOS.md)): without a capacity API and an upgrade credit the second lever becomes a desk process and the window moves right. The arithmetic, its assumptions, and how season 1 replaces them are in [requirements/08](requirements/08-business-case.md), generated from one assumptions block by [`scripts/business_case.py`](scripts/business_case.py) and checked by lint on every push. The estate's physical capacity, not the software, is the first thing that binds: 15,000 a day is not feasible on the current car park and lunch seating, and those decisions are the Countess's before the first summer.
 
 ---
 

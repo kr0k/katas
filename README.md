@@ -2,7 +2,7 @@
 
 > Proposal for a modern, AI-assisted architecture that helps the 72nd Countess Von Digitalis turn a sprawling estate — 40 historic rides and 200+ exotic (and poisonous) animals — into a profitable, growing attraction, without going back to the garden gnome business.
 
-**Team:** _<team name>_ · **Submission:** September 2026
+**Team:** BONK · **Submission:** September 2026
 
 ---
 

@@ -6,7 +6,7 @@ Patchy Wi-Fi shapes everything on the estate. This is the detailed view.
 
 | Device class | Examples | Protocol | Volume | Power / link |
 | --- | --- | --- | --- | --- |
-| **Gate readers** | QR/NFC at 4–6 entry points | MQTT over Wi-Fi/Ethernet to local broker | ≈ 2,940 scans in the peak hour of a peak day (≈ 5,900 persons at 2 per scan; ≈ 29,400 visitor-days, [capacity check](../../requirements/08-business-case.md#1-capacity-reality-check)); an average day is far lower | Wired where possible |
+| **Gate readers** | QR/NFC at 4–6 entry points | MQTT over Wi-Fi/Ethernet to local broker | ≈ 2,940 scans in the peak hour of a peak day (≈ 5,900 persons at 2 per scan; ≈ 29,400 visitor-days, [capacity check](../../appendix/business-case-model.md#1-capacity-reality-check)); an average day is far lower | Wired where possible |
 | **Anonymous counters** | LiDAR / thermal / IR beam counters at zone boundaries and queue lines | MQTT (small payloads) | 1 msg / min / device (in/out deltas), ~150 devices; queue-line counters that need 30 s resolution are PoE | Battery + LoRaWAN, or PoE |
 | **Enclosure sensors** | feed scales, water quality (pH, temp, turbidity), climate, door contacts, PIR/beam dry-zone detectors | MQTT (small payloads) | 1 msg / min / sensor, ~300 sensors | LoRaWAN or Wi-Fi; door contacts and PIR/beam wired |
 | **Cameras** | 1–2 per enclosure, IR for nocturnal | RTSP to edge node (never MQTT, never cloud) | 55–110 streams | Wired PoE |
@@ -184,23 +184,13 @@ Two GPU-class edge servers, sized **N+1**: either node alone carries the whole e
 
 ## LoRaWAN airtime
 
-Assumptions (replaced by the site survey — see [`TODOS.md`](../../TODOS.md)): ~350 devices on LoRaWAN (150 counters + 200 sensors, the rest wired), 1 uplink/min each, 20-byte payloads, EU868 with 8 channels, spreading-factor distribution 70% SF7–SF9 (≈ 0.1 s airtime) and 30% SF10 (≈ 0.4 s).
+The transport rule above exists because airtime, not bandwidth, is the LoRaWAN constraint. At ~350 devices sending one 20-byte uplink a minute, **three gateways** hold channel load near 5% each and the worst-case device duty cycle at ≈ 0.7%, inside the 1% regulatory limit. Battery life ≥ 2 years at SF9.
 
-| Quantity | Value |
-| --- | --- |
-| Uplinks | 350 / min ≈ 5.8 / s |
-| Mean airtime per uplink | 0.7 × 0.1 s + 0.3 × 0.4 s ≈ 0.19 s |
-| Airtime per second, all devices | ≈ 1.1 s / s |
-| Channel load with one gateway (8 channels) | ≈ 14% — above the ≤ 10% we allow for < 5% collision loss (pure ALOHA) |
-| Channel load with **three gateways** | ≈ 5% per gateway, with receive diversity at the edges |
-| Worst-case device duty cycle (SF10, 1/min) | 0.4 s / 60 s ≈ 0.7% — under the 1% regulatory limit; SF11–12 would exceed it, hence the transport rule |
-| Battery, SF9 at 1/min | ≥ 2 years on a 2 × AA-class cell (vendor figure; verified in the survey) |
-
-Metric: per-gateway packet loss and SF histogram, collected by the network server; a device that drifts to SF11+ is moved to PoE or its reporting rate halved.
+Per-gateway packet loss and the SF histogram are collected by the network server; a device that drifts to SF11+ is moved to PoE or has its reporting rate halved. Full arithmetic and its assumptions: [appendix · LoRaWAN airtime budget](../../appendix/lorawan-airtime.md), replaced by the site survey ([TODOS.md](../../TODOS.md)).
 
 ## Capacity check at 15,000 visitors/day, by traffic class
 
-Assumptions: 450 sensors and counters at 1–2 msg/min (≈ 15 msg/s in total); S1 feature windows for 200 animals (per-animal mode — we size for the larger of 200 animals or 55 enclosures); 100 S1 candidate events/day; ~500 devices sending an hourly heartbeat; payload sizes from a prototype; managed IoT ingestion at ≈ $1 per million messages (typical list price, ±50%). **Volume, buffer and ingestion columns are for an average day** at 15,000 visitor-days and one person per scan; a peak day (≈ 29,400 visitor-days, [requirements/08 §1](../../requirements/08-business-case.md#1-capacity-reality-check)) at the blended 2 persons per scan produces about the same number of scans — the critical class has margin either way, and the rate cell shows the peak hour.
+Assumptions: 450 sensors and counters at 1–2 msg/min (≈ 15 msg/s in total); S1 feature windows for 200 animals (per-animal mode — we size for the larger of 200 animals or 55 enclosures); 100 S1 candidate events/day; ~500 devices sending an hourly heartbeat; payload sizes from a prototype; managed IoT ingestion at ≈ $1 per million messages (typical list price, ±50%). **Volume, buffer and ingestion columns are for an average day** at 15,000 visitor-days and one person per scan; a peak day (≈ 29,400 visitor-days, [requirements/08 §1](../../appendix/business-case-model.md#1-capacity-reality-check)) at the blended 2 persons per scan produces about the same number of scans — the critical class has margin either way, and the rate cell shows the peak hour.
 
 | Class | Source | Rate | Msg size | Volume / day | 72 h buffer | Ingestion msgs / month | Ingestion cost / month |
 | --- | --- | --- | --- | --- | --- | --- | --- |

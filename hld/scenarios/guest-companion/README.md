@@ -12,7 +12,7 @@ This is a language problem: a parent typing "we have a 3-year-old who's scared o
 
 ## Where the companion sits in the flywheel
 
-The companion starts the [flywheel](../../../requirements/08-business-case.md#3-the-membership-flywheel): a family that plans its day with it has a reason to keep an account; the account lets a nudge say "the cassowary chick you saw is on show" and offer the quiet-day pass; the pass brings them back.
+The companion starts the [flywheel](../../../appendix/business-case-model.md#3-the-membership-flywheel): a family that plans its day with it has a reason to keep an account; the account lets a nudge say "the cassowary chick you saw is on show" and offer the quiet-day pass; the pass brings them back.
 
 The scenario owns the *mechanics* of two growth levers — the nudge that fills a weekday with pass holders, and the prompt that turns today's ticket into a pass — but not their economics. The pass price is management's yearly decision, the upgrade credit is a ticketing-platform invariant (P-I7, [ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)), and quiet-day offers on day tickets belong to S5.
 
@@ -48,7 +48,7 @@ flowchart TB
 ```
 
 ## What it does
-- **Plan the day:** builds an itinerary from constraints (children's ages, interests, time, accessibility) using forecast and live queues; re-plans when a ride closes or a queue spikes; **steers lunch times** ("the terrace café is quiet until 12:30") because F&B seating is the second constraint to bind ([08 §1](../../../requirements/08-business-case.md#1-capacity-reality-check)).
+- **Plan the day:** builds an itinerary from constraints (children's ages, interests, time, accessibility) using forecast and live queues; re-plans when a ride closes or a queue spikes; **steers lunch times** ("the terrace café is quiet until 12:30") because F&B seating is the second constraint to bind ([08 §1](../../../appendix/business-case-model.md#1-capacity-reality-check)).
 - **Answer questions:** grounded on the knowledge base — "Where is the axolotl?", "Is the Ferris wheel OK for a 4-year-old?", "When is the piranha feeding?" — with citations to the source fact.
 - **Offline-tolerant:** the itinerary and map are cached on the device; when Wi-Fi is patchy the visitor still has their plan; live re-planning resumes on reconnect.
 - **Upgrade to a pass:** shown only to day-ticket holders without a pass whose ticket was scanned in today (from the pass state the orchestrator already fetches); tapping it issues a **credit voucher** for today's ticket price, redeemable against a season pass within 7 days — the rules are the ticketing platform's (P-I7, [ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)); idempotency key = ticket id; offline the prompt reads "available at the exit and at the gate POS"; the next-day nudge reminds about the outstanding voucher, it does not create a new one.
@@ -95,7 +95,7 @@ Every promotion runs a **load test at 500 concurrent sessions** (a Saturday peak
 | Load test at 500 concurrent sessions | — | NFR-PRF-1 budgets met |
 
 - **Production:** sampled LLM-as-judge on factuality + weekly human review of 50 sessions; thumbs-down rate; escalation rate; "answer not grounded" blocks by guardrails (each one is a KB gap or a model regression); latency per request class.
-- **Business signal:** itinerary adherence (did they go where suggested?), queue time for companion users vs. non-users, return rate of nudged vs. control cohort (A/B), weekday visits of nudged pass holders vs. control (the lever the platform is credited with in [08 §4](../../../requirements/08-business-case.md#4-does-the-platform-pay-back)); the four funnel rates reported monthly as business guardrails (alert only).
+- **Business signal:** itinerary adherence (did they go where suggested?), queue time for companion users vs. non-users, return rate of nudged vs. control cohort (A/B), weekday visits of nudged pass holders vs. control (the lever the platform is credited with in [08 §4](../../../appendix/business-case-model.md#4-does-the-platform-pay-back)); the four funnel rates reported monthly as business guardrails (alert only).
 - All thresholds: [thresholds & cadences table](../../ai-platform/README.md#thresholds-and-cadences-source-of-truth).
 
 ## Degradation ladder

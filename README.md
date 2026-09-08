@@ -23,6 +23,7 @@
 - [Does it work? Validation & verification of AI](#does-it-work-validation--verification-of-ai)
 - [What this architecture does not do](#what-this-architecture-does-not-do)
 - [Risks](#risks)
+- [Appendix](#appendix)
 - [Video](#video)
 
 ---
@@ -37,6 +38,7 @@
 | `hld/ai-platform/` | Inference gateway (adopted) and model governance: registry, evaluation, monitoring, cost | …judging how we handle uncertainty and verify AI |
 | [`hld/architecture-evaluation.md`](hld/architecture-evaluation.md) | Quality-attribute scenarios, the styles we rejected, sensitivity and trade-off points, risks and non-risks | …asking how the characteristics were evaluated |
 | `adrs/` | Architecture Decision Records with alternatives and trade-offs | …looking for the "why" behind any choice |
+| [`appendix/`](appendix/README.md) | The work the architecture rests on but does not consist of: business-case model, generative-cost model, daily-report specification, vendor ticketing rules, data-health runbooks, LoRaWAN airtime | …checking a number or a calculation |
 | `video/` | Semi-final video (if we get there) | |
 
 Every scenario links to its ADRs; every ADR links back to the requirements it serves. The [traceability table](#traceability-capability--requirement--decision) is the shortcut. `uv run scripts/lint_docs.py` checks links, ids, traceability and every number derived from the business-case model; GitHub Actions runs it on every push.
@@ -53,7 +55,7 @@ The estate receives ~5,000 visitors/day and must reach 15,000/day within three y
 
 The platform costs about 3% of today's revenue, and its savings alone never cover it. On the roadmap's own gates it pays back in **years 4–7** — year 4 only if the platform is credited with 36% of the growth between year 2 and year 3, which the roadmap cannot deliver before Phase 3. It is a growth bet, sized accordingly, and conditional on the ticketing-vendor evaluation ([TODOS.md](TODOS.md)): without a capacity API and an upgrade credit, the second growth lever becomes a desk process and the window moves right.
 
-The estate's physical capacity binds before the software does: 15,000 a day is not feasible on the current car park and lunch seating, and those are the Countess's decisions before the first summer. Arithmetic, assumptions and how season 1 replaces them are in [requirements/08](requirements/08-business-case.md), generated from one assumptions block by [`scripts/business_case.py`](scripts/business_case.py).
+The estate's physical capacity binds before the software does: 15,000 a day is not feasible on the current car park and lunch seating, and those are the Countess's decisions before the first summer. The findings and what the architecture takes from them are in [requirements/08](requirements/08-business-case.md); the arithmetic behind them, and how season 1 replaces its assumptions, is in the [appendix model](appendix/business-case-model.md).
 
 ---
 
@@ -243,6 +245,10 @@ The proposal removes the estate's blindness — where people are, how animals ar
 ## Risks
 
 See [requirements/07-risks-and-mitigations.md](requirements/07-risks-and-mitigations.md).
+
+## Appendix
+
+Finance, product specification, vendor rules, radio planning and runbooks are kept out of the architecture and indexed in [`appendix/`](appendix/README.md). Each architectural document quotes the conclusion it needs and links to the calculation behind it.
 
 ## Video
 

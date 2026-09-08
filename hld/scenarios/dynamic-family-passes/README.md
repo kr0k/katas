@@ -16,7 +16,7 @@ The estate's problem is not that Sundays are underpriced; it is that Wednesdays 
 
 ## Pricing's place in the flywheel
 
-Pricing's job in the [flywheel](../../../requirements/08-business-case.md#3-the-membership-flywheel) is the second turn: a season pass priced below two visits, plus an upgrade voucher for today's ticket, so the family that liked Wednesday comes back in March. The quiet-day experiment fills the calendar; the pass fills the year.
+Pricing's job in the [flywheel](../../../appendix/business-case-model.md#3-the-membership-flywheel) is the second turn: a season pass priced below two visits, plus an upgrade voucher for today's ticket, so the family that liked Wednesday comes back in March. The quiet-day experiment fills the calendar; the pass fills the year.
 
 The two stay apart by design. **S5 prices day and family tickets for specific quiet dates.** A season pass is not date-specific, so its price is management's yearly decision like the base price, and the upgrade voucher is a ticketing-platform invariant — **P-I7** in [ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md), executed by the vendor. S5 references P-I7 and never prices a pass. Weekday fill by pass holders belongs to S4's nudges; S5 fills weekdays with day-ticket buyers.
 
@@ -59,7 +59,7 @@ The fairness rules are the reason a family trusts the price. They live in policy
 | P-I6 Explainable | Every published price has a logged recommendation, model version and policy decision behind it (FR-5.1) |
 | P-I7 Upgrade credit — *a platform invariant owned by Ticketing & Access ([ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)), referenced here* | A season pass has one price for everyone (P-I2 holds for passes too). A day ticket scanned in today can be turned into a **credit voucher** for its price — once per ticket id, redeemable against a season pass within 7 days; the pass then starts on the visit date; a refund voids an unredeemed voucher, and a ticket is not refundable once its voucher is redeemed — rules the ticketing platform executes, never a personal price. S5 only reads pass state; it never prices a pass |
 
-**Property-based tests** generate random sequences of recommendations, guardrail edits and concurrent checkouts and assert zero violations; **violations = 0** is a CI gate for every policy-engine change and a production monitor (any violation = revert to fixed price + incident). The contribution constraint is tested the same way with the A15 parameters as generated inputs. P-I7's cases — double redemption, refund before and after redemption, expired voucher, a ticket of another day — run in Ticketing & Access against the vendor sandbox ([hld/core → Verification](../../core/README.md#verification-purchases-cap-and-the-daily-report)).
+**Property-based tests** generate random sequences of recommendations, guardrail edits and concurrent checkouts and assert zero violations; **violations = 0** is a CI gate for every policy-engine change and a production monitor (any violation = revert to fixed price + incident). The contribution constraint is tested the same way with the A15 parameters as generated inputs. P-I7's cases — double redemption, refund before and after redemption, expired voucher, a ticket of another day — run in Ticketing & Access against the vendor sandbox ([hld/core → Verification](../../../appendix/data-health-and-verification.md#verification-purchases-cap-and-the-daily-report)).
 
 ## Year 1: a randomised experiment, not a pricing engine
 

@@ -4,6 +4,7 @@
 
 - [`core/`](core/README.md) — the foundation every AI scenario stands on: edge devices, MQTT, backhaul, event backbone, business services, data platform.
 - [`ai-platform/`](ai-platform/README.md) — shared AI infrastructure: inference gateway (adopted OSS) and model governance — registry, evaluation, monitoring. Read this for "dealing with uncertainty" and "does it work".
+- [`../appendix/`](../appendix/README.md) — calculations and specifications the design references but does not contain: business case, generative cost, daily-report spec, ticketing rules, data-health runbooks, LoRaWAN airtime.
 - [`architecture-evaluation.md`](architecture-evaluation.md) — the ATAM-style evaluation of the whole thing: quality-attribute scenarios with response measures, the architectural styles we rejected and why, sensitivity points, trade-off points, risks and non-risks.
 - [`scenarios/`](scenarios/) — one folder per AI use case. Each has the same structure: *Problem → Why AI → Solution → Containers → Diagram → Data → Validation → ADRs*.
 

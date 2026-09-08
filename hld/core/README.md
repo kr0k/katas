@@ -190,115 +190,31 @@ At-least-once delivery means every consumer eventually sees a duplicate: after a
 
 ## Ticketing & Access additions: purchases, cap and upgrade credit
 
-Three things the business case ([requirements/08](../../requirements/08-business-case.md)) asks the foundation to carry. None changes deployment units, safety tiers or gate validation; all three live in the anti-corruption layer and are executed by the adopted platform ([ADR-0012](../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md)).
+The business case asks the foundation to carry three things. All are executed by the adopted platform and enter our world through the Ticketing & Access anti-corruption layer; none changes a deployment unit, a safety tier or gate validation.
 
-### On-site spend (FR-2.6)
+| What | What the architecture fixes | Executed by |
+| --- | --- | --- |
+| **On-site spend (FR-2.6)** | POS transactions arrive as signed webhooks; the layer verifies the signature, dedupes on transaction id for 7 days, rejects any event whose runtime values hit the PII deny-list, and writes `PurchaseRecorded` to the outbox with no subject unless purchase-history consent covers it ([ADR-0009](../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §7). Backpressure answers 429 and slows the vendor; the dead-letter queue holds only invalid events | POS: the ticketing platform's own or a separate system (A13) |
+| **Timed entry and daily cap (FR-1.7)** | The cap is policy config, applied through the vendor API and published as `CapacityCapChanged` (who / when / why / old / new). It acts on unsold tickets only; gate validation is untouched. Pass holders reserve a timed slot carried as a credential attribute, validated offline ([ADR-0011](../../adrs/ADR-0011-offline-ticket-validation.md)) | Vendor cap and reservation API |
+| **Upgrade credit voucher (P-I7)** | An invariant, not a price: one voucher per ticket id, idempotency key = ticket id, and a pass keeps one price for everyone. The companion and the gate POS surface it; the vendor enforces the rules | Vendor |
 
-The POS — the ticketing platform's own or a separate system (A13) — posts each transaction as a signed webhook. The anti-corruption layer then:
-
-- **Verifies the signature.** HMAC-SHA256 over the raw body with a key id, constant-time compare, and a signed-at timestamp accepted within 5 minutes. Every retry is re-signed. Mutual TLS is welcome as transport but is not replay protection; keys are short-lived vendor-published ones, or a rotatable secret with an overlap window.
-- **Drops duplicates** on transaction id for 7 days, the same window as device events ([ADR-0001](../../adrs/ADR-0001-edge-first-store-and-forward.md)), so a re-signed backlog after our own outage is accepted while a captured payload is not.
-- **Runs a runtime value deny-list** (PAN/Luhn, e-mail, phone) over every field and rejects the event with an incident on a match. The schema-registry CI check cannot see runtime values, so this is the only place it can be caught.
-- **Writes `PurchaseRecorded` to the outbox:** transaction id, type (sale / refund / void / correction), net + tax + currency, category without an admission category, terminal, time. The pseudonymous `visitor_id` travels only under the purchase-history consent ([ADR-0009](../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §7). Terminal-to-zone mapping belongs to Park Operations, not here; an unknown terminal lands in an "unmapped" bucket and alerts rather than being dropped.
-
-Every night the day's totals are reconciled against the vendor's end-of-day figures. A difference above 1% marks the day's spend *provisional* on every read model and produces an exceptions report for finance.
-
-**Backpressure slows, never drops.** Above the rate limit the layer answers HTTP 429 with Retry-After and the vendor retries with backoff (an ADR-0012 criterion), so a burst drains at our pace with zero loss — the sandbox test replays one hour of backlog in ≤ 10 minutes. The dead-letter queue holds only invalid events (signature, schema, PII) and has no quota for valid ones.
-
-### Timed entry and daily cap (FR-1.7)
-
-The default cap is GitOps policy config under the management role. A day-level change by the ops manager — usually proposed by the daily report from the S3 forecast — carries a reason code, goes through the vendor's cap API, and is published as `CapacityCapChanged` (who / when / why / old / new).
-
-- The cap applies to **unsold tickets only**; gate validation is untouched.
-- Pass holders hold no date-specific ticket, so on capacity-managed days they **reserve a free timed slot**. The reservation travels as an attribute of the signed credential and is validated offline like the signature ([ADR-0011](../../adrs/ADR-0011-offline-ticket-validation.md)); an unreserved pass is admitted only while the downlink cap snapshot has room.
-- Concurrent edits are last-write-wins, both events published, with a UI warning. The vendor API returns the effective cap and the sold count; *sold > cap* raises an oversell alert, never a gate refusal.
-
-A cap redistributes arrivals and adds no capacity ([requirements/08 §1](../../requirements/08-business-case.md#1-capacity-reality-check)).
-
-### Upgrade credit voucher (P-I7)
-
-A day ticket scanned in today (`GateEntered`, until the operational day closes) can be turned **once per ticket id** into a credit voucher for its price, redeemable against a season pass within 7 days, at home or at the desk. The pass starts on the visit date, so the visit counts as a pass visit.
-
-- A refund of the ticket voids an unredeemed voucher; once redeemed, the ticket is not refundable — it is absorbed by the pass.
-- The vendor executes the rules; the prompt is ours. The companion shows it only to day-ticket holders without a pass, using the ticket id as idempotency key; offline it reads "available at the exit and at the gate POS". The gate POS makes the same offer, and the next-day nudge reminds about an outstanding voucher without creating new eligibility.
-- A pass keeps one price for everyone: the voucher is a rule, not a personal price.
+Full rules, field lists, reconciliation and failure handling: [appendix · ticketing rules](../../appendix/ticketing-rules.md).
 
 ## Estate daily report
 
 **FR-2.7**: at 21:00 the Countess receives one phone screen of "how was today", promised in [requirements/01](../../requirements/01-business-goals-and-drivers.md).
 
-It is a read model in Park Operations over facts and human decisions already on the backbone: `GateEntered` (with `persons_admitted`), `TicketPurchased`, `PassRenewed`, `PurchaseRecorded`, `CapacityCapChanged`, `ReviewDecided`, `TreatmentStarted` / `TreatmentClosed`, `QueueLengthUpdated`, plus the S3 forecast and `StaffingPlanApproved` from inside the module. It publishes no event and is not an AI scenario: numbers are inserted verbatim, the recommendation comes from a fixed rule set, and the optional phrasing reuses the S1 drafter as `summarise-estate-day` under the same verbatim-numbers rule and human approval ([ADR-0010](../../adrs/ADR-0010-grounded-llm-with-guardrails.md) §2).
+Architecturally it is a **read model inside Park Operations** over facts and human decisions already on the backbone — `GateEntered` (with `persons_admitted`), `TicketPurchased`, `PassRenewed`, `PurchaseRecorded`, `CapacityCapChanged`, `ReviewDecided`, `TreatmentStarted` / `TreatmentClosed`, `QueueLengthUpdated`, plus the S3 forecast and `StaffingPlanApproved` from inside the module. It publishes no event and is not an AI scenario:
 
-**Evening timeline.** Numbers are final at 21:00, so the ops manager approves wording, not numbers:
+- Numbers are **inserted verbatim** from the read model; a post-generation check fails the send if a number in the text is not in the model.
+- The recommendation comes from a **fixed rule set**, not a model.
+- The optional phrasing reuses the S1 drafter as `summarise-estate-day` under the same verbatim-numbers rule and human approval ([ADR-0010](../../adrs/ADR-0010-grounded-llm-with-guardrails.md) §2). What the ops manager approves is wording, never numbers.
 
-1. **20:30** — a draft is rendered from the 20:30 snapshot, every figure a slot.
-2. **20:30–21:00** — the ops manager approves the wording. Offline, the button is disabled with the reason shown.
-3. **21:00** — the final snapshot's numbers go verbatim into the approved slots, the verbatim check runs on the final text, freshness is evaluated, the report is sent.
+Information architecture, the five delivery states, the 20:30–21:00 timeline and the report's own test cases are product specification: [appendix · estate daily report](../../appendix/estate-daily-report.md).
 
-If the rule set picks a different recommendation at 21:00 than at 20:30, the template wording is sent instead of the approved phrase.
+## Business data health and verification
 
-**Information architecture** — one screen, top to bottom, no charts (they are one tap away in the ops dashboard); mobile first, with an e-mail copy of the same text:
-
-| # | Block | Lines | Source |
-| --- | --- | --- | --- |
-| 1 | **Tomorrow's recommendation** and the one number furthest from forecast, large | Chosen by a fixed rule set — *forecast below the quiet-day threshold → quiet-day offer on*; *parking within 10% of its limit → cap proposed*; *rain forecast → staffing to covered zones*; otherwise "no change" — and only phrased by the LLM | S3 forecast, capacity model, weather |
-| 2 | **Guests and spend** | Visitor-days vs. forecast; weekday/weekend ratio to date (OKR 1.5); spend per visitor-day and total (FR-2.6); top-3 and bottom-3 zones by spend | `GateEntered`, `PurchaseRecorded`, forecast |
-| 3 | **Animals** | Reviews decided today (confirmed / dismissed); animals under treatment (opened / closed) — human decisions, never anomaly scores | `ReviewDecided`, `TreatmentStarted/Closed` |
-| 4 | **Passes and queues** | Passes sold, renewals (OKR 1.6); p90 queue on the top-10 rides (OKR 2.2) | `TicketPurchased`, `PassRenewed`, `QueueLengthUpdated` |
-| 5 | **Tomorrow** | Forecast visitor-days; approved staffing; **days until parking binds** at the current attendance trend — computed from the A14 parameters and labelled as a model | forecast, `StaffingPlanApproved`, capacity model |
-| — | **Footer = freshness** | snapshot id · freshness at 21:00 (p95 ingest delay, uplink buffer state) · provisional flags · template version · phrasing model version or "template" | read model, [edge metrics](edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class) |
-
-**States and rules**
-
-| State | When | What the Countess sees |
-| --- | --- | --- |
-| SUCCESS | Fresh at 21:00 (below), verbatim check passed on the final numbers, wording approved between 20:30 and 21:00 | Full report, phrased |
-| SUCCESS (template) | No wording approved by 21:00, phrasing unavailable, or the recommendation changed between the 20:30 draft and 21:00 | Full report, template wording; approve after 21:00 is logged as "sent as template" and no phrasing is sent later |
-| PARTIAL (provisional) | **Not fresh at 21:00** — freshness = p95(ingested_at − event_time) over the day's events ≤ 15 min **and** the broker's uplink buffer empty, both metrics [Edge & connectivity](edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class) already collects (recency of the last event is *not* the measure: the park closes at 18:00) — or the day's spend reconciliation failed | Report marked *provisional* by symbol **and** word (never colour alone) in the header and footer; **re-issued at 07:00** |
-| PARTIAL (template only) | Post-generation check finds a number that is not in the read model, or a read-model number missing from the text | Template wording sent; alert to the platform owner; the phrasing bundle is a rollback candidate |
-| EMPTY | Closed day | Short variant: animals, treatments, tomorrow |
-| FIRST SEASON | No prior-year comparison or no forecast yet | "first season — baseline" / "heuristic" labels instead of blanks |
-| ERROR | Not delivered after 3 retries | Dashboard banner and a "report not delivered" alert; the snapshot is still in the archive |
-
-Approval is **idempotent per date**; offline, the approve button is disabled with the reason shown (GD-15). Every report is archived behind SSO with **3-year retention**, snapshot and text together; approve and skip decisions are logged with the snapshot id.
-
-## Business data health
-
-Purchases and the daily report are business data; they get the same health table as the sensors. One dashboard panel exists from day 1 of `purchase_ingestion`; each row is metric → threshold → the one-line runbook.
-
-| Metric | Threshold → alert | Runbook |
-| --- | --- | --- |
-| Purchase ingestion lag (webhook → read model) | p95 > 5 min | Check the vendor's webhook queue, then the layer's dead-letter queue |
-| Dead-letter queue by reason (invalid events only — 429 responses are not DLQ entries) | Any PII rejection; > 0.1% of the day invalid for other reasons | PII → incident and vendor ticket; others → fix, replay from the DLQ |
-| Webhook backlog drain time after an outage | > 10 min per hour of backlog | Check the 429 rate and the vendor's retry cadence; never widen the DLQ to "solve" it |
-| Visitor-days vs. admissions sold (Σ `persons_admitted` vs. tickets and pass entries) | Δ > 2% | Check re-entry handling (`persons_admitted` must be 0) and the vendor's gate export |
-| Report freshness at 21:00 (p95 ingest delay, uplink buffer) | p95 > 15 min, or buffer not empty | Report goes provisional automatically; check the bridge drain, re-issue at 07:00 |
-| Unmapped terminals | > 0 for 24 h | Ops maps terminal → zone in Park Operations policy config |
-| Reconciliation Δ vs. vendor end-of-day totals | > 1% | Spend marked provisional; exceptions report to finance; compare transaction ids |
-| Report generated / approved / sent / provisional | Not generated by 21:05; provisional 3 days running; not sent after 3 retries | Report states above; platform on-call for "not generated" |
-| Verbatim-check failures | > 0 | Template-only sent automatically; roll the phrasing bundle back in the registry |
-| Cap oversell (sold > effective cap) | > 0 | Alert ops; vendor ticket; check for a last-write-wins race in `CapacityCapChanged` |
-| Upgrade credits: duplicates, credit after refund | > 0 | `pass_upgrade_prompt` flag off; reconcile credits with `TicketPurchased` and the vendor |
-| Webhook authentication failures | > 10 per hour | Rotate the key via GitOps; check the vendor status page; treat as a possible replay attack |
-
-## Verification: purchases, cap and the daily report
-
-Same discipline as the AI ([ADR-0008](../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md)) and the foundation ([game days](resilience-validation.md)):
-
-| Level | What it covers |
-| --- | --- |
-| **Unit** | The deny-list (Luhn, e-mail, phone) on generated payloads. Terminal → zone mapping, including an unknown terminal landing in the "unmapped" bucket with an alert. The spend read model over sale / refund / void / correction sequences: a refund reduces the day, a void removes it, a correction replaces it. A purchase without purchase-history consent carries no subject. The verbatim checker: every read-model number present, no other number in the text. The recommendation rule set, including a change between the 20:30 and 21:00 snapshots. The freshness computation (p95 ingest delay, buffer state — recency must *not* trigger it). The days-until-parking-binds model against hand-computed cases. Prompt eligibility: a day-ticket holder scanned in today sees the upgrade prompt, a pass holder does not, offline shows the gate-POS text |
-| **Integration**, in the vendor sandbox ([ADR-0012](../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md) criterion) | Webhook signature and replay rejection. One hour of re-signed backlog in a burst → slowed with 429, drained ≤ 10 min, loss 0. End-of-day reconciliation with an injected 1% gap → the day's spend goes provisional on every read model and the report. Cap API: effective cap, sold count, oversell alert. Two concurrent cap edits → both `CapacityCapChanged` published with who / when / why / old / new, last write wins, UI warns. A pass holder's reservation validated offline on a capacity-managed day, an unreserved pass held below the cap (GD-4). The upgrade voucher end to end: tap in the companion → voucher → redeemed online → credential updated |
-| **Consumer-driven contract** | The report's subscriptions are pinned: fields it reads from `GateEntered` (`persons_admitted`, credential type, reservation), `QueueLengthUpdated`, `TicketPurchased`, `PassRenewed`, `PurchaseRecorded`, `CapacityCapChanged`, `ReviewDecided`, `TreatmentStarted/Closed`. A producer change that breaks them fails the producer's build |
-| **Property** | P-I7: double redemption, refund before and after redemption, expired voucher, a ticket of another day, the pass start date — violations = 0. The S5 policy engine's contribution constraint with the A15 parameters as generated inputs ([S5](../scenarios/dynamic-family-passes/README.md)). Σ `persons_admitted` over a generated day of entries, exits and re-entries equals admissions sold |
-| **End-to-end report day**, injectable clock | Happy path; closed day; first season; wording approved after 21:00 (sent as template); approve tapped twice (one send); reconciliation failed (provisional); delivery fails three times (ERROR state, alert, snapshot archived); recommendation changes between 20:30 and 21:00 (template wording); uplink down at 20:50 (GD-15) |
-| **KPI read models** | Every number that trips a business guardrail or feeds an OKR is computed by a read model with fixture event streams and known answers: the cohort rates (adoption, opt-in, nudge reach, return, pass conversion, pass renewal, account retention), the repeat share on identified households (a household with a pass and an account counted once), the pass share of admissions, spend per visitor-day with its seasonal adjustment, the S5 weekly contribution guardrail. Empty cases included: a cohort with no expiring passes, a month without a prior-year analogue, a week without a 0% block. Same formulas as [requirements/08 §0](../../requirements/08-business-case.md#0-how-to-read-the-numbers); a disagreement between a read model and `business_case.py` on the same fixture is a bug in one of them |
-| **Evaluation set** | "Numeric fidelity" for `summarise-estate-day`: 200 read-model snapshots with expected text; gate = inserted figures verbatim 100%, invented numbers 0 ([thresholds table](../ai-platform/README.md#thresholds-and-cadences-source-of-truth)) |
-| **Game days** | GD-4 (offline gate on a capacity-managed day), GD-14 (POS sends a card number, a replay and a backlog), GD-15 (uplink down on report day) → [catalogue](resilience-validation.md) |
-
-## Rollout and flags
-
-Feature flags `purchase_ingestion`, `daily_report`, `daily_report_phrasing`, `pass_upgrade_prompt`; the cap is policy config. Order: ingestion runs **≥ 14 days in shadow** (events flow, no read model exposed) with **7 consecutive green reconciliations** → the report goes to the ops manager only for 7 days → to the Countess → phrasing switched on after the numeric-fidelity evaluation passes → the upgrade prompt in Phase 3. **Rollback** = flag off, subscription paused, read model rebuilt by replay ([ADR-0004](../../adrs/ADR-0004-event-driven-backbone.md)). **Smoke test** after every deploy: a sandbox transaction reaches the read model in ≤ 60 s; a report dry-run renders for today's snapshot.
+Purchases and the daily report are business data and get the same treatment as the sensors: a metric with a threshold and a one-line runbook, tests at every level, and a flag order that reaches the Countess last. Both are operational detail rather than architecture — [appendix · data health, verification and rollout](../../appendix/data-health-and-verification.md). The architectural claims they back up are that **KPI read models are tested, not trusted** (fixture event streams with known answers, same formulas as the model) and that a **reconciliation gap marks the day provisional** rather than silently adjusting a number.
 
 ## Cross-cutting
 

@@ -35,7 +35,7 @@ This table is the summary. The evaluation behind it — the utility tree of qual
 | NFR-AVL-3 | Safety alert delivery **to a human** | ≤ 5 s from sensor to a DECT handset/pager on the local network, no cloud dependency; **acknowledged by a human within 60 s** or escalated (head keeper, then all staff); measured end to end to the acknowledgement; unacknowledged alerts per day = 0 |
 | NFR-RES-1 | Telemetry buffering during uplink loss | ≥ 24 h at edge without data loss (sized for 72 h, per traffic class) |
 | NFR-RES-2 | Degraded mode | Every AI capability has a **non-AI fallback** — a rule-based system or a documented human procedure; loss of AI never blocks a core function |
-| NFR-SCL-1 | Peak load | 15,000 visitors/day on average; a peak day ≈ 29,400 visitor-days with ≈ 5,900 arrivals and ≈ 2,940 gate scans in the peak hour (2 persons per scan, A14 — [capacity check](08-business-case.md#1-capacity-reality-check)); 40 rides + 55 enclosures streaming telemetry |
+| NFR-SCL-1 | Peak load | 15,000 visitors/day on average; a peak day ≈ 29,400 visitor-days with ≈ 5,900 arrivals and ≈ 2,940 gate scans in the peak hour (2 persons per scan, A14 — [capacity check](../appendix/business-case-model.md#1-capacity-reality-check)); 40 rides + 55 enclosures streaming telemetry |
 | NFR-SCL-2 | Camera ingest | 55 enclosures × 1–2 cameras; pre-filtered at edge; only 1-minute feature windows and event clips leave the estate |
 | NFR-PRF-1 | Companion response time, **by request class** | FAQ answer: p95 ≤ 3 s complete. Day planning: first token ≤ 2 s, first stop suggestion ≤ 5 s, full plan ≤ 15 s (p95, streamed); re-plan after a closure ≤ 5 s. Verified by a load test at 500 concurrent sessions before each promotion |
 | NFR-PRF-2 | Dashboard freshness | Live view ≤ 60 s behind reality when uplink is up |
@@ -57,35 +57,13 @@ This table is the summary. The evaluation behind it — the utility tree of qual
 
 ## Cost model (TCO, ±50%)
 
-Order-of-magnitude figures so that NFR-COST-2 can be checked and so the Countess sees what she is buying. All numbers are assumptions to be replaced by quotes. The business case — payback, growth, what the estate must fund besides the platform — is in [08](08-business-case.md), which uses this table as a curve: **OPEX(V) ≈ €580k fixed + €0.165 per visitor-day**, within ≈ 2% of both columns below, so that every cumulative figure there follows the ladder rather than two end points.
+CAPEX ≈ **€310k** (edge servers N+1, broker and LoRaWAN hosts, gate readers, 110 cameras, 450 sensors and counters, DECT, cabling), depreciated over 5 years. OPEX ≈ **€810k/yr at 5,000 visitors/day** rising to ≈ **€1.33M at 15,000/day**.
 
-**CAPEX** (one-off, mostly Phase 0–1)
+Per visitor that is ≈ **€0.58** today and ≈ **€0.31** at the target run rate — inside NFR-COST-2 with the ±50% band. **Ticketing fees and the team are ≈ 85% of the total; the AI is not the expensive part** (hosted LLMs ≈ €50k of ≈ €1.33M, [generative cost](../appendix/generative-cost.md)).
 
-| Component | Estimate | Phase |
-| --- | --- | --- |
-| 2 GPU-class edge servers (N+1) | €16k | 0 |
-| Broker witness + LoRaWAN server host, UPS, rack, PoE switching | €25k | 0 |
-| Gate readers (6), if not supplied by the ticketing platform | €12k | 0 |
-| Cameras, 110 incl. IR (55 primary in Phase 0, 55 secondary later) | €44k | 0 / 2 |
-| Enclosure sensors (300 × €150) and anonymous counters (150 × €600, LiDAR/thermal) | €135k | 0–1 |
-| LoRaWAN gateways (3) | €5k | 0 |
-| DECT base stations and 40 handsets/pagers | €15k | 0 |
-| Cabling, installation, site survey | €60k | 0 |
-| **Total CAPEX** | **≈ €310k** (≈ €62k/yr over 5 years) | |
+Two consequences for the design: cost-efficiency cannot be bought back by squeezing AI spend, and OPEX must stay flat in headcount as attendance triples — which is what adopt-not-build ([ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [ADR-0003](../adrs/ADR-0003-cloud-provider-selection.md)) is for.
 
-**OPEX** (per year)
-
-| Component | At 5,000/day | At 15,000/day | Notes |
-| --- | --- | --- | --- |
-| Cloud: event backbone, databases, object storage, IoT ingestion, own-model hosting | €40k | €70k | Ingestion itself ≈ $600/yr ([capacity table](../hld/core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class)) |
-| Hosted LLMs + open-weight endpoint (planned spend) | €10k | €50k | **Token arithmetic behind the €50k: ≈ €34,300/yr** of model calls at 15,000/day, plus the standing open-weight endpoint and the ±50% headroom — [what the generative capabilities cost](../hld/ai-platform/README.md#what-the-generative-capabilities-cost). Phase 1 runs FAQ answers only; day planning arrives in Phase 2, which is what grows the line. Cap is 2% of revenue (≈ €600k at €30M); the plan sits far below the cap |
-| Cellular (2 operators) + fixed-line fallback | €4k | €4k | |
-| Ticketing platform fees (assumed €0.15/ticket or 1.5–3% of ticket revenue) | €225k | €675k | Largest line after the team; a selection criterion in [ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md) |
-| Team: 5 engineers, loaded | €500k | €500k | Does not grow with attendance — the point of adopt-not-build |
-| Hardware maintenance and spares (10% of CAPEX) | €30k | €30k | |
-| **Total OPEX** | **≈ €810k** | **≈ €1.33M** | |
-
-**Per visitor** (CAPEX/5 + OPEX ÷ visitors/yr at 300 open days): ≈ **€0.58** at 5,000/day, ≈ **€0.31** at 15,000/day — inside NFR-COST-2 with the ±50% band. Ticketing fees and the team are ~85% of the total; the AI is not the expensive part.
+Line-by-line CAPEX and OPEX with their assumptions: [appendix · cost model](../appendix/cost-model.md).
 
 ## Architectural style
 

@@ -12,7 +12,7 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 | FR-1.4 | Gates validate tickets **while the estate uplink is down**, with later reconciliation | MUST |
 | FR-1.5 | Payments are handled by a PCI-compliant third-party provider; the estate never stores card data | MUST |
 | FR-1.6 | Pass holders can opt in to an account for return-visit offers and companion features | SHOULD |
-| FR-1.7 | Ops can configure **timed-entry slots and a daily capacity cap** through the ticketing platform, fed by the S3 forecast and the [capacity check](08-business-case.md#1-capacity-reality-check); the cap applies to unsold tickets and leaves gate validation unchanged; on capacity-managed days pass holders reserve a free timed slot — an attribute of the credential, validated offline — and unreserved passes are admitted only below the cap; every cap change carries a reason code and is published as `CapacityCapChanged` | SHOULD |
+| FR-1.7 | Ops can configure **timed-entry slots and a daily capacity cap** through the ticketing platform, fed by the S3 forecast and the [capacity check](../appendix/business-case-model.md#1-capacity-reality-check); the cap applies to unsold tickets and leaves gate validation unchanged; on capacity-managed days pass holders reserve a free timed slot — an attribute of the credential, validated offline — and unreserved passes are admitted only below the cap; every cap change carries a reason code and is published as `CapacityCapChanged` | SHOULD |
 
 ## FR-2 · Park Operations & Analytics
 

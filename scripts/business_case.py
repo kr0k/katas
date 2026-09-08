@@ -1,14 +1,14 @@
-"""Business-case arithmetic for requirements/08-business-case.md.
+"""Business-case arithmetic for appendix/business-case-model.md.
 
 Run:  uv run scripts/business_case.py            print the generated tables
-      uv run scripts/business_case.py --write    insert them between the markers in requirements/08
-      uv run scripts/business_case.py --check    verify 08, 06, README and the other documents that quote
+      uv run scripts/business_case.py --write    insert them between the markers in appendix/business-case-model.md
+      uv run scripts/business_case.py --check    verify the model, 06, README and the other documents that quote
                                                  a derived number against the model (called by lint_docs.py)
       uv run scripts/business_case.py --self-test
 
-Every derived number in requirements/08 comes from the ASSUMPTIONS block below.
-Season 1 replaces the assumptions with measured values (requirements/08 §0);
-edit the block, run --write, and the tables in 08 follow. Stdlib only.
+Every derived number in the appendix model comes from the ASSUMPTIONS block below.
+Season 1 replaces the assumptions with measured values (model §0);
+edit the block, run --write, and the tables follow. Stdlib only.
 
 Model in one paragraph. Ladder values are end-of-year run rates (visitor-days per
 day); yearly volume is the mean of adjacent run rates × open days. The weekday /
@@ -43,7 +43,8 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DOC_08 = ROOT / "requirements/08-business-case.md"
+DOC_08 = ROOT / "appendix/business-case-model.md"      # the model itself
+SUM_08 = ROOT / "requirements/08-business-case.md"      # the summary that quotes it
 DOC_04 = ROOT / "requirements/04-non-functional-requirements.md"
 DOC_05 = ROOT / "requirements/05-assumptions-and-constraints.md"
 DOC_06 = ROOT / "requirements/06-suggested-okrs.md"
@@ -51,6 +52,8 @@ DOC_07 = ROOT / "requirements/07-risks-and-mitigations.md"
 README = ROOT / "README.md"
 EDGE = ROOT / "hld/core/edge-and-connectivity.md"
 AIP = ROOT / "hld/ai-platform/README.md"
+APP_LLM = ROOT / "appendix/generative-cost.md"
+APP_COST = ROOT / "appendix/cost-model.md"
 S4 = ROOT / "hld/scenarios/guest-companion/README.md"
 S5 = ROOT / "hld/scenarios/dynamic-family-passes/README.md"
 EVAL = ROOT / "hld/architecture-evaluation.md"
@@ -819,7 +822,7 @@ AIP_TABLES = {
 }
 
 # Which document carries which generated blocks.
-BLOCK_FILES = ((DOC_08, TABLES), (AIP, AIP_TABLES))
+BLOCK_FILES = ((DOC_08, TABLES), (APP_LLM, AIP_TABLES))
 
 MARK = "<!-- business-case:{name} -->"
 END = "<!-- /business-case:{name} -->"
@@ -866,12 +869,17 @@ def expected_tokens(a: Assumptions = A) -> list[tuple[Path, str, str]]:
         (DOC_06, r"^\| \| 1\.3 ", f"model: ≈ {pct(y3.pass_share)}"),
         (DOC_06, r"^\| \| 1\.5 ", f"{ratio_str(y1.r)} / 0.5"),
         (DOC_06, r"^¹ ", f"party size of {a.party_size}"),
+        # requirements/08 — the summary that stands in front of the model
+        (SUM_08, r"^## The four findings", window),
+        (SUM_08, r"^## The four findings", f"{pct(a.incremental_rows[2] / growth)} of the year-2-to-year-3 growth"),
+        (SUM_08, r"^## What the architecture takes from it", f"≈ {n(y3.peak)} visitor-days"),
+        (SUM_08, r"^## What the architecture takes from it", f"≈ {n(peak_hour_scans)} gate scans"),
         # README — Why this pays back
         (README, r"^## Why this pays back", share_today),
         (README, r"^## Why this pays back", window),
         (README, r"^## Why this pays back", f"{pct(a.incremental_rows[2] / growth)} of the growth between year 2 and year 3"),
         # requirements/08 prose
-        (DOC_08, r"^# 08 ", window),
+        (DOC_08, r"^# Appendix", window),
         (DOC_08, r"^## 0\. ", f"party size of {a.party_size}"),
         (DOC_08, r"^## 0\. ", f"≈ {m(cs[3].V)}"),
         (DOC_08, r"^## 1\. ", f"×{x_spaces:.0f}"),
@@ -909,14 +917,19 @@ def expected_tokens(a: Assumptions = A) -> list[tuple[Path, str, str]]:
         (EDGE, r"^- Gate scans: ", f"≈ {n(peak_hour_scans)} scans in the peak hour → {peak_hour_scans / 3600:.1f}/s"),
         (AIP, r"^\| \*\*Business guardrails\*\* ", f"{eur(a.on_site)} on-site spend per visitor-day"),
         # generative-AI cost, quoted in three places
+        (APP_LLM, r"^# Appendix", f"≈ {eur_round(llm_total(a))} a year at {n(a.run_rate[3])} visitors/day"),
+        (APP_LLM, r"^# Appendix", f"≈ {eur_round(llm_total(a, cached=False))}"),
+        (APP_LLM, r"^# Appendix", f"≈ €{visitor_facing_per_visit(a):.2f} per companion household visit"),
+        (APP_LLM, r"^# Appendix", f"≈ {eur_round(llm_day_cost(a, ladder(a)[3].peak))} against ≈ {eur_round(llm_day_cost(a))} on an average day"),
+        (APP_LLM, r"^# Appendix", f"**{llm_day_cost(a, ladder(a)[3].peak) / llm_day_cost(a):.1f}×**"),
+        (APP_LLM, r"^# Appendix", f"≈ {eur_round(llm_day_cost(a, ladder(a)[3].peak) * 30)} against ≈ {eur_round(llm_total(a) / 12)} for an average month"),
+        (APP_LLM, r"^# Appendix", f"rises ≈ {eur_round(llm_escalation_sensitivity(a))}"),
+        # the AI-platform summary quotes the two figures a reader needs there
         (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a))} a year at {n(a.run_rate[3])} visitors/day"),
         (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_total(a, cached=False))}"),
         (AIP, r"^## What the generative capabilities cost", f"≈ €{visitor_facing_per_visit(a):.2f} per companion household visit"),
-        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_day_cost(a, ladder(a)[3].peak))} against ≈ {eur_round(llm_day_cost(a))} on an average day"),
-        (AIP, r"^## What the generative capabilities cost", f"**{llm_day_cost(a, ladder(a)[3].peak) / llm_day_cost(a):.1f}×**"),
-        (AIP, r"^## What the generative capabilities cost", f"≈ {eur_round(llm_day_cost(a, ladder(a)[3].peak) * 30)} against ≈ {eur_round(llm_total(a) / 12)} for an average month"),
-        (AIP, r"^## What the generative capabilities cost", f"rises ≈ {eur_round(llm_escalation_sensitivity(a))}"),
-        (DOC_04, r"^\| Hosted LLMs ", f"≈ {eur_round(llm_total(a))}/yr"),
+        (AIP, r"^## What the generative capabilities cost", f"{llm_day_cost(a, ladder(a)[3].peak) / llm_day_cost(a):.1f}×"),
+        (APP_COST, r"^\| Hosted LLMs ", f"≈ {eur_round(llm_total(a))}/yr"),
         (S4, r"^\*\*Cost budget by request class", f"≈ **€{visitor_facing_per_visit(a):.2f} per companion household visit**"),
         # architecture evaluation — the figures its scenarios and sensitivity points rest on
         (EVAL, r"^\| \| Generative growth ", f"≈ €{visitor_facing_per_visit(a):.2f} per companion household visit"),

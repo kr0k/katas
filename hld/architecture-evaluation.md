@@ -54,7 +54,7 @@ One parameter, one attribute that moves sharply with it.
 | SP-2 | Confidence band boundaries | Safety **and** the vet's hours | Widening the medium band catches more sick animals and fills the review queue; the [human roles table](ai-platform/README.md#humans-in-the-loop-who-does-what) is the constraint, not the model |
 | SP-3 | Cacheable share of the session prefix | Cost-efficiency | Prompt caching is ≈ half the generative bill: €34,300 with it, €67,100 without. A prompt refactor that breaks prefix stability is a cost incident |
 | SP-4 | Persons admitted per gate scan (A14) | Resilience of the gate path | Gate lanes hold 5,400 scans/h against ≈ 2,940 in the peak hour **at 2 persons per scan**. At 1.2 persons per scan the same peak hour needs ≈ 4,900 scans — a 9% margin instead of 45%, and the exit survey (A14) is what measures it |
-| SP-5 | Companion adoption rate | Growth **and** generative cost | One number drives both the flywheel in [08 §3](../requirements/08-business-case.md#3-the-membership-flywheel) and the token bill, so success on one is spend on the other |
+| SP-5 | Companion adoption rate | Growth **and** generative cost | One number drives both the flywheel in [08 §3](../appendix/business-case-model.md#3-the-membership-flywheel) and the token bill, so success on one is spend on the other |
 | SP-6 | Normal-operation GPU share per edge node | Cost (a third node) | The rule is a third node when normal operation exceeds 50% per node; today it is 35% |
 | SP-7 | Spreading-factor distribution (LoRaWAN) | Resilience of telemetry | A 4× airtime error (SF7 → SF10) changes gateway count and battery life; the whole airtime budget rests on an unmeasured assumption until the site survey |
 

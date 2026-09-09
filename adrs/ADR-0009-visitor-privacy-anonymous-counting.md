@@ -9,7 +9,7 @@
 
 ## Decision
 1. Zone popularity and queue lengths are measured with **anonymous counting sensors** (LiDAR / thermal / IR beam counters) at zone boundaries and queue lines. They emit **counts**, never images or identifiers.
-2. **No face recognition, no Wi-Fi/Bluetooth MAC tracking, no re-identification** anywhere in the system. Dwell time is an **average per zone derived from in/out counts** — occupancy ÷ throughput over a window (Little's law) — never from following individuals. Occupancy (in − out) accumulates counter error, so it is **reset to zero at closing** every day and **reconciled hourly** against gate totals; when the sum of zone occupancies differs from park occupancy by more than 10%, the offending counters are flagged for recalibration.
+2. **No face recognition, no Wi-Fi/Bluetooth MAC tracking, and no re-identification of anonymous visitors** anywhere in the system. To be exact rather than merely reassuring: a household holding a pass or an opt-in account **is** identified — by its own choice, and that is how OKR 1.2 has always been measured — and a durable pass credential ([ADR-0011](ADR-0011-offline-ticket-validation.md) §6) makes that identification useful at a till as well as at a gate. What does not exist is the ability to identify anyone who has *not* opted in, or to reconstruct where any household walked: **readers live at gates, ride entitlement points and tills, never on a zone boundary or a path** (NFR-PRV-3, enforced by an architecture test on the reader registry), and counting stays anonymous for every visitor. Dwell time is an **average per zone derived from in/out counts** — occupancy ÷ throughput over a window (Little's law) — never from following individuals. Occupancy (in − out) accumulates counter error, so it is **reset to zero at closing** every day and **reconciled hourly** against gate totals; when the sum of zone occupancies differs from park occupancy by more than 10%, the offending counters are flagged for recalibration.
 3. Enclosure cameras **mask visitor regions at the edge** before features or clips are produced (ADR-0006); raw video is not stored centrally.
 4. **Personal data exists only with opt-in** (account for companion/nudges) and is held in Ticketing & Guest Engagement with purpose limitation, retention limits and export/delete on request. Companion sessions without an account are ephemeral.
 5. The companion's *itinerary adherence* metric uses the visitor's **own device location with consent**, never sensors.
@@ -31,6 +31,7 @@ What the anonymous counters can and cannot tell us — so nobody asks the dashbo
 | Aggregate flows between adjacent zones (paired counters) | Demographics, group composition, faces, devices |
 | Popularity before/after an investment (FR-2.4) | Anything that needs an identifier retained past the day |
 | Spend per zone and per visitor-day, from POS terminals (FR-2.6) | What a particular family bought — unless they opted in to purchase history (§7) |
+| Spend and visit frequency **per pass-holding household**, from taps at gates and tills under their own opt-in — which is what makes OKR 1.4's second line a measurement rather than a survey estimate | **Where any household walked.** No reader sits on a path, so there is no sequence to reconstruct (NFR-PRV-3) |
 
 ## Alternatives considered
 | Option | Pros | Cons | Why not |
@@ -48,7 +49,7 @@ What the anonymous counters can and cannot tell us — so nobody asks the dashbo
 | Risk | Mitigation |
 | --- | --- |
 | Counter drift/miscounts | Periodic manual calibration; in/out reconciliation with gate totals |
-| Scope creep toward identification | ADR required; DPIA update; default answer is no |
+| Scope creep toward identification | ADR required; DPIA update; default answer is no. The specific creep to guard is a reader on a zone boundary, which would convert a transaction record into a location history — hence NFR-PRV-3 and its architecture test rather than a promise (R26) |
 | Erasure request cannot be honoured against an immutable event log or a trained model's dataset | No personal data in events by construction (CI check); crypto-shredding for the exceptions; `SubjectErased` propagates to features and golden sets; erasure end-to-end test is a game day (GD-11) |
 
 ## How we will know this was right

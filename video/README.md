@@ -9,5 +9,5 @@ Planned structure (5:00):
 4. 1:55 AI where it earns its place: five scenarios, three kinds of AI, two safety tiers
 5. 2:45 Reference scenario deep-dive: animal welfare with a vet in the loop, per animal or per enclosure
 6. 3:30 Uncertainty: adopted inference gateway vs. our model governance; budgets; provider exit
-7. 4:05 Does it work: one thresholds table, golden sets, shadow, guardrails, rollback — twenty game days for the foundation — and the Countess's daily report, the one screen where all five scenarios meet the person who pays
+7. 4:05 Does it work: one thresholds table, golden sets, shadow, guardrails, rollback — twenty-two game days for the foundation — and the Countess's daily report, the one screen where all five scenarios meet the person who pays
 8. 4:45 What this architecture does not do, and what we'd do next

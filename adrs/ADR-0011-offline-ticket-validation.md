@@ -20,6 +20,28 @@ Tickets are sold in the cloud; gates are on an estate whose uplink fails. Visito
 4. **Multi-visit passes** are validated the same way; per-day usage limits are enforced locally against the local ledger and reconciled later.
 5. Gate readers themselves hold a small cache of the public key and the last synced lists, so even a broker outage degrades to "signature-only" admission.
 
+6. **The credential's medium may be a durable card, and it changes nothing above.** A pass-holding
+   household can be issued an NFC card **once**, which it keeps (FR-1.8). The card carries the same
+   signed credential §1 already specifies — the payload says "QR/NFC" today — so offline signature
+   verification, the revocation list and the local used-ledger are untouched. Cards are issued at pass
+   purchase, at the desk or collected on the first visit; a dispensing kiosk is a later phase and, when
+   it comes, one that hands out pre-personalised cards and binds them on a tap is far simpler than one
+   that writes credentials in the field. Readers exist at gates, ride entitlement points and tills, and
+   **nowhere else** (NFR-PRV-3).
+7. **Ride entitlements decrement exactly like a family pass's group counter.** A pass that includes N
+   ride credits is a counter on the credential, held in the local ledger and shared between readers
+   through the broker; with the broker down each reader allows up to the remaining balance from its last
+   snapshot, and the excess appears in the exceptions report. This is the mechanism from the
+   partial-group-entry case below, not a new one — which is the whole reason entitlements are affordable
+   offline.
+8. **Cashless is card-on-file, not stored value.** The card carries an **identifier**; the money stays
+   with the PSP against a payment method the household registered (FR-1.9). The estate holds **no
+   balance**: nothing to reconcile, nothing to refund, nothing owed to customers if the season goes badly,
+   and PCI scope stays where [ADR-0012](ADR-0012-ticketing-platform-adopt-not-build.md) puts it. Offline,
+   a tap is accepted up to a **floor limit** and captured on reconnect; above it the visitor pays with
+   their own card, which works regardless because a card terminal reaches the acquirer on its own
+   connection rather than ours (GD-21).
+
 ## Edge cases the product must handle
 
 These are part of the acceptance test for the adopted platform ([ADR-0012](ADR-0012-ticketing-platform-adopt-not-build.md)) and of the build design if we end up building.
@@ -34,6 +56,8 @@ These are part of the acceptance test for the adopted platform ([ADR-0012](ADR-0
 | **Ticket for another day** presented today | Refused with a clear message and a pointer to the ticket desk; never silently admitted |
 | **Refund or revocation during an uplink outage** | Admitted on signature until the revocation snapshot lands (≤ 60 s after reconnect); the admission appears in the exceptions report ([downlink](../hld/core/edge-and-connectivity.md#downlink-cloud--estate)) |
 | **Reader restarts mid-queue** | Local ledger and lists persist on the reader; queued entries are re-sent from the persistent session; no double count |
+| **A card is presented that belongs to a lapsed pass** | The credential's validity window is checked offline like any other; a lapsed card is refused with a pointer to the desk and a renewal offer, never silently admitted. The card itself is not deactivated — a renewal re-issues the credential to the same card, which is the point of the household keeping it |
+| **A household loses its card** | Revocation travels the critical-class downlink like a ticket revocation and applies at every reader within 60 s; ride entitlements are frozen with it. A replacement carries the same pass and the same remaining entitlement balance, because both live in Ticketing & Access rather than on the card (GD-22, R25) |
 | **A family wants to buy a ticket at the gate while the estate's uplink is down** | Validation of tickets already sold is covered above; *selling* is the gap, and it splits in two. The **payment** normally rides the card terminal's own connection to the acquirer, not our uplink, so it is unaffected; where the terminal shares our link, the floor is cash and pass-holder entry. **Issuing** the credential uses the mechanism this ADR already relies on: the estate holds a bounded stock of **pre-signed day-ticket credentials** with a validity window, sold at the gate and activated on reconnect. Each is single-use, enters the local used-ledger like any other, and the sold-versus-activated difference is a line in the exceptions report. The stock size caps the exposure and is set with the vendor ([ADR-0012](ADR-0012-ticketing-platform-adopt-not-build.md)) |
 
 **False-rejection metric:** valid tickets refused ÷ total presentations ≤ 0.05%, measured from staff override reason codes and reconciliation; it is the number the visitor feels.
@@ -43,6 +67,8 @@ These are part of the acceptance test for the adopted platform ([ADR-0012](ADR-0
 | --- | --- | --- | --- |
 | Online validation against the cloud | Simplest fraud control | Gates stop with the uplink | Fails NFR-AVL-1 |
 | Paper tickets with manual checks during outages | Zero tech | No data, slow, fraud-prone at 15,000/day | Scale |
+| **Stored value — a balance held on the card** | Works offline natively, which is the one genuinely strong argument in a place with patchy Wi-Fi | Needs a secure element (DESFire-class) at roughly four times the card price, with SAM modules and key rotation in every terminal — real cryptographic key management for a team of five. It is a prepaid instrument, so the limited-network exclusion has to be argued and notified once payment volume passes €1M in twelve months, which ≈ €400k a month of on-site spend passes many times over. And unspent balances are a **liability on the books of an estate the brief calls loss-making**, with refund and dormancy obligations attached | The one advantage is offline payment, and a floor limit buys most of that for none of the price. We are not going to make the Countess an issuer of money |
+| **A hybrid: card-on-file plus a small prepaid wallet for food only** | Keeps offline payment for the case that needs it most, with a smaller float | Still requires the secure element and still touches the prepaid rules — the complexity of both models for the benefit of one scenario | Rejected on the same grounds, minus the excuse |
 | **Offline sales by capturing the order and deferring the payment** — the gate queues the purchase and charges on reconnect | Nothing is lost from the peak: every family that wants to buy, buys | An unpaid order is a promise, so a failed capture later is either a write-off or a chase; duplicate submissions during a long outage need their own idempotency and fraud caps; and it puts revenue collection on the outage path, which is exactly where we have the least visibility | A pre-signed credential stock gets the same revenue with none of the unpaid-order tail — the money is taken at the gate, and only the *issuing* is deferred |
 | Signed credentials + local ledger + reconciliation (chosen) | Always admits valid tickets; fraud detected, if slightly late | Small fraud window during outages; key management | — |
 

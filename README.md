@@ -97,7 +97,7 @@ Five processes, each with a named owner and a decision that already happens. The
 
 ## The number to challenge first
 
-If a reviewer has time to attack exactly one thing, it should be this: **thirteen must-have criteria are required from one ticketing vendor, and six of them may not be offered together by anyone.**
+If a reviewer has time to attack exactly one thing, it should be this: **sixteen must-have criteria are required from one ticketing vendor, and nine of them may not be offered together by anyone.**
 
 Adopt-not-build was decided on criteria, not on market facts ([ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md)). If the combination does not exist, the fallback matrix in [TODOS.md](TODOS.md) changes Phase 0's scope, turns the flywheel's second lever into a desk process, and moves the payback window right — the three things the rest of this proposal rests on. It is a two-to-three day landscape review and it is a prerequisite for Phase 0, not a footnote.
 
@@ -235,6 +235,7 @@ Index with status: [`adrs/README.md`](adrs/README.md)
 | **Core** | | | |
 | Buy tickets & family passes online and on site | FR-1.x | [Core](hld/core/README.md) | [ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [ADR-0004](adrs/ADR-0004-event-driven-backbone.md) |
 | Validate entry with patchy connectivity | FR-1.4 | [Edge](hld/core/edge-and-connectivity.md) | [ADR-0011](adrs/ADR-0011-offline-ticket-validation.md), [ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [ADR-0001](adrs/ADR-0001-edge-first-store-and-forward.md) |
+| Give a pass-holding household a durable credential: entry, ride entitlements, cashless | FR-1.8, FR-1.9 | [Edge](hld/core/edge-and-connectivity.md) | [ADR-0011](adrs/ADR-0011-offline-ticket-validation.md), [ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [ADR-0009](adrs/ADR-0009-visitor-privacy-anonymous-counting.md) |
 | Collect telemetry from park & enclosures | FR-2.1, FR-3.1 | [Edge](hld/core/edge-and-connectivity.md) | [ADR-0001](adrs/ADR-0001-edge-first-store-and-forward.md), [ADR-0002](adrs/ADR-0002-mqtt-and-cellular-backhaul.md) |
 | Store and analyse estate data | FR-2.x | [Core → Data](hld/core/README.md#data-platform) | [ADR-0003](adrs/ADR-0003-cloud-provider-selection.md), [ADR-0004](adrs/ADR-0004-event-driven-backbone.md) |
 | Record on-site spend and report the day to the Countess | FR-2.6, FR-2.7 | [Core → Estate daily report](hld/core/README.md#estate-daily-report) | [ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [ADR-0004](adrs/ADR-0004-event-driven-backbone.md), [ADR-0010](adrs/ADR-0010-grounded-llm-with-guardrails.md) |
@@ -268,7 +269,7 @@ Index with status: [`adrs/README.md`](adrs/README.md)
 
 → [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [AI platform](hld/ai-platform/README.md)
 
-The non-AI foundation gets the same treatment. A [game-day catalogue](hld/core/resilience-validation.md) of twenty scripted faults — from uplink loss and broker failover to an erasure request, a POS webhook carrying a card number and a feed scale wedged at a plausible weight — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five are the exit criterion for Phase 0.
+The non-AI foundation gets the same treatment. A [game-day catalogue](hld/core/resilience-validation.md) of twenty-two scripted faults — from uplink loss and broker failover to an erasure request, a POS webhook carrying a card number and a feed scale wedged at a plausible weight — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five are the exit criterion for Phase 0.
 
 ## What this architecture does not do
 

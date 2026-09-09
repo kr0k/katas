@@ -26,7 +26,7 @@
 
 ### Ticketing platform vendor evaluation — prerequisite for Phase 0
 
-**What:** Landscape review of 3-5 attraction-ticketing products against the 13 must-have criteria in the "Ticketing platform: adopt, not build" ADR — offline gate validation, family/season passes, `GateEntered` with `persons_admitted`, webhooks within seconds, price API with checkout lock, timed-entry slots and cap API, POS export with the FR-2.6 fields, upgrade credit voucher, signed webhooks, vendor sandbox, GDPR export/delete, open-data exit, PCI scope at the vendor, price at 15,000/day.
+**What:** Landscape review of 3-5 attraction-ticketing products against the 16 must-have criteria in the "Ticketing platform: adopt, not build" ADR — offline gate validation, family/season passes, `GateEntered` with `persons_admitted`, webhooks within seconds, price API with checkout lock, timed-entry slots and cap API, POS export with the FR-2.6 fields, upgrade credit voucher, signed webhooks, vendor sandbox, GDPR export/delete, open-data exit, PCI scope at the vendor, price at 15,000/day, and the three credential criteria — closed-loop cashless card-on-file with an offline floor limit, tap emitting `PurchaseRecorded`, and revocation with re-issue within 60 s.
 
 **Output:** an alternatives table in the ADR, a go/no-go on the build-it-ourselves fallback, and a **fallback matrix** — for each criterion no vendor meets, what changes in Phase 0 scope, staffing and the TCO table. For example: no POS export → daily totals per outlet and A13's fallback; no upgrade credit → the flywheel's second lever becomes a desk process; no cap API → the cap is enforced by closing online sales by hand.
 

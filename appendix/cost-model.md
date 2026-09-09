@@ -15,6 +15,7 @@ Order-of-magnitude figures so that NFR-COST-2 can be checked and so the Countess
 | Enclosure sensors (300 × €150) and anonymous counters (150 × €600, LiDAR/thermal) | €135k | 0–1 |
 | LoRaWAN gateways (3) | €5k | 0 |
 | DECT base stations and 40 handsets/pagers | €15k | 0 |
+| Pass credential cards, if the vendor evaluation clears it (≈ €0.55 per plain NFC card): ≈ 145k pass-holding households by year 3, or ≈ 500k cards at one per person on the pass | €80k–280k | 1–3 |
 | Cabling, installation, site survey | €60k | 0 |
 | **Total CAPEX** | **≈ €310k** (≈ €62k/yr over 5 years) | |
 
@@ -30,5 +31,5 @@ Order-of-magnitude figures so that NFR-COST-2 can be checked and so the Countess
 | Hardware maintenance and spares (10% of CAPEX) | €30k | €30k | |
 | **Total OPEX** | **≈ €810k** | **≈ €1.33M** | |
 
-**Per visitor** (CAPEX/5 + OPEX ÷ visitors/yr at 300 open days): ≈ **€0.58** at 5,000/day, ≈ **€0.31** at 15,000/day — inside NFR-COST-2 with the ±50% band. Ticketing fees and the team are ~85% of the total; the AI is not the expensive part.
+**Per visitor** (CAPEX/5 + OPEX ÷ visitors/yr at 300 open days): ≈ **€0.58** at 5,000/day, ≈ **€0.31** at 15,000/day — inside NFR-COST-2 with the ±50% band. The card programme is excluded from the total above because it is conditional on the vendor evaluation; at its upper figure it adds ≈ €0.01 per visitor-day, and the headroom to the €0.50 ceiling is ≈ €0.19. Ticketing fees and the team are ~85% of the total; the AI is not the expensive part.
 

@@ -18,6 +18,8 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
+| FR-1.8 | **Durable pass credential**: a pass-holding household may be issued an NFC card, once, which it keeps — validated offline at gates exactly like any other signed credential, and carrying ride entitlements decremented against the local ledger → [ADR-0011](../adrs/ADR-0011-offline-ticket-validation.md) | COULD |
+| FR-1.9 | **Cashless on the estate by tap**, settled against a payment method registered with the PSP — no balance held on the card or by the estate; offline a floor limit applies and above it the visitor pays by their own card → [ADR-0011](../adrs/ADR-0011-offline-ticket-validation.md) | COULD |
 | FR-2.1 | Collect **anonymous footfall and queue-length** telemetry per zone/ride via MQTT devices | MUST |
 | FR-2.2 | Ops dashboard: live and historical popularity per zone, ride and enclosure; **average dwell time per zone derived from in/out counts** (occupancy ÷ throughput — Little's law; no individual is followed, see [ADR-0009](../adrs/ADR-0009-visitor-privacy-anonymous-counting.md)); queue length | MUST |
 | FR-2.3 🤖 | Forecast visitor flow per zone at 30-min granularity for the next 7 days and **recommend staffing** → [S3](../hld/scenarios/visitor-flow-forecasting/README.md) | SHOULD |

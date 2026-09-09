@@ -3,6 +3,7 @@
 > "We have no real idea what parts of the estate are most popular, so it's difficult to know where to invest & deploy staff."
 
 **Moves:** OKR 2.2 (p90 queue ≤ 20 min), 2.3 (next-day MAPE ≤ 25%), 2.4 (idle staff hours −30%), 1.5 (fill weekdays)
+**Process:** [P2 · the opening and staffing plan](../../../README.md#where-ai-sits-in-the-working-day)
 **Phase:** 1 (live occupancy dashboard, heuristic staffing) → 2 (forecasting + optimiser, after ≥ 1 season of data per A6/R7) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-2.1, FR-2.2, FR-2.3, FR-2.4, FR-5.3; feeds FR-1.7 (timed-entry cap) and shows FR-2.6 (spend per zone)
 **ADRs:** [ADR-0009](../../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md), [ADR-0008](../../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (manager approves plans), [ADR-0004](../../../adrs/ADR-0004-event-driven-backbone.md) (`StaffingPlanApproved`, not the forecast, crosses contexts)

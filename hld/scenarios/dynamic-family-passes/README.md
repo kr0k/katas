@@ -3,6 +3,7 @@
 > Fixed prices cannot fill quiet Wednesdays or capture the value of a sunny Sunday. The Countess needs a pricing lever with guardrails she controls.
 
 **Moves:** OKR 1.5 (weekday/weekend ratio 0.35 → 0.38 base / 0.5 stretch → 0.60 — the primary objective), 1.1 (visitors/day), 1.4 (revenue per visitor-day — must not fall)
+**Process:** [P4 · the 21:00 review and the weekly commercial call](../../../README.md#where-ai-sits-in-the-working-day)
 **Phase:** 3 — needs one year of sales and footfall history; year 1 runs as a randomised quiet-day discount experiment — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-4.3, FR-1.1, FR-1.2, FR-5.1
 **ADRs:** [ADR-0008](../../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (management approves out-of-guardrail prices), [ADR-0004](../../../adrs/ADR-0004-event-driven-backbone.md) (`PriceRecommended` → `PriceUpdated`), [ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md) (price API with checkout lock)

@@ -3,6 +3,7 @@
 > The jumping piranha collection needs population checks. Manual counting is slow, stressful for the fish and wrong by ±30%.
 
 **Moves:** OKR 3.4 (estimate error ±10% → ±5%)
+**Process:** [P5 · the census and the stock take](../../../README.md#where-ai-sits-in-the-working-day)
 **Phase:** 3 — after S1 vision has proven the edge pipeline; needs a census of record as ground truth — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-3.4, FR-5.1
 **ADRs:** [ADR-0006](../../../adrs/ADR-0006-edge-vs-cloud-inference.md), [ADR-0008](../../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md)

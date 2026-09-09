@@ -12,6 +12,7 @@
 - [The problem in one paragraph](#the-problem-in-one-paragraph)
 - [Why this pays back](#why-this-pays-back)
 - [Our approach: how we used AI](#our-approach-how-we-used-ai)
+- [Where AI sits in the working day](#where-ai-sits-in-the-working-day)
 - [The number to challenge first](#the-number-to-challenge-first)
 - [Architecture at a glance](#architecture-at-a-glance)
 - [Delivery roadmap: what we build when, and what we buy](#delivery-roadmap-what-we-build-when-and-what-we-buy)
@@ -63,16 +64,34 @@ The estate's physical capacity binds before the software does: 15,000 a day is n
 
 ## Our approach: how we used AI
 
-AI is a layer on top of a sound event-driven, edge-first system, not the system itself. The order of work:
+**AI sits inside the estate's working day, not beside it.** It belongs to the keeper's morning round, the ops manager's opening plan, a visiting family's afternoon and the Countess's 21:00 review — recurring decisions that already exist and are made badly today for want of information. What stays *on top* is the coupling and not the AI: every capability is reached by name, so a model can be swapped, degraded or switched off without stopping the decision it serves.
+
+**Embedded in a process is not embedded in the critical path.** Each of those decisions is still made with the AI switched off: every read the platform offers is also a dashboard, every draft is also a form, and every model alert has a rule standing behind it. That is the whole difference between AI *in* a business process and a business process that *depends* on AI.
+
+The order of work:
 
 1. **Business first.** The brief rewritten as goals, pain points and [OKRs](requirements/06-suggested-okrs.md) with current and target values, so every scenario points at a number it should move.
 2. **Foundation second.** Patchy Wi-Fi is the dominant constraint, so the [core architecture](hld/core/README.md) is edge-first: a local MQTT broker with store-and-forward, cellular/LoRaWAN backhaul, offline ticket validation. Everything that keeps people and animals safe works without the cloud.
-3. **AI third, and only where a rule or a query would not do.** Each candidate had to answer: which OKR does it move, why is deterministic logic insufficient, how will we know it works, and what happens when it is wrong? Five survived — [animal welfare monitoring](hld/scenarios/animal-welfare-monitoring/README.md) (the reference scenario, fully worked), [piranha counting](hld/scenarios/piranha-population-counting/README.md), [visitor flow forecasting](hld/scenarios/visitor-flow-forecasting/README.md), [guest companion](hld/scenarios/guest-companion/README.md) and [dynamic family passes](hld/scenarios/dynamic-family-passes/README.md).
+3. **AI inside the decision, and only where the process needs a judgement a rule cannot make.** Each candidate had to answer: which OKR does it move, why is deterministic logic insufficient, how will we know it works, and what happens when it is wrong? Five survived — [animal welfare monitoring](hld/scenarios/animal-welfare-monitoring/README.md) (the reference scenario, fully worked), [piranha counting](hld/scenarios/piranha-population-counting/README.md), [visitor flow forecasting](hld/scenarios/visitor-flow-forecasting/README.md), [guest companion](hld/scenarios/guest-companion/README.md) and [dynamic family passes](hld/scenarios/dynamic-family-passes/README.md).
 4. **Uncertainty and verification as architecture.** An adopted [inference gateway](hld/ai-platform/README.md) isolates us from any single provider; one governance loop covers every model, rented or owned; confidence bands, evaluation gates and production monitoring are specified in [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) and [ADR-0005](adrs/ADR-0005-model-gateway-and-provider-independence.md).
 
 Three kinds of AI, treated differently: **classical ML** (forecasting, pricing) is deterministic given its inputs and tested like software; **computer vision** produces probabilities and gets confidence bands and human review; **generative AI** is grounded, constrained and continuously evaluated.
 
 AI also helped *write* this proposal, which the kata's theme makes fair game for scrutiny: what it did, the five places it was wrong, and the checks we added once we noticed are in [how we used AI](how-we-used-ai.md).
+
+---
+
+## Where AI sits in the working day
+
+Five processes, each with a named owner and a decision that already happens. The last two columns are the test of the claim above: someone human commits, and the process survives the AI being gone.
+
+| Process | Owner | Trigger | Where AI enters the decision | Who commits | With the AI switched off | KR |
+| --- | --- | --- | --- | --- | --- | --- |
+| **P1 · The morning welfare round** | Keeper, then the vet | Opening; and any alert during the day | Overnight telemetry and camera features are scored, so the round begins with a ranked list and the evidence behind each item rather than 55 equally likely enclosures | The vet confirms or dismisses, with a reason code | The round runs in its usual order; tier-0 rules and feed-scale thresholds still raise alerts | 3.1, 3.2, 3.5 |
+| **P2 · The opening and staffing plan** | Ops manager | The evening before; revisited mid-morning | Tomorrow's footfall is forecast per zone, and a deterministic optimiser turns the forecast into a roster proposal | The ops manager approves or edits the roster | The heuristic — the same weekday last week, adjusted for season — produces the plan | 2.2, 2.3, 2.4 |
+| **P3 · A family's day in the park** | The visiting family | Ticket purchase, then arrival | The companion builds the day around live queues and the forecast, answers questions from the knowledge base, and re-plans when a ride closes | The family chooses; staff take over on escalation | The cached itinerary and the printed map; the info point answers questions | 1.2, 2.2 |
+| **P4 · The 21:00 review and the weekly commercial call** | The Countess and management | Daily at 21:00; weekly for pricing | Figures are inserted verbatim into the daily report and its wording drafted around them; quiet-day price proposals come from the elasticity model | The ops manager approves the wording; management approves any price outside the guardrails | The report goes out from its template with the same figures; prices stay fixed | 1.1, 1.4, 1.5 |
+| **P5 · The census and the stock take** | Keeper, at tank maintenance | Planned maintenance, twice a year | Edge counting maintains a running population estimate between censuses, as an interval rather than a point | The keeper's count is the census of record | The population ledger and a manual count | 3.4 |
 
 ---
 
@@ -192,13 +211,15 @@ Each scenario README states its phase; the phases in `hld/` are summarised in [h
 
 ## AI scenarios
 
-| # | Scenario | AI type | Moves OKR | Human in the loop? |
-| --- | --- | --- | --- | --- |
-| S1 | [Animal welfare monitoring](hld/scenarios/animal-welfare-monitoring/README.md) *(reference)* | CV + anomaly detection, per animal or per enclosure | 3.1, 3.2, 3.3 | Yes — veterinarian decides |
-| S2 | [Piranha population counting](hld/scenarios/piranha-population-counting/README.md) | Edge CV | 3.4 | Census of record at tank maintenance; monthly visual sanity check |
-| S3 | [Visitor flow forecasting & staffing](hld/scenarios/visitor-flow-forecasting/README.md) | Classical ML | 2.1, 2.2, 2.3 | Ops manager approves rosters |
-| S4 | [Guest companion](hld/scenarios/guest-companion/README.md) | Grounded LLM | 1.2, 1.3, 1.6, 2.2 | Escalation to staff |
-| S5 | [Dynamic family passes](hld/scenarios/dynamic-family-passes/README.md) | Classical ML + rules | 1.5, 1.1, 1.4 | Pricing guardrails set by Countess |
+Attendance runs into the estate's physical capacity long before the software binds ([08 §1](appendix/business-case-model.md#1-capacity-reality-check)), so the levers that grow revenue *without* growing the crowd — spend per visit and repeat visits — are the capital-efficient ones. The column says which lever each scenario pulls; welfare pulls none of them, because healthy animals are the product rather than a lever on it.
+
+| # | Scenario | AI type | Revenue lever | Moves OKR | Human in the loop? |
+| --- | --- | --- | --- | --- | --- |
+| S1 | [Animal welfare monitoring](hld/scenarios/animal-welfare-monitoring/README.md) *(reference)* | CV + anomaly detection, per animal or per enclosure | Cost avoided — and the product itself | 3.1, 3.2, 3.3 | Yes — veterinarian decides |
+| S2 | [Piranha population counting](hld/scenarios/piranha-population-counting/README.md) | Edge CV | Cost avoided (collection integrity) | 3.4 | Census of record at tank maintenance; monthly visual sanity check |
+| S3 | [Visitor flow forecasting & staffing](hld/scenarios/visitor-flow-forecasting/README.md) | Classical ML | Spend per visit (less time queueing) · staffing cost | 2.1, 2.2, 2.3 | Ops manager approves rosters |
+| S4 | [Guest companion](hld/scenarios/guest-companion/README.md) | Grounded LLM | Repeat visits · spend per visit | 1.2, 1.3, 1.6, 2.2 | Escalation to staff |
+| S5 | [Dynamic family passes](hld/scenarios/dynamic-family-passes/README.md) | Classical ML + rules | Attendance on quiet days | 1.5, 1.1, 1.4 | Pricing guardrails set by Countess |
 
 ## Architecture Decision Records
 

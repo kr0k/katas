@@ -86,4 +86,8 @@ See [core/README.md](core/README.md#container-view) for the full container view 
 
 Contexts communicate only through events on the backbone or through published read models — no shared databases. This matters for the AI additions: a scenario can be switched off, replaced or degraded without touching the others.
 
-**Rule: probabilistic events do not cross into visitor-facing contexts.** `WelfareAnomalyDetected` is a model's opinion; what Guest Engagement may act on is `EnclosureStatusChanged`, a keeper's decision. `PriceRecommended` is a model's opinion; what visitors see is `PriceUpdated`, after the policy engine and, where needed, management. The forecast never leaves Park Operations; `StaffingPlanApproved` does. Contract tests fail a visitor-facing context that subscribes to an AI-output topic ([ADR-0004](../adrs/ADR-0004-event-driven-backbone.md) §9).
+### Rule: probabilistic events do not cross into visitor-facing contexts
+
+This is the boundary that makes embedding AI in a business process safe rather than reckless, so it is stated once here and enforced in code. `WelfareAnomalyDetected` is a model's opinion; what Guest Engagement may act on is `EnclosureStatusChanged`, a keeper's decision. `PriceRecommended` is a model's opinion; what visitors see is `PriceUpdated`, after the policy engine and, where needed, management. The forecast never leaves Park Operations; `StaffingPlanApproved` does. Contract tests fail a visitor-facing context that subscribes to an AI-output topic ([ADR-0004](../adrs/ADR-0004-event-driven-backbone.md) §9).
+
+Its complement is the reason the [process table](../README.md#where-ai-sits-in-the-working-day) has a column for the AI being off: a model may inform a decision, and a human or a rule commits it. Nothing downstream of a model is load-bearing on its own.

@@ -3,6 +3,7 @@
 > Families wander, queue, leave early, and don't come back. We want a companion that plans their day, steers them to short queues and interesting animals, and gives them a reason to return.
 
 **Moves:** OKR 1.2 (returning share of households 10% → 10% base / 25% stretch → 40% target, model ≈ 32%), 1.3 (passes 20% → 19% / 40% → ≥ 50% target, model ≈ 41%), 1.6 (season-pass renewal, with the ticketing platform), 2.2 (queue time via load spreading)
+**Process:** [P3 · a family's day in the park](../../../README.md#where-ai-sits-in-the-working-day)
 **Phase:** 1 (FAQ answers via the gateway) → 2 (day planning with live queues and forecast) → 3 (return-visit nudges) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-4.1, FR-4.2, FR-1.6, FR-5.1, FR-5.3
 **ADRs:** [ADR-0005](../../../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (staff escalation)

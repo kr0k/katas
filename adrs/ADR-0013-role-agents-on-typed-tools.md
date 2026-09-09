@@ -5,7 +5,7 @@
 **Related:** ADR-0004, ADR-0005, ADR-0007, ADR-0008, ADR-0010
 
 ## Context
-The five scenarios put AI where a judgement is needed, but they deliver it as an alert, a forecast or a
+The scenarios put AI where a judgement is needed, but they deliver it as an alert, a forecast or a
 chat answer — one output, one screen. The decisions that actually run the estate are multi-step: the vet
 wants to know *why* this animal is flagged and what it looked like last week before opening a treatment;
 the ops manager wants tomorrow's roster changed for one zone and to see what that costs; the Countess

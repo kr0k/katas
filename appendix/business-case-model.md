@@ -129,7 +129,7 @@ The membership trade is explicit: pass visits grow to 41% of visits, revenue per
 
 ## 3. The membership flywheel
 
-Zoos and family attractions grow on membership, not on ticket price: a pass priced below two visits turns a single-day buyer into a habit, and in 2026 renewal is the test of perceived value. The five scenarios were designed one by one; read together they are one wheel, with the estate's physical safety as the licence to enter it:
+Zoos and family attractions grow on membership, not on ticket price: a pass priced below two visits turns a single-day buyer into a habit, and in 2026 renewal is the test of perceived value. The scenarios were designed one by one; read together the five that touch a visitor are one wheel, with the estate's physical safety as the licence to enter it:
 
 ```mermaid
 flowchart LR

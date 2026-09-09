@@ -130,6 +130,32 @@ All numbers below are copies of the [thresholds & cadences table](../../ai-platf
 
 **Kill switch:** the capability owner can set any anomaly type to "review everything" (band = 0) or switch off scoring entirely; rules and rounds continue.
 
+## Two capabilities the feeding data pays for twice
+
+The feed scales were installed to answer "did this animal eat" (FR-3.3). Having them produces two more
+answers at no extra hardware cost, and both sit in this scenario because they are this scenario's data.
+
+**Protocol answers for staff (FR-3.9).** A keeper's question at 07:00 — quarantine steps for a new
+arrival, the procedure for a suspected bite — is answered from the estate's **approved protocol set**,
+with the actionable steps inserted **verbatim** and the document and version cited; no approved document
+produces a refusal and a name to call, never a composed answer. It is the companion's safety-fact
+mechanism with the stakes raised, decided in [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md) §7
+and reached as a copilot tool ([agents](../../ai-platform/agents.md#ops-copilot)). The protocol documents
+already exist for regulatory reasons; the platform indexes them and authors none. Verified by GD-24, whose
+interesting case is the document mid-revision — it must read as absent, not as current.
+
+**Feed consumption forecast (FR-3.10).** `FeedingRecorded` and the scale deltas are a consumption series
+per store and species, so ordering can start from a forecast rather than last month's average — seasonal
+appetite, a changed roster and growth included. The keeper approves the order; the deterministic fallback
+is the trailing four-week average, which is what happens today and which the model **must beat** on MAPE
+before promotion.
+
+Two honesties about it. The saving is the **estate's, not the platform's**: feed is estate operating cost
+and there is no feed line in our [cost model](../../../appendix/cost-model.md), so the payback case is
+credited with none of it — the same rule applied to every other benefit here. And the number that matters
+is not forecast error but **stockouts**, because running out of food for a venomous collection is not a
+rounding error (OKR 3.7).
+
 ## The carnivorous plant collection, on the same pipeline
 
 The brief names the plant collection as the asset the Countess would have to **sell** if the estate does

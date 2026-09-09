@@ -13,7 +13,7 @@ One decision per file. Format: Context → Decision → Alternatives considered 
 | [ADR-0007](ADR-0007-human-in-the-loop-confidence-bands.md) | Human in the loop via confidence bands | accepted | AI platform / S1 |
 | [ADR-0008](ADR-0008-ai-evaluation-and-production-monitoring.md) | AI evaluation gate and production monitoring | accepted | AI platform |
 | [ADR-0009](ADR-0009-visitor-privacy-anonymous-counting.md) | Anonymous footfall counting, no visitor identification | accepted | Core / S3 |
-| [ADR-0010](ADR-0010-grounded-llm-with-guardrails.md) | Grounded LLM with output guardrails for the guest companion | accepted | S4 |
+| [ADR-0010](ADR-0010-grounded-llm-with-guardrails.md) | Grounded LLM with output guardrails, for visitors and for staff | accepted | S4 / S1 |
 | [ADR-0011](ADR-0011-offline-ticket-validation.md) | Offline ticket validation with eventual reconciliation | accepted | Core |
 | [ADR-0012](ADR-0012-ticketing-platform-adopt-not-build.md) | Ticketing platform: adopt, not build | accepted | Core |
 | [ADR-0013](ADR-0013-role-agents-on-typed-tools.md) | Role agents on typed tools, proposing into existing approvals | accepted | AI platform |

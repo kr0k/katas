@@ -27,6 +27,7 @@ role agents would be four sets of tools, evals, budgets and audit surfaces for a
 | `metric(name, dims, window)` | read | The metric layer only — never raw tables | A number with its definition and window | — |
 | `evidence(finding_id)` | read | The typed output record and the telemetry around it ([ADR-0007](../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) §6) | Clip window, sensor trace, factor contributions | — |
 | `sensor_health(device_id)` | read | Device registry and heartbeat history | Dead / stuck / drifting, with since-when | — |
+| `protocol(question)` | read | The knowledge base's **staff tier** only — approved protocol documents, never general knowledge | The actionable steps **verbatim** with the document id and version, or a refusal naming who to call ([ADR-0010](../../adrs/ADR-0010-grounded-llm-with-guardrails.md) §7) | — |
 | `open_review(animal_id, reason)` | creates work | — | A review-queue item | Nobody — it creates work, not action; rate-limited per hour |
 | `draft_staffing_change(date, zone, delta)` | draft | Forecast, labour rules | `StaffingPlanDrafted` | Ops manager → `StaffingPlanApproved` |
 | `draft_cap_change(date, cap, reason)` | draft | Capacity model | A draft with its reason code | Management → `CapacityCapChanged` |

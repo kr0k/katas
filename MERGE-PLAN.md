@@ -496,3 +496,39 @@ All six waves implemented. Every commit left `lint_docs.py`, `check_mermaid.py` 
 Cosmetic only, from the tier-3 list: a glossary, and SVG exports of the diagrams for use in the
 semi-final video and outside GitHub (`check_mermaid.py` already runs mermaid-cli, so the exports are
 nearly free).
+
+
+---
+
+## 13 · Three capabilities added after the waves (2026-09-09)
+
+Chosen from a longer candidate list because each passes the §8 ledger and none needs a new ADR.
+
+| Capability | Home | Why it earned a place | Cost |
+| --- | --- | --- | --- |
+| **Staff protocol answers** (FR-3.9) | S1, as a copilot tool; the mechanism is [ADR-0010](adrs/ADR-0010-grounded-llm-with-guardrails.md) §7 | The copilot we had just built knew metrics, evidence and sensor health but **not the estate's own procedures** — which is what a keeper actually asks at 07:00. The protocol documents exist already for regulatory reasons | ≈ €2/yr; ≈ 1 h/month of approval by the vet and head keeper |
+| **Causal ROI of investments** (FR-2.9, FR-2.10) | **New scenario S7** | FR-2.4 had promised to correlate investments with popularity and **nothing sat underneath it**. It answers the brief's own "difficult to know where to invest" with a method. The prerequisite turned out to be a *register*, not a model — Phase 0, and it costs a form | No generative cost at all; a quarterly readout |
+| **Feed consumption forecast** (FR-3.10) | S1 | The feed scales were installed for FR-3.3 and produce a consumption series for free. Ordering starts from a forecast rather than last month's average | No generative cost; the keeper already approves orders |
+
+**Departures from the discipline, stated rather than hidden.** S7 is a **seventh** scenario, one past the
+budget in §1, and it is the second overrun after `draft-caption`. Both were accepted deliberately: S7
+carries a kill gate, has no generative cost, and closes an FR that had been making a promise the
+architecture could not keep. The scenario count is now seven against ad_kata's fifteen, and every one of
+the seven still names an OKR, a fallback and a cut condition — which is the distinction that matters, not
+the number.
+
+**The most interesting property of S7:** its most common correct output is *"we cannot attribute this"* —
+because a small estate makes a few large investments at once, which is exactly the condition under which
+causal inference cannot work. The scenario's real contribution is therefore the advice to **stagger
+investments so they can be measured**, which costs nothing to act on and needs no software.
+
+Generative spend after all three: **€34,632/yr**, headroom 44%. The quoted figures did not move.
+
+### Candidates considered and not taken
+
+Refinements of existing scenarios (queue-level forecast horizon, review-queue triage by severity, feeding
+schedule optimisation, return propensity, machine translation of narrative content, audio descriptions for
+accessibility) and one unquantifiable (energy and climate optimisation — no data, no cost line). Explicitly
+rejected: camera-based lost-child search, which is the surveillance [ADR-0009](adrs/ADR-0009-visitor-privacy-anonymous-counting.md)
+exists to refuse, and species identification from visitor photographs, which brings uncontrolled frames
+into a system whose masking guarantee lives at the edge.

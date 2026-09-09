@@ -135,6 +135,8 @@ class Assumptions:
     faq_live_share: float = 0.25                    # of model-served FAQ answers needing a live lookup
     tok_tool_select: tuple = (1_500, 1_000, 100)    # the tool-selection turn itself
     agent_share_cap: float = 0.05                   # the layer must stay this small next to the rest
+    protocol_answers_per_day: float = 15.0          # FR-3.9; grounded on the approved protocol set
+    tok_protocol: tuple = (4_000, 2_000, 300)
     caption_drafts_per_day: float = 2.0             # S6, Phase 3; a human publishes every one
     tok_caption: tuple = (3_000, 0, 400)
     ai_revenue_cap: float = 0.02        # NFR-COST-1 — AI spend ≤ this share of revenue
@@ -590,7 +592,10 @@ def llm_rows(a: Assumptions = A, cached: bool = True) -> list[tuple[str, float, 
         ("`summarise-*` report drafters", reports, "large", call_cost(a.tok_report, a.price_large, reports, cached, a)),
     ]
     captions = a.caption_drafts_per_day * a.open_days
+    protocols = a.protocol_answers_per_day * a.open_days
     rows += [
+        ("`answer-protocol` — a staff protocol question (Phase 2)", protocols, "small",
+         call_cost(a.tok_protocol, a.price_small, protocols, cached, a)),
         ("`draft-caption` — S6 content drafts (Phase 3)", captions, "large",
          call_cost(a.tok_caption, a.price_large, captions, cached, a)),
         ("`agent:ops-copilot` — one staff task, summed over its tool-call turns", copilot, "large",
@@ -841,6 +846,7 @@ def t_llm_cost(a: Assumptions = A) -> str:
         "`agent:ops-copilot` — one staff task, summed over its tool-call turns": a.tok_copilot,
         "`agent:companion` — tool-selection turn on a live-data question": a.tok_tool_select,
         "`ask-the-estate` — a question answered over defined metrics": a.tok_estate,
+        "`answer-protocol` — a staff protocol question (Phase 2)": a.tok_protocol,
         "`draft-caption` — S6 content drafts (Phase 3)": a.tok_caption,
     }
     rows = []

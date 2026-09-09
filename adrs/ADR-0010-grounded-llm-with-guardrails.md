@@ -1,4 +1,4 @@
-# ADR-0010 — Grounded LLM with output guardrails for the guest companion
+# ADR-0010 — Grounded LLM with output guardrails, for visitors and for staff
 
 **Status:** accepted · **Date:** 2026-09-05
 **Serves:** FR-4.1, FR-4.2, NFR-PRF-1, R5
@@ -14,6 +14,12 @@ A conversational companion is the most visible use of generative AI and the one 
 4. **Scope policy:** the companion declines medical, legal and off-estate questions and offers the info point.
 5. **Tiered models via the gateway, budgeted by request class.** FAQ answers come from a small model, served where possible from a daily **FAQ cache** keyed by knowledge-base version; planning uses a larger model with **streaming**, so the family sees the first stop while the rest is composed. The per-class budgets are NFR-PRF-1's and are not restated here. Secondary provider and open-weight fallback per ADR-0005; final fallback is static FAQ + map.
 6. **Eval suite** (ADR-0008): Q&A pairs, constrained planning scenarios, adversarial prompts, indirect-injection cases, an ungrounded-block false-positive gate, per-language safety-field fidelity, read-aloud cases, an offline itinerary test and a 500-session load test — sets and gates in [S4 → validation](../hld/scenarios/guest-companion/README.md#validation--verification). Safety refusals and injection resistance must be 100% at promotion and are monitored in production.
+7. **The same mechanism serves staff protocols, and it is the reason we can offer them at all** (FR-3.9). A keeper asking "what is the procedure for a suspected bite" is the companion's safety-fact case with the stakes raised: the **actionable steps are inserted verbatim** from the approved protocol document and the model may not restate, summarise or reorder them — it may only route to the right document and phrase the surrounding context. Three rules follow:
+   - **The citation is mandatory and visible.** An answer without the document id and version is not shown at all; staff need to know which version they acted on, and so does an incident review afterwards.
+   - **No approved document means a refusal with a name.** The response is "there is no approved protocol for this — call the head keeper", never a composed answer from general knowledge. A document marked pending re-approval after a change counts as absent (GD-24).
+   - **The protocol set is curated, owned and versioned** like the knowledge base it lives in, with the vet and the head keeper as owners. Zoo protocols exist already for regulatory reasons; this capability indexes them rather than inventing a corpus.
+
+   Scope is the mirror of §4: the staff capability declines nothing procedural but refuses everything not covered, where the visitor capability declines whole topics.
 
 ## Alternatives considered
 | Option | Pros | Cons | Why not |

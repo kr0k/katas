@@ -15,12 +15,14 @@
 | | 2.2 p90 queue time on top-10 rides | unknown | ≤ 20 min | ≤ 15 min | S3, S4 |
 | | 2.3 Forecast accuracy, zone footfall next day (MAPE) | n/a | ≤ 25% | ≤ 15% | S3 |
 | | 2.4 Staff hours in zones with no visitors | unknown | −30% | −50% | S3 |
+| | 2.5 Capital investments with a measured effect and a stated interval within two quarters of opening (a reasoned *cannot attribute* counts as measured) | 0% | 50% | 80% | S7 |
 | **3. Healthy animals at lower cost** | 3.1 Time from first anomaly to vet review | days | ≤ 4 h | ≤ 1 h | S1 |
 | | 3.2 Veterinary cost per animal per year | baseline | −15% | −30% | S1 |
 | | 3.3 Feeding events logged automatically | 0% | 90% | 98% | S1 |
 | | 3.4 Piranha population estimate error vs. census of record (full count at planned tank maintenance, ledger-adjusted between censuses) | ±30% (manual count) | ±10% | ±5% | S2 |
 | | 3.5 Vet override rate on AI-flagged reviews (proxy for false positives) | n/a | ≤ 40% | ≤ 25% | S1 |
 | | 3.6 Plant-collection losses from preventable conditions (light, humidity, watering) | unknown | baseline | −50% | S1 |
+| | 3.7 Feed ordering: stockouts per quarter, and forecast error against the trailing-average baseline it must beat | unknown | baseline | 0 stockouts; MAPE below baseline | S1 |
 | **4. Keep everyone safe** | 4.1 Safety alert delivery p99 (local) | n/a | ≤ 5 s | ≤ 5 s | Core |
 | | 4.2 Safety incidents involving animals | 0 | 0 | 0 | Core |
 | **5. Keep the platform affordable and evolvable** | 5.1 AI spend as share of revenue | n/a | ≤ 2% | ≤ 1.5% | AI platform |

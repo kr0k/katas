@@ -443,3 +443,56 @@ an output of the site survey and the edge compute budget re-sized before purchas
 table (contradicts the fixed five), and AD's lower human-in-the-loop hours (ours are higher and more
 honest — R13 rests on them). Still open from the same review: a glossary and SVG exports of the
 diagrams, both cosmetic.
+
+
+---
+
+## 12 · Execution log (branch `ai-embedded-merge`)
+
+All six waves implemented. Every commit left `lint_docs.py`, `check_mermaid.py` and
+`business_case.py --self-test` green.
+
+| Commit | Wave | What landed |
+| --- | --- | --- |
+| `68f49c6` | §11 | Rejections into each ADR's *Alternatives considered*; `how-we-used-ai.md`; review-queue health; the number to challenge first; characteristics per context; the client decision |
+| `81bdf45` | 0 | Motto replaced; the five-process table with an owner, who commits and a with-AI-off column; process line on every scenario; revenue-lever column; the probabilistic-events rule promoted to a named heading |
+| `c8a600a` | 2 | Cost-of-error table drives the bands; typed output record `{value, confidence, evidence, capability, bundle_id}`; the capability contract (rule-or-model, promotion trigger, must-beat, fallback); provider-swap honesty; override rate's two meanings; calibration response |
+| `6c84fce` | 1 | ADR-0013 + `agents.md`; two agents and one read-only capability; eight invariants; injection and memory-poisoning chains; GD-17–GD-20; SP-8/9, TP-8/9; agent request classes in the cost model |
+| `e7c115d` | 4 | Metric layer; risk classes with proportional controls; kill gate per capability; pricing fairness as an allowlist plus a property test; AI incident runbook |
+| `a5dda57` | 5 | Durable pass credential, card-on-file; entitlements on the group-counter mechanism; ADR-0009 reworded precisely + NFR-PRV-3; three vendor criteria; GD-21/22; A16 |
+| `64e111e` | 3 | Plant collection inside S1; reach-versus-coverage geometry; S6 content drafting with its kill gate; GD-23 |
+
+### Where execution departed from the plan
+
+- **ADR-0014 was never written.** The data mule and the radio bridge were retracted mid-planning (§7.1.2)
+  after the user challenged the mule's value, so new ADRs went from two to **one**. Remote-enclosure
+  geometry became a section in ADR-0002 plus a *Reach* section in edge & connectivity — a better outcome,
+  because the rejection is now a quantified exclusion rather than an adopted channel.
+- **The plant collection did not get its own scenario.** It extends S1, which keeps the scenario count at
+  six with S6 rather than seven, and lets the collection inherit one governance track instead of starting
+  a second.
+- **Game-day numbering is sequential by implementation order,** not by wave: GD-17–20 agents, GD-21/22
+  credential, GD-23 content. The catalogue is twenty-three.
+- **The cost model caught a stale claim, as designed.** Adding the agent request classes moved the
+  generative total and broke the pinned 46% headroom assertion — the invariant added after a reviewer once
+  found a claim nothing tested. Figures were regenerated across five documents: €34,600 planned, €68,000
+  without the caches, 44% absorbed.
+
+### Budget at the end (§1)
+
+| Ceiling | Planned | Actual |
+| --- | --- | --- |
+| New ADRs | ≤ 2 | **1** (ADR-0013) |
+| New scenarios | ≤ 1 | **1** (S6) |
+| New generative capabilities | ≤ 3 | **4** — the three agent classes plus `draft-caption`, which was wave 3 rather than wave 1 |
+| Generative spend | ≤ €45k/yr | **€34,630** |
+| Per-visitor TCO | ≤ €0.50 | **€0.31**, card programme conditional and excluded |
+| Staff hours on AI | ≤ 30 h/wk | **≈ 27 h/wk** at Phase 3 |
+| New deployables | 0 | **0** |
+| Payback story | untouched | untouched — years 4–7 |
+
+### Still open
+
+Cosmetic only, from the tier-3 list: a glossary, and SVG exports of the diagrams for use in the
+semi-final video and outside GitHub (`check_mermaid.py` already runs mermaid-cli, so the exports are
+nearly free).

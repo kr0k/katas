@@ -45,9 +45,11 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
+| FR-3.8 🤖 | **Collection condition**: the carnivorous plant house is monitored on the same IoT classes and the same anomaly capability as an enclosure, and a detected feeding event becomes a scheduled demonstration → [S1](../hld/scenarios/animal-welfare-monitoring/README.md) | COULD |
 | FR-4.1 🤖 | **Guest companion**: a conversational assistant (mobile/web, kiosks) that plans a family's day, suggests the next stop based on live queues, and answers questions about animals and rides → [S4](../hld/scenarios/guest-companion/README.md) | SHOULD |
 | FR-4.2 🤖 | Personalised **return-visit nudges** (new animal born, seasonal event, unfinished "collection") for opted-in visitors → [S4](../hld/scenarios/guest-companion/README.md) | SHOULD |
 | FR-4.5 🤖 | **Staff copilot**: a keeper, vet or ops manager asks for an explanation or a draft, and the platform reads defined metrics and evidence and *proposes* — a review to open in [S1](../hld/scenarios/animal-welfare-monitoring/README.md), a roster change in [S3](../hld/scenarios/visitor-flow-forecasting/README.md), a cap change — into the approval surface that already owns that decision → [agents](../hld/ai-platform/agents.md#ops-copilot) | COULD |
+| FR-4.6 🤖 | **Content drafts from what the cameras already noticed**: highlight candidates from S1's activity features, captioned in the estate's voice, into the curator's queue — a human publishes, and there is no automated publish path → [S6](../hld/scenarios/content-drafting/README.md) | COULD |
 | FR-4.3 🤖 | **Demand-aware family pass pricing** within guardrails set by the estate → [S5](../hld/scenarios/dynamic-family-passes/README.md) | COULD |
 | FR-4.4 | Post-visit feedback collection and theme analysis | COULD |
 

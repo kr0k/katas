@@ -204,9 +204,10 @@ Hours per week by role and phase, all of them roles the estate already has. **La
 | Guest team | Review 50 sessions; curate knowledge base; triage thumbs-down | 3 + 5 h/wk | 4 + 5 h/wk | 4 + 5 h/wk | Reviews, KB fixes |
 | Ops manager + guest team | **Label 20 agent tasks a week** for task success (ADR-0013) — the only new human cost the agentic layer adds; the copilot's own proposals redistribute review time rather than adding it | — | 1 h/wk | 1 h/wk | The label is the accept / edit / reject |
 | Guest team + a contracted translator | **Approve the safety, allergen and price fields per language** (NFR-LNG-1) — a bounded set that changes only when a rule, a price or an animal changes, not a per-answer task | — | 2 h/wk while a language is added, then ≈ 1 h/mo | ≈ 1 h/mo per language | Explicit approval per field and language |
+| Curator | Review and publish or discard content drafts (S6, Phase 3) | — | — | 1 h/wk | Publish / edit / discard is the label |
 | Management | Out-of-guardrail price approvals; experiment readout | — | — | 1 h/wk | Approval reason codes |
 | Platform engineers (of the 5) | Model promotions, game days, on-call; re-issue of [requirements/08](../../requirements/08-business-case.md) with the ops manager (1 day/yr, from Phase 2 entry) | 1 day/quarter + rota | same + 1 day/yr | same + 1 day/yr | — |
-| **Total estate-staff hours on AI** | | **≈ 17 h/wk** | **≈ 27 h/wk** | **≈ 26 h/wk** | Phase 2 carries the language-approval spike; it falls away once a language is live |
+| **Total estate-staff hours on AI** | | **≈ 17 h/wk** | **≈ 27 h/wk** | **≈ 27 h/wk** | Phase 2 carries the language-approval spike; it falls away once a language is live |
 
 Workload per role is a tracked metric; a phase gate slips before a role is overloaded (R13, NFR-OPS-1).
 
@@ -249,6 +250,7 @@ five scenarios only pay off in Phase 3.
 | S3 forecast + optimiser | End of season 2 | Still not beating the "same weekday last week" heuristic on rolling-origin MAPE. The heuristic stays either way, so cutting costs nothing |
 | S4 companion planning | End of season 2 | Adoption below half the funnel's assumption *and* no measurable queue-time or return difference against the control cohort |
 | S5 pricing | After the year-1 randomised experiment | Contribution on discounted blocks not above the fixed-price counterfactual |
+| S6 content drafting | End of the first season live | Approval without edits below 60% — the drafts are not saving the curator time, and prompt-tuning forever is not an answer |
 | `agent:ops-copilot` | Two quarters after Phase 2 | Task success below 70%, or proposals rejected more often than accepted |
 | `ask-the-estate` | Two quarters after Phase 2 | Fewer than a handful of questions a week — a capability nobody asks is a maintenance cost with a licence |
 

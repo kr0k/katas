@@ -130,6 +130,28 @@ All numbers below are copies of the [thresholds & cadences table](../../ai-platf
 
 **Kill switch:** the capability owner can set any anomaly type to "review everything" (band = 0) or switch off scoring entirely; rules and rounds continue.
 
+## The carnivorous plant collection, on the same pipeline
+
+The brief names the plant collection as the asset the Countess would have to **sell** if the estate does
+not become profitable ([G1](../../../requirements/01-business-goals-and-drivers.md)). It is the one asset
+this proposal had said nothing about, which is a gap rather than a decision. It closes here, and it needs
+**no new context, no new component and no new scenario** — a plant house is an enclosure whose occupants
+do not move:
+
+| What it needs | What it reuses |
+| --- | --- |
+| Light, humidity, temperature, soil moisture and watering telemetry | The IoT classes and transport rule already specified ([ADR-0002](../../../adrs/ADR-0002-mqtt-and-cellular-backhaul.md) §2) — these are ≤ 20-byte, 1-per-minute devices, so LoRaWAN carries them |
+| "This specimen is deteriorating" | `score-enclosure-activity` generalised to `score-exhibit-condition`: the same tabular anomaly capability against a per-specimen baseline, the same bands, the same review queue — with the head gardener as the reviewer instead of the vet |
+| "The plant caught something" | An existing edge node publishing an ordinary fact, `ExhibitEventDetected`. It is not a welfare alert and carries no tier-0 weight |
+| Turning that into money | Park Operations schedules a demonstration feeding; the companion announces it as an event like any other; the zone's popularity is measured by the counters that already exist (FR-2.4) |
+
+Two things worth being explicit about. The **capability is the same one**, so it inherits the promotion
+trigger, the golden set discipline and the kill gate rather than starting a second governance track; the
+only new artefacts are a baseline per specimen and a gardener as a named owner. And the **conclusion is
+commercial, not architectural**: an asset that was on the disposal list becomes an exhibit the platform
+serves, at the cost of configuring components that are already there. OKR 3.6 is the number, and it is
+deliberately modest — this is asset preservation plus content, not a growth lever.
+
 ## Trade-offs we accepted
 - **Features at edge, scoring in cloud** — one more hop and one more dependency, in exchange for keeping 110 video streams off the backhaul and improving scoring models without touching edge hardware. Aggregating to 1-minute windows cuts feature traffic from ~200 to ~3 messages per second and the 72 h buffer from ~10 GB to ~3 GB ([capacity table](../../core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class)); hourly anomaly scoring needs no sub-minute resolution, and the raw 1 Hz trace still ships around events. Detections that must be instant are rules running locally, not models.
 - **Per-enclosure for groups** — we lose "this meerkat ate less" for group species and gain a scenario that works on day one for every enclosure. Identity in groups is research, not roadmap.

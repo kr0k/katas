@@ -10,6 +10,7 @@
 | | 1.4 Revenue per visitor-day (admission + on-site, cash)²; second line: revenue per unique household per year (estimate) | baseline | ≥ baseline | not below baseline; per household +30% | S4, S5 |
 | | 1.5 Weekday / weekend attendance ratio³ (fill quiet days) — S5's primary objective | 0.35 | 0.38 / 0.5 | 0.6 | S5, S3 |
 | | 1.6 Season-pass renewal rate (households renewing ÷ households whose pass expired)⁴ | n/a | baseline (first cohort) | ≥ 70% (ambitious) | S4, S5 |
+| | 1.7 Content drafts approved without edits (earned reach reported alongside as an estimate, never as attributed attendance) | n/a | n/a | ≥ 60% | S6 |
 | **2. Run the park on data, not guesswork** | 2.1 Zones with live popularity data | 0% | 100% | 100% | Core |
 | | 2.2 p90 queue time on top-10 rides | unknown | ≤ 20 min | ≤ 15 min | S3, S4 |
 | | 2.3 Forecast accuracy, zone footfall next day (MAPE) | n/a | ≤ 25% | ≤ 15% | S3 |
@@ -19,6 +20,7 @@
 | | 3.3 Feeding events logged automatically | 0% | 90% | 98% | S1 |
 | | 3.4 Piranha population estimate error vs. census of record (full count at planned tank maintenance, ledger-adjusted between censuses) | ±30% (manual count) | ±10% | ±5% | S2 |
 | | 3.5 Vet override rate on AI-flagged reviews (proxy for false positives) | n/a | ≤ 40% | ≤ 25% | S1 |
+| | 3.6 Plant-collection losses from preventable conditions (light, humidity, watering) | unknown | baseline | −50% | S1 |
 | **4. Keep everyone safe** | 4.1 Safety alert delivery p99 (local) | n/a | ≤ 5 s | ≤ 5 s | Core |
 | | 4.2 Safety incidents involving animals | 0 | 0 | 0 | Core |
 | **5. Keep the platform affordable and evolvable** | 5.1 AI spend as share of revenue | n/a | ≤ 2% | ≤ 1.5% | AI platform |

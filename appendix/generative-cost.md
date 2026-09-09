@@ -14,6 +14,7 @@ Token counts per call and the two tier prices are assumptions — list-price ban
 | Nudge wording (Phase 3) | 3,471,429 | 1,500 / 0 / 200 | small | €1,200 |
 | LLM-as-judge on a sample | 92,721 | 3,000 / 0 / 100 | large | €974 |
 | `summarise-*` report drafters | 900 | 4,000 / 0 / 500 | large | €18 |
+| `draft-caption` — S6 content drafts (Phase 3) | 600 | 3,000 / 0 / 400 | large | €9 |
 | `agent:ops-copilot` — one staff task, summed over its tool-call turns | 6,000 | 20,000 / 15,000 / 1,500 | large | €252 |
 | `agent:companion` — tool-selection turn on a live-data question | 578,571 | 1,500 / 1,000 / 100 | small | €87 |
 | `ask-the-estate` — a question answered over defined metrics | 1,500 | 5,000 / 3,000 / 400 | large | €19 |

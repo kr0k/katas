@@ -135,6 +135,8 @@ class Assumptions:
     faq_live_share: float = 0.25                    # of model-served FAQ answers needing a live lookup
     tok_tool_select: tuple = (1_500, 1_000, 100)    # the tool-selection turn itself
     agent_share_cap: float = 0.05                   # the layer must stay this small next to the rest
+    caption_drafts_per_day: float = 2.0             # S6, Phase 3; a human publishes every one
+    tok_caption: tuple = (3_000, 0, 400)
     ai_revenue_cap: float = 0.02        # NFR-COST-1 — AI spend ≤ this share of revenue
     llm_opex_line: float = 50_000       # the hosted-LLM OPEX line this spend must fit (requirements/04)
 
@@ -587,7 +589,10 @@ def llm_rows(a: Assumptions = A, cached: bool = True) -> list[tuple[str, float, 
         ("LLM-as-judge on a sample", judged, "large", call_cost(a.tok_judge, a.price_large, judged, cached, a)),
         ("`summarise-*` report drafters", reports, "large", call_cost(a.tok_report, a.price_large, reports, cached, a)),
     ]
+    captions = a.caption_drafts_per_day * a.open_days
     rows += [
+        ("`draft-caption` — S6 content drafts (Phase 3)", captions, "large",
+         call_cost(a.tok_caption, a.price_large, captions, cached, a)),
         ("`agent:ops-copilot` — one staff task, summed over its tool-call turns", copilot, "large",
          call_cost(a.tok_copilot, a.price_large, copilot, cached, a)),
         ("`agent:companion` — tool-selection turn on a live-data question", tool_select, "small",
@@ -836,6 +841,7 @@ def t_llm_cost(a: Assumptions = A) -> str:
         "`agent:ops-copilot` — one staff task, summed over its tool-call turns": a.tok_copilot,
         "`agent:companion` — tool-selection turn on a live-data question": a.tok_tool_select,
         "`ask-the-estate` — a question answered over defined metrics": a.tok_estate,
+        "`draft-caption` — S6 content drafts (Phase 3)": a.tok_caption,
     }
     rows = []
     for label, calls, tier, cost in llm_rows(a):

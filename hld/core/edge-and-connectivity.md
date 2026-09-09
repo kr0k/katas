@@ -166,6 +166,24 @@ One identity scheme does not fit both radios. LoRaWAN devices cannot do TLS; wir
 
 Also: cameras on an isolated VLAN reachable only by the edge nodes; firmware/OTA through the same GitOps pipeline as software; tamper switches on sensor housings raise a critical event (a stolen sensor's AppKey is de-registered the same hour — risk R15).
 
+## Reach: enclosures beyond a cable run
+
+Coverage and **reach** are different questions, and the transport rule answers only the first. PoE ends
+at 100 m; the estate does not. So every enclosure with a camera is classified once, at the site survey,
+and the rule is [ADR-0002](../../adrs/ADR-0002-mqtt-and-cellular-backhaul.md) §8:
+
+| Distance from the nearest switch | Camera link | Consequence |
+| --- | --- | --- |
+| ≤ 100 m | PoE to the edge tier | The default; nothing special |
+| > 100 m, fibre can be laid | Single-mode fibre + media converter, then PoE locally | Inside the €60k cabling line of the [cost model](../../appendix/cost-model.md); the two central edge nodes still see every stream |
+| > 100 m, fibre cannot be laid (heritage fabric, a water crossing, a protected avenue) | **A local inference node at the enclosure** | Only events cross the link, so LoRaWAN or a cellular gateway suffices. Adds a third deployment target to operate |
+
+The third row is the expensive one and its count is an **output of the site survey**, not an assumption:
+above two such enclosures the [edge compute budget](#edge-compute-budget) and the €60k cabling line are
+both re-sized before anything is bought. This is also why neither a radio bridge nor a data mule appears
+here — with compute at the enclosure there is no bulky payload left to carry, and the arithmetic is in
+ADR-0002's rejected alternatives.
+
 ## Edge compute budget
 
 Two GPU-class edge servers, sized **N+1**: either node alone carries the whole estate at degraded frame rates.

@@ -185,6 +185,7 @@ Production re-measures these from sampled human-labelled data on the same defini
 | **`agent:ops-copilot`** (Phase 2) | Task success ≥ 0.70 on a 100-task labelled set; tool-error rate ≤ 0.05; 0 instructions followed from retrieved content on the 100-case injection set; 0 duplicate effects under forced retry; step budget respected in every task | Task success below target for two weekly cycles → **agent** rollback (prompt, whitelist, budget), separate from the model bundle; tool-error rate rising → integration triage before any retraining; `open_review` items rejected by the vet > 50% → the tool is rate-limited harder or withdrawn | Weekly: 20 tasks labelled by the ops manager and the guest team | AI platform |
 | **`agent:companion`** (Phase 2) | The S4 companion gates, plus: tool-selection accuracy ≥ 0.95 on a labelled set of live-data questions; 0 effectful calls without a typed argument set | As S4, plus duplicate `hold_slot` effects = 0 under forced retry | Within the S4 weekly session review | Guest team |
 | **`ask-the-estate`** (Phase 2) | Every answer resolves to a named metric or refuses: fabricated numbers = 0 on a 100-question set including 20 unanswerable ones; the metric definition and window shown with every answer | Any answer without a metric definition → capability off until fixed | Monthly: 10 answers checked against the read model by the ops manager | Ops manager |
+| **S5 pricing fairness** | Property-based test: subject- or household-level features reaching the pricing bundle = 0, checked in CI **and** by the production validator | Discount reach skewed to a single day type for a quarter, complaint rate > 0.5 per thousand buyers, or floor-hit frequency rising → readout to management with the option to withdraw a discount level | Quarterly fairness audit: reach by day type, complaints, floor and ceiling share | Management |
 | **Review-queue health** — the people, not the model | — | Overdue confirmations > 10% of a week's items, **or** queue depth above the phase's review capacity for 3 consecutive days → alert the capability owner and shed load as described in [review queue](#review-queue-human-in-the-loop); a shed-item sample containing a real case → stop shedding, slip the phase gate | Weekly, read together with the override rate | Vet · Ops manager |
 | **Business guardrails** (alert only — no model is rolled back on a business number; every figure comes from a KPI read model that is itself tested with fixture event streams, [hld/core → Verification](../../appendix/data-health-and-verification.md#verification-purchases-cap-and-the-daily-report)) | — | Season-pass renewal: cohort-over-cohort decline > 10 points before month 36 (earliest signal month 24), below 60% after → alert Guest team and management. On-site spend per visitor-day — all guests, `PurchaseRecorded` ÷ Σ `persons_admitted` — 10% below the modelled €6.00 on-site spend per visitor-day, seasonally adjusted (A6) → alert. Pass share of admissions (credential type on `GateEntered`) more than 5 points below the ladder for a quarter → alert management. Contribution per pass visit is **derived** from those two and the A15 parameters by `business_case.py` and labelled *model* — never a raw metric, because purchases carry no subject without consent ([ADR-0009](../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §7). Cohort rates (adoption, opt-in, nudge reach, return, pass conversion, pass renewal, account retention — [08 §3](../../appendix/business-case-model.md#3-the-membership-flywheel)) more than 20% below the table for 2 months → alert Guest team | Monthly readout with the OKRs; yearly re-issue of requirements/08 with measured values | Guest team · Management |
 | **Platform** | Every production capability has a passing eval and a named non-AI fallback (OKR 5.3) | Budget alerts at 70% / 90%, downgrade at 100% (NFR-COST-1); model swap ≤ 1 day (OKR 5.2) | Monthly shadow run of the secondary provider and the open-weight bundle; quarterly game days GD-9/GD-10 | AI platform |
@@ -208,6 +209,51 @@ Hours per week by role and phase, all of them roles the estate already has. **La
 | **Total estate-staff hours on AI** | | **≈ 17 h/wk** | **≈ 27 h/wk** | **≈ 26 h/wk** | Phase 2 carries the language-approval spike; it falls away once a language is live |
 
 Workload per role is a tracked metric; a phase gate slips before a role is overloaded (R13, NFR-OPS-1).
+
+## Risk classes, and controls in proportion
+
+The EU AI Act's risk framing is the obvious lens in 2026 and we use it as one, stating the applicability
+itself as an assumption (A5). The point of the table is that controls are **proportional**: treating a
+caption draft like a welfare decision wastes the only scarce resource we have, which is human attention.
+
+| Class | Capabilities | Why |
+| --- | --- | --- |
+| **High** | Welfare decisions (S1 confirm/dismiss, treatment); anything near visitor safety — the tier-1 aggression advisory, the companion's safety facts | Physical harm to an animal or a person; some of it irreversible |
+| **Medium** | Quiet-day pricing (S5); staffing plans (S3); every effectful agent tool | Affects people's money or work, but nobody is hurt by an error |
+| **Low** | Report and caption drafts; `ask-the-estate` and other read-only answers | Internal, reversible, and a human reads the output before it matters |
+
+| Control | Low | Medium | High |
+| --- | --- | --- | --- |
+| Deterministic fallback (NFR-RES-2) | ✅ | ✅ | ✅ |
+| Human commits the action | Only where it is published | ✅ | ✅ — and never a model alone on a safety path (FR-3.6) |
+| Eval gate + owner + golden set | ✅ | ✅ | ✅ strict, with per-band calibration |
+| Evidence with every output ([ADR-0007](../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) §6) | ✅ | ✅ | ✅ |
+| Fairness review | — | ✅ (pricing reach by day type) | ✅ |
+| Audit retention | Standard | Standard | Welfare decisions 2–3 years (FR-5.1) |
+| Incident procedure | General | ✅ | ✅ with a named owner on call in hours |
+
+The autonomy classes other proposals need here — a driverless shuttle, predictive maintenance clearing a
+ride for service — do not appear because we do not build them ([ADR-0002](../../adrs/ADR-0002-mqtt-and-cellular-backhaul.md),
+[requirements/05](../../requirements/05-assumptions-and-constraints.md#out-of-scope)).
+
+## Every capability has a review date and a cut condition
+
+An AI capability that delivers nothing for two seasons should be deleted, not carried. So each one
+carries a **kill gate** next to its promotion gate — the honest counterweight to a roadmap where two of
+five scenarios only pay off in Phase 3.
+
+| Capability | Reviewed | Cut if |
+| --- | --- | --- |
+| S1 welfare anomalies | End of season 2 | Vet override rate still above 40%, or treatments arriving with no prior flag still above 30% — the vet has stopped trusting the queue and we are paying for review hours that change nothing |
+| S2 piranha counting | After the second census | Census error not inside ±10%, and the ledger-adjusted estimate no better than the manual count it replaced |
+| S3 forecast + optimiser | End of season 2 | Still not beating the "same weekday last week" heuristic on rolling-origin MAPE. The heuristic stays either way, so cutting costs nothing |
+| S4 companion planning | End of season 2 | Adoption below half the funnel's assumption *and* no measurable queue-time or return difference against the control cohort |
+| S5 pricing | After the year-1 randomised experiment | Contribution on discounted blocks not above the fixed-price counterfactual |
+| `agent:ops-copilot` | Two quarters after Phase 2 | Task success below 70%, or proposals rejected more often than accepted |
+| `ask-the-estate` | Two quarters after Phase 2 | Fewer than a handful of questions a week — a capability nobody asks is a maintenance cost with a licence |
+
+Cutting is a registry change and the deletion of a golden set. Nothing depends on a capability's
+existence, which is what makes the gate credible rather than rhetorical.
 
 ## The three kinds of AI and how the platform treats them
 

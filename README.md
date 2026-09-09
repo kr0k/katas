@@ -287,7 +287,7 @@ See [requirements/07-risks-and-mitigations.md](requirements/07-risks-and-mitigat
 
 ## Appendix
 
-Finance, product specification, vendor rules, radio planning and runbooks are kept out of the architecture and indexed in [`appendix/`](appendix/README.md). Each architectural document quotes the conclusion it needs and links to the calculation behind it.
+Finance, product specification, vendor rules, radio planning and runbooks — including the [AI incident runbook](appendix/ai-incident-runbook.md) — are kept out of the architecture and indexed in [`appendix/`](appendix/README.md). Each architectural document quotes the conclusion it needs and links to the calculation behind it.
 
 ## Video
 

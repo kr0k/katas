@@ -62,6 +62,31 @@ The fairness rules are the reason a family trusts the price. They live in policy
 
 **Property-based tests** generate random sequences of recommendations, guardrail edits and concurrent checkouts and assert zero violations; **violations = 0** is a CI gate for every policy-engine change and a production monitor (any violation = revert to fixed price + incident). The contribution constraint is tested the same way with the A15 parameters as generated inputs. P-I7's own cases run in Ticketing & Access against the vendor sandbox ([test plan](../../../appendix/data-health-and-verification.md#verification-purchases-cap-and-the-daily-report)).
 
+## Fairness, and why it is enforced rather than promised
+
+A price that moves is the most reputationally exposed thing in this proposal, and the usual assurance —
+"we would never price by who is asking" — is a policy statement that survives exactly as long as the
+person who wrote it. Ours is mechanical instead.
+
+**Price is a function of day type and load, never of a person.** The elasticity model's feature set is an
+**allowlist** in the feature store: date attributes, day type, lead time, weather, capacity state,
+historical volume for the same day type. A property-based test in the invariant suite fails the build if
+any subject-level or household-level feature reaches the pricing bundle, which is checked in production by
+the same independent validator that checks the floor. For the anonymous majority of visitors there is no
+profile to price against at all ([ADR-0009](../../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md)) —
+but the allowlist is what keeps that true when a segment *is* identifiable, such as pass-holding
+households.
+
+**What is audited, and by whom.** Quarterly, with the readout to management: the reach of each discount
+level by day type (a quiet-day offer that only ever lands on visitors who could already come cheaply is
+not doing its job); the complaint rate per thousand buyers; and the share of transactions at the floor
+and the ceiling. The audit is on the [thresholds table](../../ai-platform/README.md#thresholds-and-cadences-source-of-truth)
+with the rest, so it happens on a cadence rather than after an incident.
+
+**What we do not do:** personalised prices, prices that rise during a checkout a family has started, and
+prices that differ between two households buying the same day. Those are in the ADR's rejected
+alternatives, not in a policy document someone can revise.
+
 ## Year 1: a randomised experiment, not a pricing engine
 
 There is no elasticity to estimate before there is variation in price. So year 1 is designed as an experiment the model later learns from:

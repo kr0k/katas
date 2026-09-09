@@ -54,6 +54,32 @@ flowchart TB
 - **Upgrade to a pass:** shown only to day-ticket holders without a pass whose ticket was scanned in today, from the pass state the orchestrator already fetches. Tapping it issues a **credit voucher** under invariant P-I7, whose rules the ticketing platform executes ([ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [appendix](../../../appendix/ticketing-rules.md)); idempotency key = ticket id; offline the prompt reads "available at the exit and at the gate POS"; the next-day nudge reminds about the outstanding voucher, it does not create a new one.
 - **Return nudges (opt-in):** "The cassowary chick you saw is on show from Saturday", "You saw 31 of 55 enclosures — finish your collection", "Quiet-day family offer this Wednesday" (S5's standing or experimental offer, surfaced here), "Your upgrade voucher is valid until Sunday", "Saturday is a capacity-managed day — reserve your pass holders' slot" (FR-1.7). Content templates are curated; the LLM personalises within them; frequency caps apply.
 
+## The client, and why it is an installable web app
+
+Two of this scenario's promises depend on what the visitor's device can do, so the client is an
+architectural choice rather than a presentation one: the plan has to survive patchy Wi-Fi, and the
+nudges that drive the flywheel have to be deliverable. Layout, copy and visual design are out of
+scope here — this is about availability and delivery.
+
+**Decision: an installable web app (service worker plus local storage for the cached itinerary and
+map), reached from the ticket confirmation, with no store download in the way.** A native app is a
+later option, triggered by a specific need rather than by preference.
+
+| Option | Why it was considered | Why not chosen |
+| --- | --- | --- |
+| **Installable web app (chosen)** | One codebase for phone and kiosk; offline cache covers the "Offline-tolerant" promise above; nothing to install before a family can use it on the day they arrive; no store review between a knowledge-base fix and the visitor seeing it | Push delivery is weaker and more platform-dependent than native, and precise indoor positioning is not available — neither of which this scenario needs |
+| Native iOS and Android | Better push and background behaviour; access to precise positioning | Two codebases and a store release cycle for a team of five (NFR-OPS-1, R9), and a download stands between the visitor and the itinerary at the moment they want it — adoption is the flywheel's first rate ([08 §3](../../../appendix/business-case-model.md#3-the-membership-flywheel)), so friction there is expensive |
+| A hybrid wrapper | Would keep one codebase and add store presence | The wrapper's cost without the native capability we would be paying it for |
+| No client at all — SMS and e-mail only | Nothing to build | No offline plan, no live re-planning, and the itinerary is the product |
+
+**What follows from it.** Nudges are delivered by e-mail as the guaranteed channel and push as the
+opportunistic one, so the flywheel's reach rate never rests on a permission the browser may not
+grant; the reach rate counts clicks and visits rather than deliveries, which is how it is defined in
+the funnel already. Itinerary adherence uses the device's own location **with consent**
+([ADR-0009](../../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §5), never estate sensors,
+and works without it. Going native later changes the delivery of these functions, not their
+contracts — the companion is reached through the same API gateway either way.
+
 ## Containers
 | Container | Responsibility | AI? |
 | --- | --- | --- |

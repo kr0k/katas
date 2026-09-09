@@ -12,6 +12,7 @@
 - [The problem in one paragraph](#the-problem-in-one-paragraph)
 - [Why this pays back](#why-this-pays-back)
 - [Our approach: how we used AI](#our-approach-how-we-used-ai)
+- [The number to challenge first](#the-number-to-challenge-first)
 - [Architecture at a glance](#architecture-at-a-glance)
 - [Delivery roadmap: what we build when, and what we buy](#delivery-roadmap-what-we-build-when-and-what-we-buy)
 - [Requirements](#requirements)
@@ -39,6 +40,7 @@
 | [`hld/architecture-evaluation.md`](hld/architecture-evaluation.md) | Quality-attribute scenarios, the styles we rejected, sensitivity and trade-off points, risks and non-risks | …asking how the characteristics were evaluated |
 | `adrs/` | Architecture Decision Records with alternatives and trade-offs | …looking for the "why" behind any choice |
 | [`appendix/`](appendix/README.md) | The work the architecture rests on but does not consist of: business-case model, generative-cost model, daily-report specification, vendor ticketing rules, data-health runbooks, LoRaWAN airtime | …checking a number or a calculation |
+| [`how-we-used-ai.md`](how-we-used-ai.md) | How AI was used to produce this proposal, where it was wrong, and what we changed in the process because of it | …judging the kata's own theme |
 | `video/` | Semi-final video (if we get there) | |
 
 Every scenario links to its ADRs; every ADR links back to the requirements it serves. The [traceability table](#traceability-capability--requirement--decision) is the shortcut. `uv run scripts/lint_docs.py` checks links, anchors, ids, traceability, duplicated prose and every number derived from the business-case model; `uv run scripts/check_mermaid.py` renders each diagram with mermaid's own parser. GitHub Actions runs both on every push.
@@ -69,6 +71,18 @@ AI is a layer on top of a sound event-driven, edge-first system, not the system 
 4. **Uncertainty and verification as architecture.** An adopted [inference gateway](hld/ai-platform/README.md) isolates us from any single provider; one governance loop covers every model, rented or owned; confidence bands, evaluation gates and production monitoring are specified in [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) and [ADR-0005](adrs/ADR-0005-model-gateway-and-provider-independence.md).
 
 Three kinds of AI, treated differently: **classical ML** (forecasting, pricing) is deterministic given its inputs and tested like software; **computer vision** produces probabilities and gets confidence bands and human review; **generative AI** is grounded, constrained and continuously evaluated.
+
+AI also helped *write* this proposal, which the kata's theme makes fair game for scrutiny: what it did, the five places it was wrong, and the checks we added once we noticed are in [how we used AI](how-we-used-ai.md).
+
+---
+
+## The number to challenge first
+
+If a reviewer has time to attack exactly one thing, it should be this: **thirteen must-have criteria are required from one ticketing vendor, and six of them may not be offered together by anyone.**
+
+Adopt-not-build was decided on criteria, not on market facts ([ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md)). If the combination does not exist, the fallback matrix in [TODOS.md](TODOS.md) changes Phase 0's scope, turns the flywheel's second lever into a desk process, and moves the payback window right — the three things the rest of this proposal rests on. It is a two-to-three day landscape review and it is a prerequisite for Phase 0, not a footnote.
+
+Everything else that could move a conclusion is a [sensitivity point](hld/architecture-evaluation.md#sensitivity-points), with the prompt-cache share and persons-per-gate-scan the two sharpest.
 
 ---
 
@@ -148,6 +162,7 @@ Five AI scenarios, two radio technologies and an edge tier are a lot for ≤ 5 e
 | Open-weight fallback model | **Adopt** managed hosting of open weights → [ADR-0005](adrs/ADR-0005-model-gateway-and-provider-independence.md) | Provider independence without a GPU fleet (R9) |
 | Model governance: registry, evaluation gate, monitoring | **Build thin**, on managed MLOps primitives → [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) | Golden sets and thresholds are ours; the plumbing is not |
 | Edge tier: broker, LoRaWAN server, tier-0 rules, gate adapters | **Configure** OSS, build small glue → [ADR-0001](adrs/ADR-0001-edge-first-store-and-forward.md) | Off-the-shelf components; the estate-specific part is the rules and the wiring |
+| Visitor client (companion, itinerary, nudges) | **Build** as one installable web app → [S4](hld/scenarios/guest-companion/README.md#the-client-and-why-it-is-an-installable-web-app) | One codebase for phone and kiosk, offline cache for the plan, and no store download between a family and their day |
 | Business logic of the four contexts | **Build** as a modular monolith → [ADR-0004](adrs/ADR-0004-event-driven-backbone.md) | This *is* the estate's domain |
 | Own models: welfare vision and anomaly scoring, piranha counting, footfall forecast, price elasticity | **Build** → [ADR-0006](adrs/ADR-0006-edge-vs-cloud-inference.md) | No API knows what a lethargic cassowary looks like |
 

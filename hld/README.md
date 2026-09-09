@@ -75,6 +75,15 @@ See [core/README.md](core/README.md#container-view) for the full container view 
 | **Animal Welfare** | animals, enclosures, feeding, health reviews, treatments, population ledger and estimates | `FeedingRecorded`, `WelfareAnomalyDetected`, `ReviewDecided`, `TreatmentStarted`, `TreatmentClosed`, `EnclosureStatusChanged` (keeper decision: on/off show), `PopulationEstimated`, `SafetyAlertRaised` | enclosure telemetry |
 | **Guest Engagement** | companion sessions, itineraries, nudges, pricing recommendations, per-subject keys | `ItineraryCreated`, `NudgeSent`, `PriceRecommended`, `SubjectErased` | `QueueLengthUpdated`, `RideStatusChanged`, `TicketPurchased`, `PriceUpdated`, `EnclosureStatusChanged` (e.g. "the sloth is off show today") |
 
+**Why the boundaries sit where they do.** Each context is dominated by a different one of the estate's [driving characteristics](../requirements/04-non-functional-requirements.md#driving-characteristics-the-ones-that-shape-the-architecture), which is the reason there are four of them and not one module or fourteen services: a boundary is drawn where the characteristics diverge, so that each side can be built and degraded on its own terms.
+
+| Context | Dominant characteristic | What the boundary therefore buys |
+| --- | --- | --- |
+| **Ticketing & Access** | Resilience to connectivity loss (plus a local need for transactional consistency the others do not have) | Admission survives an outage on signed credentials and a local ledger, while money and PCI scope stay with the vendor — neither of which the other three contexts should inherit |
+| **Park Operations** | Analysability, at a cost that does not grow with attendance | Read models rebuilt by replay, forecasting in scheduled batches, and no model on a request path |
+| **Animal Welfare** | Safety, then accuracy | The tier-0 rules stay deterministic and local, structurally separated from every model; confidence bands and evidence travel with each opinion |
+| **Guest Engagement** | Evolvability of the AI layer, then cost-efficiency | Capabilities are addressed by name so a model can be swapped, degraded or switched off without the visitor-facing surface changing |
+
 Contexts communicate only through events on the backbone or through published read models — no shared databases. This matters for the AI additions: a scenario can be switched off, replaced or degraded without touching the others.
 
 **Rule: probabilistic events do not cross into visitor-facing contexts.** `WelfareAnomalyDetected` is a model's opinion; what Guest Engagement may act on is `EnclosureStatusChanged`, a keeper's decision. `PriceRecommended` is a model's opinion; what visitors see is `PriceUpdated`, after the policy engine and, where needed, management. The forecast never leaves Park Operations; `StaffingPlanApproved` does. Contract tests fail a visitor-facing context that subscribes to an AI-output topic ([ADR-0004](../adrs/ADR-0004-event-driven-backbone.md) §9).

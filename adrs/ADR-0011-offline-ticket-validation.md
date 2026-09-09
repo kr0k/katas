@@ -34,6 +34,7 @@ These are part of the acceptance test for the adopted platform ([ADR-0012](ADR-0
 | **Ticket for another day** presented today | Refused with a clear message and a pointer to the ticket desk; never silently admitted |
 | **Refund or revocation during an uplink outage** | Admitted on signature until the revocation snapshot lands (≤ 60 s after reconnect); the admission appears in the exceptions report ([downlink](../hld/core/edge-and-connectivity.md#downlink-cloud--estate)) |
 | **Reader restarts mid-queue** | Local ledger and lists persist on the reader; queued entries are re-sent from the persistent session; no double count |
+| **A family wants to buy a ticket at the gate while the estate's uplink is down** | Validation of tickets already sold is covered above; *selling* is the gap, and it splits in two. The **payment** normally rides the card terminal's own connection to the acquirer, not our uplink, so it is unaffected; where the terminal shares our link, the floor is cash and pass-holder entry. **Issuing** the credential uses the mechanism this ADR already relies on: the estate holds a bounded stock of **pre-signed day-ticket credentials** with a validity window, sold at the gate and activated on reconnect. Each is single-use, enters the local used-ledger like any other, and the sold-versus-activated difference is a line in the exceptions report. The stock size caps the exposure and is set with the vendor ([ADR-0012](ADR-0012-ticketing-platform-adopt-not-build.md)) |
 
 **False-rejection metric:** valid tickets refused ÷ total presentations ≤ 0.05%, measured from staff override reason codes and reconciliation; it is the number the visitor feels.
 
@@ -42,6 +43,7 @@ These are part of the acceptance test for the adopted platform ([ADR-0012](ADR-0
 | --- | --- | --- | --- |
 | Online validation against the cloud | Simplest fraud control | Gates stop with the uplink | Fails NFR-AVL-1 |
 | Paper tickets with manual checks during outages | Zero tech | No data, slow, fraud-prone at 15,000/day | Scale |
+| **Offline sales by capturing the order and deferring the payment** — the gate queues the purchase and charges on reconnect | Nothing is lost from the peak: every family that wants to buy, buys | An unpaid order is a promise, so a failed capture later is either a write-off or a chase; duplicate submissions during a long outage need their own idempotency and fraud caps; and it puts revenue collection on the outage path, which is exactly where we have the least visibility | A pre-signed credential stock gets the same revenue with none of the unpaid-order tail — the money is taken at the gate, and only the *issuing* is deferred |
 | Signed credentials + local ledger + reconciliation (chosen) | Always admits valid tickets; fraud detected, if slightly late | Small fraud window during outages; key management | — |
 
 ## Consequences

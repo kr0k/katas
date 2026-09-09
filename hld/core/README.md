@@ -240,4 +240,5 @@ Purchases and the daily report are business data and get the same treatment as t
 - **Observability:** OpenTelemetry everywhere; AI calls carry `capability`, `model_version`, `confidence`, `cost` attributes.
 - **Infrastructure as code & GitOps:** everything — including model versions in the registry — is declared in Git and reconciled.
 - **Degradation ladder:** (1) cloud + AI, (2) cloud without AI (rules/heuristics), (3) estate-only (gates, safety, buffering). Every scenario names where it sits on this ladder.
+- **Cold restore is a runbook, not an engineer.** Bringing the edge tier, the broker cluster and the gate readers back after a power event is written as a checklist that ops staff on site can follow without a shell, because the people there when the park opens are not the five engineers (NFR-OPS-1). The quarterly restore drill (GD-13) is run by whoever is on site, not by the author of the runbook.
 - **Resilience validation:** sixteen scripted game days with expected behaviour, metric, cadence and owner → [resilience-validation.md](resilience-validation.md).

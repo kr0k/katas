@@ -16,5 +16,6 @@ One decision per file. Format: Context → Decision → Alternatives considered 
 | [ADR-0010](ADR-0010-grounded-llm-with-guardrails.md) | Grounded LLM with output guardrails for the guest companion | accepted | S4 |
 | [ADR-0011](ADR-0011-offline-ticket-validation.md) | Offline ticket validation with eventual reconciliation | accepted | Core |
 | [ADR-0012](ADR-0012-ticketing-platform-adopt-not-build.md) | Ticketing platform: adopt, not build | accepted | Core |
+| [ADR-0013](ADR-0013-role-agents-on-typed-tools.md) | Role agents on typed tools, proposing into existing approvals | accepted | AI platform |
 
 Template: [`template.md`](template.md)

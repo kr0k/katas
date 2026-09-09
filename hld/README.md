@@ -4,6 +4,7 @@
 
 - [`core/`](core/README.md) — the foundation every AI scenario stands on: edge devices, MQTT, backhaul, event backbone, business services, data platform.
 - [`ai-platform/`](ai-platform/README.md) — shared AI infrastructure: inference gateway (adopted OSS) and model governance — registry, evaluation, monitoring. Read this for "dealing with uncertainty" and "does it work".
+- [`ai-platform/agents.md`](ai-platform/agents.md) — the agentic layer: which tools each agent has, what it may read and write, the injection and memory-poisoning chains worked through, and what the layer costs.
 - [`../appendix/`](../appendix/README.md) — calculations and specifications the design references but does not contain: business case, generative cost, daily-report spec, ticketing rules, data-health runbooks, LoRaWAN airtime.
 - [`architecture-evaluation.md`](architecture-evaluation.md) — the ATAM-style evaluation of the whole thing: quality-attribute scenarios with response measures, the architectural styles we rejected and why, sensitivity points, trade-off points, risks and non-risks.
 - [`scenarios/`](scenarios/) — one folder per AI use case. Each has the same structure: *Problem → Why AI → Solution → Containers → Diagram → Data → Validation → ADRs*.
@@ -16,7 +17,7 @@ The full roadmap with entry gates and the build-vs-adopt table lives in the [REA
 | --- | --- | --- | --- |
 | 0 · Foundation | Everything: edge tier, ticketing platform integration, event backbone, business monolith, data platform, game days | — | — (data capture only) |
 | 1 · Data & rules | Anonymous counters complete · spend ingestion (`PurchaseRecorded`) · [Estate daily report](core/README.md#estate-daily-report) as a template | Inference gateway (adopted), registry and eval gate (thin) | S1 feeding-by-scale · S3 live dashboard · S4 FAQ |
-| 2 · Models on data | Edge compute N+1 · daily report phrased by the S1 drafter capability · [requirements/08](../requirements/08-business-case.md) re-issued with season-1 values | Monitoring, shadow mode, golden sets per capability | S1 activity anomalies + vision in shadow · S3 forecasting · S4 planning |
+| 2 · Models on data | Edge compute N+1 · daily report phrased by the S1 drafter capability · metric layer · [requirements/08](../requirements/08-business-case.md) re-issued with season-1 values | Monitoring, shadow mode, golden sets per capability · [agents](ai-platform/agents.md) (ops copilot, `ask-the-estate`, companion tool-selection) | S1 activity anomalies + vision in shadow · S3 forecasting · S4 planning |
 | 3 · Optimisation | — | — | S2 counting · S5 pricing experiment · S4 nudges and pass-upgrade prompt · S1 per-animal vision |
 
 Each scenario README carries a **Phase** line in its header.

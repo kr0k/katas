@@ -125,6 +125,16 @@ class Assumptions:
     cache_read_share: float = 0.10      # cached input costs this share of the input price
     promotions_per_year: int = 4        # companion bundles promoted per year
     shadow_weeks: int = 2               # each promotion runs 2 weeks in shadow (ADR-0008 §3)
+    # Agentic layer (ADR-0013). Staff-facing work is hundreds of tasks a day, not
+    # millions of visitor interactions, and tool selection is routing rather than
+    # reasoning — so it is priced on the small tier.
+    copilot_tasks_per_day: float = 20.0             # ops manager, vet, head keeper
+    tok_copilot: tuple = (20_000, 15_000, 1_500)    # a whole task, summed over its tool-call turns
+    estate_questions_per_day: float = 5.0           # `ask-the-estate`, read-only over the metric layer
+    tok_estate: tuple = (5_000, 3_000, 400)
+    faq_live_share: float = 0.25                    # of model-served FAQ answers needing a live lookup
+    tok_tool_select: tuple = (1_500, 1_000, 100)    # the tool-selection turn itself
+    agent_share_cap: float = 0.05                   # the layer must stay this small next to the rest
     ai_revenue_cap: float = 0.02        # NFR-COST-1 — AI spend ≤ this share of revenue
     llm_opex_line: float = 50_000       # the hosted-LLM OPEX line this spend must fit (requirements/04)
 
@@ -563,7 +573,10 @@ def llm_rows(a: Assumptions = A, cached: bool = True) -> list[tuple[str, float, 
     plans, replans = using, using * a.replans_per_visit
     accounts = using * a.opt_in[2]
     nudges = accounts * a.nudges_per_account_year
-    judged = (faq + plans + replans) * a.judge_sample
+    copilot = a.copilot_tasks_per_day * a.open_days
+    estate_q = a.estate_questions_per_day * a.open_days
+    tool_select = faq * a.faq_live_share
+    judged = (faq + plans + replans + copilot + estate_q) * a.judge_sample
     reports = a.reports_per_day * a.open_days
     rows = [
         ("`answer-question` — FAQ, small tier", faq_small, "small", call_cost(a.tok_faq, a.price_small, faq_small, cached, a)),
@@ -574,6 +587,14 @@ def llm_rows(a: Assumptions = A, cached: bool = True) -> list[tuple[str, float, 
         ("LLM-as-judge on a sample", judged, "large", call_cost(a.tok_judge, a.price_large, judged, cached, a)),
         ("`summarise-*` report drafters", reports, "large", call_cost(a.tok_report, a.price_large, reports, cached, a)),
     ]
+    rows += [
+        ("`agent:ops-copilot` — one staff task, summed over its tool-call turns", copilot, "large",
+         call_cost(a.tok_copilot, a.price_large, copilot, cached, a)),
+        ("`agent:companion` — tool-selection turn on a live-data question", tool_select, "small",
+         call_cost(a.tok_tool_select, a.price_small, tool_select, cached, a)),
+        ("`ask-the-estate` — a question answered over defined metrics", estate_q, "large",
+         call_cost(a.tok_estate, a.price_large, estate_q, cached, a)),
+    ]
     visitor_facing = sum(r[3] for r in rows[:4])
     shadow = visitor_facing * a.promotions_per_year * a.shadow_weeks / 52
     rows.append(("Shadow runs before promotion", 0.0, "as production", shadow))
@@ -582,6 +603,18 @@ def llm_rows(a: Assumptions = A, cached: bool = True) -> list[tuple[str, float, 
 
 def llm_total(a: Assumptions = A, cached: bool = True) -> float:
     return sum(r[3] for r in llm_rows(a, cached))
+
+
+AGENT_LABELS = ("`agent:ops-copilot`", "`agent:companion`", "`ask-the-estate`")
+
+
+def agent_cost(a: Assumptions = A) -> float:
+    """Yearly cost of the agentic layer's own request classes (ADR-0013)."""
+    return sum(r[3] for r in llm_rows(a) if r[0].startswith(AGENT_LABELS))
+
+
+def agent_share(a: Assumptions = A) -> float:
+    return agent_cost(a) / llm_total(a)
 
 
 def llm_headroom(a: Assumptions = A) -> float:
@@ -800,6 +833,9 @@ def t_llm_cost(a: Assumptions = A) -> str:
         "Nudge wording (Phase 3)": a.tok_nudge,
         "LLM-as-judge on a sample": a.tok_judge,
         "`summarise-*` report drafters": a.tok_report,
+        "`agent:ops-copilot` — one staff task, summed over its tool-call turns": a.tok_copilot,
+        "`agent:companion` — tool-selection turn on a live-data question": a.tok_tool_select,
+        "`ask-the-estate` — a question answered over defined metrics": a.tok_estate,
     }
     rows = []
     for label, calls, tier, cost in llm_rows(a):
@@ -1033,6 +1069,8 @@ def invariants(a: Assumptions) -> None:
     rr_V = a.run_rate[3] * a.open_days
     assert llm_total(a) < a.ai_revenue_cap * ladder(a)[3].gross * rr_V / ladder(a)[3].V, "planned AI spend must sit under the NFR-COST-1 cap"
     assert llm_total(a) < a.llm_opex_line, "the OPEX line must cover the planned token spend"
+    assert agent_share(a) < a.agent_share_cap, "the agentic layer must stay small next to the visitor-facing classes"
+    assert agent_cost(a) > 0 and llm_total(a) > agent_cost(a)
     assert llm_headroom(a) > 0
 
 
@@ -1049,7 +1087,7 @@ def self_test(a: Assumptions = A) -> None:
     # one hand-computable generative call: 1,500 full + 4,500 cached input, 800 output, large tier
     assert round(call_cost(a.tok_plan, a.price_large, 1, True, a), 6) == round((1_500 * 3.0 + 4_500 * 0.3 + 800 * 15.0) / 1e6, 6)
     assert round(companion_households(a)) == 771_429
-    assert round(llm_headroom(a) * 100) == 46  # the line absorbs 46%, not the full ±50% band
+    assert round(llm_headroom(a) * 100) == 44  # the line absorbs 44%, not the full ±50% band
     # invariants under three assumption sets
     for alt in (a, PESSIMISTIC, OPTIMISTIC):
         invariants(alt)

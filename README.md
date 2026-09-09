@@ -167,7 +167,7 @@ Five AI scenarios, two radio technologies and an edge tier are a lot for ≤ 5 e
 | --- | --- | --- | --- | --- |
 | **0 · Foundation** | Day 1 | Edge tier: MQTT broker, LoRaWAN gateway, gate readers, tier-0 safety rules, staff devices. Ticketing platform adopted and integrated (ADR-0012). Event backbone, business monolith skeleton, data platform, GitOps. | None. Data capture only — every sensor and gate produces events from day one. | Game days: uplink loss, broker failover, gate offline, revocation after outage, safety alert to a human → [resilience validation](hld/core/resilience-validation.md) |
 | **1 · Data & rules** | Phase 0 in production | Anonymous counters in every zone (OKR 2.1). Feature store. Inference gateway and thin model governance. Spend ingestion (`PurchaseRecorded`, FR-2.6) after 14 days in shadow. [Estate daily report](hld/core/README.md#estate-daily-report) as a template (FR-2.7). | **S1** feeding-by-scale: rules + tabular anomaly on feed scales and sensors. **S3** live occupancy dashboard (no ML). **S4** FAQ answers: small model via the gateway, grounded on the knowledge base. | Thresholds table live; golden sets started by domain owners; heuristic staffing rules in place (R7); 7 consecutive green spend reconciliations; OKR 1.6 baseline at month 12 |
-| **2 · Models on accumulated data** | ≥ 1 season of footfall and welfare data (A6, R7) | Edge compute sized N+1; visitor-masking gate. [requirements/08](requirements/08-business-case.md) re-issued with season-1 measured values. | **S1** per-enclosure activity anomalies, then camera features in shadow. **S3** footfall forecasting + staffing optimiser (must beat the heuristic). **S4** day planning with streaming answers. Daily report phrasing via the S1 drafter, after the numeric-fidelity eval. | Backtests vs. heuristic baseline; 2-week shadow runs; MAPE gate |
+| **2 · Models on accumulated data** | ≥ 1 season of footfall and welfare data (A6, R7) | Edge compute sized N+1; visitor-masking gate. [requirements/08](requirements/08-business-case.md) re-issued with season-1 measured values. | **S1** per-enclosure activity anomalies, then camera features in shadow. **S3** footfall forecasting + staffing optimiser (must beat the heuristic). **S4** day planning with streaming answers. Daily report phrasing via the S1 drafter, after the numeric-fidelity eval. **Agents** ([ADR-0013](adrs/ADR-0013-role-agents-on-typed-tools.md)): the ops copilot and `ask-the-estate` arrive once the metric layer and the review queue exist to propose into — the layer is proposals over Phase 1–2 capabilities, so it cannot precede them. | Backtests vs. heuristic baseline; 2-week shadow runs; MAPE gate; agent game days GD-17–GD-20 and a weekly labelled task sample |
 | **3 · Optimisation** | Phase 2 live + 1 year of sales and footfall | — | **S2** piranha counting against a census of record. **S5** demand-aware pricing as a year-1 randomised quiet-day experiment. **S4** return-visit nudges and the pass-upgrade prompt. **S1** per-animal vision for solitary or tagged animals. | Census comparison; A/B by date cohort; nudge control cohort |
 | **4+ · Research** | Open questions in [`TODOS.md`](TODOS.md) | — | Per-animal re-identification in group enclosures; ride downtime analytics (FR-2.5). | Spikes with entry thresholds |
 
@@ -207,6 +207,7 @@ Each scenario README states its phase; the phases in `hld/` are summarised in [h
 - [Edge & connectivity: traffic classes, store-and-forward, downlink, capacity](hld/core/edge-and-connectivity.md)
 - [Resilience validation: the game-day catalogue](hld/core/resilience-validation.md)
 - [AI platform: inference gateway, model governance, cost](hld/ai-platform/README.md)
+- [Agents: AI inside the decision, on typed tools](hld/ai-platform/agents.md)
 - [Architecture evaluation: utility tree, styles, sensitivity and trade-off points](hld/architecture-evaluation.md)
 
 ## AI scenarios
@@ -246,6 +247,8 @@ Index with status: [`adrs/README.md`](adrs/README.md)
 | **AI operations** | | | |
 | Swap models/providers without rewriting services | NFR-EVO | [AI platform](hld/ai-platform/README.md) | [ADR-0005](adrs/ADR-0005-model-gateway-and-provider-independence.md) |
 | Prove AI works before and after release | NFR-VER | [AI platform](hld/ai-platform/README.md) | [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) |
+| Reach inside a multi-step decision — explain a flag, draft a roster change, answer a follow-up | FR-2.8, FR-4.5 | [Agents](hld/ai-platform/agents.md) | [ADR-0013](adrs/ADR-0013-role-agents-on-typed-tools.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0004](adrs/ADR-0004-event-driven-backbone.md) |
+| Keep an agent bounded, idempotent and reconstructible | NFR-AGT-1 | [Agents](hld/ai-platform/agents.md#invariants) | [ADR-0013](adrs/ADR-0013-role-agents-on-typed-tools.md), [ADR-0005](adrs/ADR-0005-model-gateway-and-provider-independence.md) |
 
 ---
 
@@ -265,7 +268,7 @@ Index with status: [`adrs/README.md`](adrs/README.md)
 
 → [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [AI platform](hld/ai-platform/README.md)
 
-The non-AI foundation gets the same treatment. A [game-day catalogue](hld/core/resilience-validation.md) of sixteen scripted faults — from uplink loss and broker failover to an erasure request, a POS webhook carrying a card number and a feed scale wedged at a plausible weight — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five are the exit criterion for Phase 0.
+The non-AI foundation gets the same treatment. A [game-day catalogue](hld/core/resilience-validation.md) of twenty scripted faults — from uplink loss and broker failover to an erasure request, a POS webhook carrying a card number and a feed scale wedged at a plausible weight — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five are the exit criterion for Phase 0.
 
 ## What this architecture does not do
 

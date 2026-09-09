@@ -24,6 +24,7 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 | FR-2.4 | Correlate investments (new ride, refurbished enclosure) with changes in popularity | SHOULD |
 | FR-2.5 | Ride telemetry (cycles, downtime, faults) feeds maintenance scheduling | COULD |
 | FR-2.6 | Ingest **on-site purchases** from the POS as auditable `PurchaseRecorded` events: `transaction_id`, type (sale / refund / void / correction), net amount + tax + currency, category (F&B / retail / parking / other — **no admission category**: gate-POS ticket sales stay `TicketPurchased`, so nothing is double-counted), `pos_terminal_id`, time; the pseudonymous `visitor_id` only where the opt-in explicitly covers purchase history ([ADR-0009](../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §7), otherwise no subject; never card data (NFR-SEC-2). Reconciled daily against the vendor's end-of-day totals | MUST |
+| FR-2.8 🤖 | **Ask the estate**: management asks a question in plain language and it is answered over the estate's *defined metrics* — the occupancy and forecast metrics of [S3](../hld/scenarios/visitor-flow-forecasting/README.md) among them — read-only, with the metric definition and the window shown beside the answer → [agents](../hld/ai-platform/agents.md#ask-the-estate) | COULD |
 | FR-2.7 | **Estate daily report** — one screen of "how was today" for the Countess at 21:00, a read model over existing events with every number inserted verbatim; the optional phrasing reuses the S1 daily-summary drafter under its human-approval rules → [Core](../hld/core/README.md#estate-daily-report) | SHOULD |
 
 ## FR-3 · Animal Welfare
@@ -44,6 +45,7 @@ Format: `FR-<domain>.<n>` — **MUST** / **SHOULD** / **COULD**. AI-enabled requ
 | --- | --- | --- |
 | FR-4.1 🤖 | **Guest companion**: a conversational assistant (mobile/web, kiosks) that plans a family's day, suggests the next stop based on live queues, and answers questions about animals and rides → [S4](../hld/scenarios/guest-companion/README.md) | SHOULD |
 | FR-4.2 🤖 | Personalised **return-visit nudges** (new animal born, seasonal event, unfinished "collection") for opted-in visitors → [S4](../hld/scenarios/guest-companion/README.md) | SHOULD |
+| FR-4.5 🤖 | **Staff copilot**: a keeper, vet or ops manager asks for an explanation or a draft, and the platform reads defined metrics and evidence and *proposes* — a review to open in [S1](../hld/scenarios/animal-welfare-monitoring/README.md), a roster change in [S3](../hld/scenarios/visitor-flow-forecasting/README.md), a cap change — into the approval surface that already owns that decision → [agents](../hld/ai-platform/agents.md#ops-copilot) | COULD |
 | FR-4.3 🤖 | **Demand-aware family pass pricing** within guardrails set by the estate → [S5](../hld/scenarios/dynamic-family-passes/README.md) | COULD |
 | FR-4.4 | Post-visit feedback collection and theme analysis | COULD |
 

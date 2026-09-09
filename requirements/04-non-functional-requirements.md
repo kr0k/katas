@@ -47,7 +47,7 @@ This table is the summary. The evaluation behind it — the utility tree of qual
 | NFR-PRV-1 | Visitor privacy | Footfall counting is anonymous (no faces, no device IDs retained); GDPR-compliant opt-in for accounts; no personal data in events; erasure completed ≤ 30 days with a passing audit query ([ADR-0009](../adrs/ADR-0009-visitor-privacy-anonymous-counting.md)) |
 | NFR-PRV-2 | Camera footage | Enclosure cameras point at animals; visitor areas in frame are masked at edge before anything is stored |
 | NFR-OBS-1 | Observability | Traces, metrics and logs for every service and every AI call (model, version, tokens, cost, confidence) |
-| NFR-EVO-1 | Model replaceability | Swap a model/provider for a capability in ≤ 1 day with no service code change |
+| NFR-EVO-1 | Model replaceability | Swap a model/provider for a capability in ≤ 1 day with no service code change. The day includes fitting the provider's own prompt variant and re-running the capability's eval suite — a swap is free of code, not of validation ([ADR-0005](../adrs/ADR-0005-model-gateway-and-provider-independence.md) §3) |
 | NFR-VER-1 | AI verification | No model/prompt version reaches production without passing its evaluation suite; the non-AI foundation is verified by the [game-day catalogue](../hld/core/resilience-validation.md) |
 | NFR-COST-1 | AI spend | Per-capability monthly budget with alerts at 70% / 90% and automatic downgrade at 100%; total AI spend ≤ 2% of revenue (OKR 5.1) |
 | NFR-COST-2 | **Platform cost per visitor** | Total cost of ownership (CAPEX depreciated over 5 years + OPEX including ticketing fees and the team) ≤ €1.00 per visitor at 5,000/day and ≤ €0.50 at 15,000/day, reported quarterly — see [cost model](#cost-model-tco-50) |

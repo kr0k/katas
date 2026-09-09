@@ -73,6 +73,20 @@ We do not build any of that. Routes, budgets and fallback chains are declarative
 
 → [ADR-0005](../../adrs/ADR-0005-model-gateway-and-provider-independence.md)
 
+### What a capability declares
+
+The capability is the unit every consumer calls, so its registry entry is the contract — and one field in it is what keeps the delivery phases honest.
+
+| Field | Why it is there |
+| --- | --- |
+| `implementation: rule \| model` | **A capability served by a deterministic rule is still a capability.** S1 begins as feed-scale thresholds, S3 as "the same weekday last week, adjusted for season" — behind the same names their consumers already call, so the switch to a model changes nothing outside the registry |
+| `promotion trigger` | What must be true before a model replaces the rule: the labelled volume required, the threshold it must beat from the [thresholds table](#thresholds-and-cadences-source-of-truth), and the shadow duration. A capability without one drifts either into rules forever or into a model promoted on enthusiasm |
+| `must beat` | The named baseline, which is the rule itself — not a paper metric. S3's forecast is promoted only if it beats the heuristic it replaces |
+| `fallback` | The rule does not retire when the model arrives; it becomes the last rung of the fallback chain ([ADR-0005](../../adrs/ADR-0005-model-gateway-and-provider-independence.md) §4). Promotion changes which implementation is primary, never whether a deterministic path exists |
+| `owner` | The domain lead who owns the golden set and the bands (vet, ops manager, guest team) |
+
+This is why the [delivery roadmap](../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy) is an architectural mechanism rather than a project plan: a phase gate is a promotion trigger that has not fired yet, and the rule that is live meanwhile is the same artefact the fallback chain will keep afterwards.
+
 ### Capability → runtime path
 
 | Capability (examples) | Model kind | Runtime path | Governed by |
@@ -141,7 +155,8 @@ Each gated number names the instrument that produces it, so a gate and its produ
 | Metric | Definition |
 | --- | --- |
 | `calibration error ≤ 0.05` | **Expected calibration error (ECE)** on the capability's golden set over **10 equal-mass bins** of model confidence: ECE = Σ (nᵦ/N) · \|accuracyᵦ − mean confidenceᵦ\|. Equal-mass rather than equal-width, because confidence piles up at the ends and equal-width bins leave the interesting ones nearly empty. The CI job emits a reliability diagram and per-bin counts as build artifacts |
-| Per-band calibration | Each of ADR-0007's three bands is checked on its own: \|accuracy − mean confidence\| ≤ 0.05 **within** the medium band, and the high band's accuracy ≥ its lower confidence bound. An aggregate ECE of 0.03 can hide a medium band 15 points optimistic, which is what the vet acts on |
+| Per-band calibration | Each of ADR-0007's three bands is checked on its own: \|accuracy − mean confidence\| ≤ 0.05 **within** the medium band, and the high band's accuracy ≥ its lower confidence bound. An aggregate ECE of 0.03 can hide a medium band 15 points optimistic, which is what the vet acts on. **Max deviation of any single bin ≤ 0.10** as well, so one badly-behaved bin cannot be averaged away |
+| What happens when calibration fails | The bundle is blocked, and post-hoc calibration is re-fitted and re-measured. Until it passes, the capability is not simply switched off: **its bands shift conservatively** — the medium band's lower bound drops so that more goes to a human and less is auto-acted, at a known cost in review hours. A model whose confidence cannot be trusted is still useful; a model whose confidence is trusted wrongly is not |
 | Confidence itself | A calibrated quantity, not a raw model score. Post-hoc calibration (temperature scaling, or isotonic where labels allow) is fitted on a held-out split that is **not** the golden set and shipped inside the versioned bundle, so a model swap re-fits it and the gate re-measures it |
 | `factuality ≥ 0.95` | Share of factual claims in a sampled answer that map to a cited knowledge-base record or live-data call. Judged by the LLM-as-judge, calibrated weekly against the guest team's 50 human-reviewed sessions; judge-vs-human disagreement above 10% invalidates the measurement (ADR-0008 §5) |
 | `MAPE` | Rolling-origin: refitted at each origin, scored on the next day only, never on data available after the origin |

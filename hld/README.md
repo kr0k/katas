@@ -15,10 +15,10 @@ The full roadmap with entry gates and the build-vs-adopt table lives in the [REA
 
 | Phase | `core/` | `ai-platform/` | `scenarios/` |
 | --- | --- | --- | --- |
-| 0 · Foundation | Everything: edge tier, ticketing platform integration, event backbone, business monolith, data platform, game days | — | — (data capture only) |
+| 0 · Foundation | Everything: edge tier, ticketing platform integration, event backbone, business monolith, data platform, **investment register** (FR-2.9), game days | — | — (data capture only) |
 | 1 · Data & rules | Anonymous counters complete · spend ingestion (`PurchaseRecorded`) · [Estate daily report](core/README.md#estate-daily-report) as a template | Inference gateway (adopted), registry and eval gate (thin) | S1 feeding-by-scale · S3 live dashboard · S4 FAQ |
 | 2 · Models on data | Edge compute N+1 · daily report phrased by the S1 drafter capability · metric layer · [requirements/08](../requirements/08-business-case.md) re-issued with season-1 values | Monitoring, shadow mode, golden sets per capability · [agents](ai-platform/agents.md) (ops copilot, `ask-the-estate`, companion tool-selection) | S1 activity anomalies + vision in shadow, protocol answers, feed forecast · S3 forecasting · S4 planning |
-| 3 · Optimisation | Investment register has a year of history | — | S2 counting · S5 pricing experiment · S4 nudges and pass-upgrade prompt · S1 per-animal vision and the plant collection · S6 content drafts · S7 investment evaluation |
+| 3 · Optimisation | — | — | S2 counting · S5 pricing experiment · S4 nudges and pass-upgrade prompt · S1 per-animal vision and the plant collection · S6 content drafts · S7 investment evaluation |
 
 Each scenario README carries a **Phase** line in its header.
 

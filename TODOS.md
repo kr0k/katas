@@ -78,4 +78,28 @@
 **Priority:** P2
 **Depends on:** Physical access to the estate; LoRaWAN network server container.
 
+### Export the mermaid diagrams to SVG for the video
+
+**What:** Have CI write an SVG per mermaid block into `diagrams/exports/`, alongside the render check that already runs.
+
+**Why:** [`video/`](video/README.md) is a real deliverable and the semi-final video cannot show a GitHub-rendered mermaid block — a slide needs a file. The same applies to any PDF or printed version of the submission.
+
+**Context:** `scripts/check_mermaid.py` already installs and drives `@mermaid-js/mermaid-cli` in its own CI job, so producing an SVG is a flag on a call that is already being made rather than a new tool or a new job. Keep the exports out of the lint gate: they are build output, not content, so a stale export must not be able to fail the docs job.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** Nothing.
+
+### Bump the CI actions off Node.js 20
+
+**What:** Update `actions/checkout` and `astral-sh/setup-uv` in [`.github/workflows/lint.yml`](.github/workflows/lint.yml) to versions that target a supported Node runtime.
+
+**Why:** The failure mode is the dangerous shape: when GitHub stops force-running these actions on Node 24, the workflow does not go red — it stops running, and with it the gate that checks every link, id, count and derived number across 50 files. A gate that disappears is worse than one that fails.
+
+**Context:** Observed on run 34355341654 on this branch: *"Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, astral-sh/setup-uv@v5."* Both jobs pass today. Bump the two actions and confirm both jobs still pass; the `mermaid` job is the fragile one because it installs a Chromium at run time. Deliberately kept out of the content branch so the architecture diff stays readable.
+
+**Effort:** S
+**Priority:** P2
+**Depends on:** Nothing.
+
 ## Completed

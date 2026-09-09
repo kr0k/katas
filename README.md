@@ -276,7 +276,7 @@ Index with status: [`adrs/README.md`](adrs/README.md)
 
 → [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [AI platform](hld/ai-platform/README.md)
 
-The non-AI foundation gets the same treatment. A [game-day catalogue](hld/core/resilience-validation.md) of twenty-four scripted faults — from uplink loss and broker failover to an erasure request, a POS webhook carrying a card number and a feed scale wedged at a plausible weight — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five are the exit criterion for Phase 0.
+The non-AI foundation gets the same treatment. A [game-day catalogue](hld/core/resilience-validation.md) of twenty-five scripted faults — from uplink loss and broker failover to an erasure request, a POS webhook carrying a card number and a feed scale wedged at a plausible weight — each with expected behaviour, a metric, a pass threshold, a cadence and an owner. Five are the exit criterion for Phase 0.
 
 ## What this architecture does not do
 

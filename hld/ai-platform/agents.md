@@ -134,10 +134,11 @@ that already has none is not possible.
 
 | | Volume | Cost |
 | --- | --- | --- |
-| `agent:ops-copilot` | 20 staff tasks a day, ≈ 6,000 a year | ≈ €250 / yr |
-| `agent:companion` tool-selection turn | ≈ 578,000 a year, small tier | ≈ €90 / yr |
-| `ask-the-estate` | 5 questions a day | ≈ €20 / yr |
-| **The agentic layer** | | **≈ €360 / yr — 1% of the generative bill** |
+| `agent:ops-copilot` | 20 staff tasks a day, ≈ 6,000 a year | €252 / yr |
+| `agent:companion` tool-selection turn | ≈ 578,000 a year, small tier | €87 / yr |
+| `ask-the-estate` | 5 questions a day | €19 / yr |
+| `answer-protocol` | 15 staff questions a day | €2 / yr |
+| **The agentic layer** | | **€360 / yr — 1% of the generative bill** |
 
 The arithmetic is in [`scripts/business_case.py`](../../scripts/business_case.py) and the row-by-row
 table is in the [generative cost appendix](../../appendix/generative-cost.md). The reason it is small is
@@ -147,8 +148,12 @@ thousands of households, which is why *it* is 90% of the bill and why the copilo
 had to go to the small tier. A layer that looks like the most ambitious part of the proposal is a
 rounding error, and the same arithmetic says an agent aimed at every visitor would not be.
 
-A self-test asserts the layer stays under 5% of generative spend, so an ambition that outgrows the
-audience fails the build.
+Every figure above is pinned to [`scripts/business_case.py`](../../scripts/business_case.py), so a
+changed assumption fails lint rather than leaving this table quietly wrong. Each cost row in that model
+**declares** whether the agentic layer reaches it, rather than being matched on its name — so a
+capability added under an unexpected name cannot default to sitting outside the budget. A self-test
+asserts the layer stays under 5% of generative spend, so an ambition that outgrows the audience fails
+the build.
 
 ## In-production evaluation, and rollback of the agent rather than the model
 

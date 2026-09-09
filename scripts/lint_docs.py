@@ -31,16 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import business_case  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-# Working documents that are not part of the submission: they reference ids and files that do
-# not exist yet, which is the point of a plan.
-NOT_SUBMISSION = {"MERGE-PLAN.md"}
-MD_FILES = sorted(
-    p
-    for p in ROOT.rglob("*.md")
-    if ".git" not in p.parts
-    and ".venv" not in p.parts
-    and str(p.relative_to(ROOT)) not in NOT_SUBMISSION
-)
+MD_FILES = sorted(p for p in ROOT.rglob("*.md") if ".git" not in p.parts and ".venv" not in p.parts)
 
 LINK_RE = re.compile(r"\]\(([^)\s]+)\)")
 HEADING_RE = re.compile(r"^#+\s+(.*?)\s*$")

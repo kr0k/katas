@@ -58,7 +58,7 @@ loop, can duplicate an effect on a retry, and can learn from its own output unti
 ## Alternatives considered
 | Option | Pros | Cons | Why not |
 | --- | --- | --- | --- |
-| **Four agents, one per stakeholder group** (the shape the sibling proposal took) | Complete coverage; a clean story per persona; more visible AI ambition | Four tool inventories, four eval suites, four budgets, four audit surfaces — and two of them would wrap processes that are already single-screen decisions (the vet's queue, the Countess's report) | Operability at five engineers (NFR-OPS-1, R9). Coverage is achieved by tools, not by multiplying agents |
+| **Four agents, one per stakeholder group** (the shape an earlier draft of this proposal took) | Complete coverage; a clean story per persona; more visible AI ambition | Four tool inventories, four eval suites, four budgets, four audit surfaces — and two of them would wrap processes that are already single-screen decisions (the vet's queue, the Countess's report) | Operability at five engineers (NFR-OPS-1, R9). Coverage is achieved by tools, not by multiplying agents |
 | **Keep assistants only — no tools, no agency** | Nothing new to secure; today's design unchanged | The multi-step work stays manual, so the claim that AI sits inside the decision would be false. Answering "why is this animal flagged" needs three lookups, and a chat window that cannot do them is a search box | It is the claim we are making; declining it means dropping the claim |
 | **Agents with direct database or SQL access** | Fastest to build; answers anything | Bypasses per-context ownership and permissions, unauditable, and text-to-SQL over raw schemas invents joins and therefore invents numbers | Correctness and ADR-0004 §7; the metric layer exists precisely so a question resolves to a defined number or is refused |
 | **Fully autonomous agents that act** | No human in the loop, so no queue and no latency | Fails V&V: there is no evaluation that makes an unreviewed price change or welfare intervention acceptable, and the reputational exposure is asymmetric ([ADR-0007](ADR-0007-human-in-the-loop-confidence-bands.md)) | Safety and accountability. A human commits anything that moves money, rosters, prices or care |
@@ -87,4 +87,4 @@ regression testing statistical rather than exact; and the copilot can waste the 
 Task success and human-override rate within their thresholds (OKR 5.4); tool-error rate falling after the
 first month; duplicate effects 0 and instructions-followed-from-content 0 across GD-17 to GD-20; the
 agentic layer under 5% of generative spend, asserted in the self-test; and the honest negative test — with
-the layer disabled, every one of the five processes still completes, which is checked in GD-19.
+the layer disabled, every one of the six processes still completes, which is checked in GD-19.

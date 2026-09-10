@@ -13,7 +13,6 @@
 - [Why this pays back](#why-this-pays-back)
 - [Our approach: how we used AI](#our-approach-how-we-used-ai)
 - [Where AI sits in the working day](#where-ai-sits-in-the-working-day)
-- [The number to challenge first](#the-number-to-challenge-first)
 - [Architecture at a glance](#architecture-at-a-glance)
 - [Delivery roadmap: what we build when, and what we buy](#delivery-roadmap-what-we-build-when-and-what-we-buy)
 - [Requirements](#requirements)
@@ -24,6 +23,7 @@
 - [Dealing with uncertainty in AI](#dealing-with-uncertainty-in-ai)
 - [Does it work? Validation & verification of AI](#does-it-work-validation--verification-of-ai)
 - [What this architecture does not do](#what-this-architecture-does-not-do)
+- [The number to challenge first](#the-number-to-challenge-first)
 - [Risks](#risks)
 - [Appendix](#appendix)
 - [Video](#video)
@@ -31,6 +31,14 @@
 ---
 
 ## How to read this repository
+
+**If you have fifteen minutes:** [why it pays back](#why-this-pays-back) → the [process table](#where-ai-sits-in-the-working-day) → the [diagram](#architecture-at-a-glance) → [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md) and [ADR-0013](adrs/ADR-0013-role-agents-on-typed-tools.md) → [how we used AI](how-we-used-ai.md). The rest of the repository is evidence for one of those five.
+
+**Where we were bold:**
+
+- **AI sits inside processes that already run the estate, rather than in a layer above them** — and with the layer switched off, all six of them still complete ([process table](#where-ai-sits-in-the-working-day), GD-19).
+- **Confidence bands are derived from what an error costs**, capability by capability; where one side of the error is unbounded, no band is set and a different mechanism owns the outcome ([ADR-0007 §0](adrs/ADR-0007-human-in-the-loop-confidence-bands.md#what-an-error-costs-and-what-that-sets)).
+- **Two agents and one read-only capability, not one agent per stakeholder** — coverage comes from typed tools instead of from more agents ([ADR-0013](adrs/ADR-0013-role-agents-on-typed-tools.md)).
 
 | Folder | What is inside | Start here if you are… |
 | --- | --- | --- |
@@ -83,26 +91,27 @@ AI also helped *write* this proposal, which the kata's theme makes fair game for
 
 ## Where AI sits in the working day
 
-Five processes, each with a named owner and a decision that already happens. The last two columns are the test of the claim above: someone human commits, and the process survives the AI being gone.
+Six processes, each with a named owner and a decision that already happens. The first table says where the AI enters; the second is the test of the claim above — someone human commits, and the process survives the AI being gone.
 
-| Process | Owner | Trigger | Where AI enters the decision | Who commits | With the AI switched off | KR |
-| --- | --- | --- | --- | --- | --- | --- |
-| **P1 · The morning welfare round** | Keeper, then the vet | Opening; and any alert during the day | Overnight telemetry and camera features are scored, so the round begins with a ranked list and the evidence behind each item rather than 55 equally likely enclosures; a procedural question is answered from the approved protocol set with the steps verbatim, or refused with a name to call; feed ordering starts from a forecast rather than last month's average | The vet confirms or dismisses, with a reason code | The round runs in its usual order; tier-0 rules and feed-scale thresholds still raise alerts | 3.1, 3.2, 3.5 |
-| **P2 · The opening and staffing plan** | Ops manager | The evening before; revisited mid-morning | Tomorrow's footfall is forecast per zone, and a deterministic optimiser turns the forecast into a roster proposal | The ops manager approves or edits the roster | The heuristic — the same weekday last week, adjusted for season — produces the plan | 2.2, 2.3, 2.4 |
-| **P3 · A family's day in the park** | The visiting family | Ticket purchase, then arrival | The companion builds the day around live queues and the forecast, answers questions from the knowledge base, and re-plans when a ride closes | The family chooses; staff take over on escalation | The cached itinerary and the printed map; the info point answers questions | 1.2, 2.2 |
-| **P4 · The 21:00 review, the commercial call, and the quarterly investment review** | The Countess and management | Daily at 21:00; weekly for pricing; **quarterly for capital** | Figures are inserted verbatim into the daily report and its wording drafted around them; quiet-day price proposals come from the elasticity model; quarterly, each recorded investment gets a causal effect estimate with its interval — or the verdict that it cannot be told apart from the season (S7) | The ops manager approves the wording; management approves any price outside the guardrails | The report goes out from its template with the same figures; prices stay fixed | 1.1, 1.4, 1.5 |
-| **P6 · The weekly content slot** | Curator | Weekly, and whenever something photogenic happens | Highlight candidates are found in activity features we already compute, and a caption is drafted around a verbatim species fact | The curator publishes, or discards — there is no automated publish path | The curator scans the week's clips themselves, which is today's process | 1.7 |
-| **P5 · The census and the stock take** | Keeper, at tank maintenance | Planned maintenance, twice a year | Edge counting maintains a running population estimate between censuses, as an interval rather than a point | The keeper's count is the census of record | The population ledger and a manual count | 3.4 |
+| Process | Owner | Trigger | Where AI enters the decision |
+| --- | --- | --- | --- |
+| **P1 · The morning welfare round** | Keeper, then the vet | Opening; and any alert during the day | Overnight telemetry and camera features are scored, so the round begins with a ranked list and the evidence behind each item rather than 55 equally likely enclosures; a procedural question is answered from the approved protocol set with the steps verbatim, or refused with a name to call; feed ordering starts from a forecast rather than last month's average |
+| **P2 · The opening and staffing plan** | Ops manager | The evening before; revisited mid-morning | Tomorrow's footfall is forecast per zone, and a deterministic optimiser turns the forecast into a roster proposal |
+| **P3 · A family's day in the park** | The visiting family | Ticket purchase, then arrival | The companion builds the day around live queues and the forecast, answers questions from the knowledge base, and re-plans when a ride closes |
+| **P4 · The 21:00 review, the commercial call, and the quarterly investment review** | The Countess and management | Daily at 21:00; weekly for pricing; **quarterly for capital** | Figures are inserted verbatim into the daily report and its wording drafted around them; quiet-day price proposals come from the elasticity model; quarterly, each recorded investment gets a causal effect estimate with its interval — or the verdict that it cannot be told apart from the season (S7) |
+| **P5 · The weekly content slot** | Curator | Weekly, and whenever something photogenic happens | Highlight candidates are found in activity features we already compute, and a caption is drafted around a verbatim species fact |
+| **P6 · The census and the stock take** | Keeper, at tank maintenance | Planned maintenance, twice a year | Edge counting maintains a running population estimate between censuses, as an interval rather than a point |
 
----
+**Who commits, and what the day looks like with the AI gone.**
 
-## The number to challenge first
-
-If a reviewer has time to attack exactly one thing, it should be this: **sixteen must-have criteria are required from one ticketing vendor, and nine of them may not be offered together by anyone.**
-
-Adopt-not-build was decided on criteria, not on market facts ([ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md)). If the combination does not exist, the fallback matrix in [TODOS.md](TODOS.md) changes Phase 0's scope, turns the flywheel's second lever into a desk process, and moves the payback window right — the three things the rest of this proposal rests on. It is a two-to-three day landscape review and it is a prerequisite for Phase 0, not a footnote.
-
-Everything else that could move a conclusion is a [sensitivity point](hld/architecture-evaluation.md#sensitivity-points), with the prompt-cache share and persons-per-gate-scan the two sharpest.
+| Process | Who commits | With the AI switched off | KR |
+| --- | --- | --- | --- |
+| P1 · Welfare round | The vet confirms or dismisses, with a reason code | The round runs in its usual order; tier-0 rules and feed-scale thresholds still raise alerts | 3.1, 3.2, 3.5 |
+| P2 · Staffing plan | The ops manager approves or edits the roster | The heuristic — the same weekday last week, adjusted for season — produces the plan | 2.2, 2.3, 2.4 |
+| P3 · A family's day | The family chooses; staff take over on escalation | The cached itinerary and the printed map; the info point answers questions | 1.2, 2.2 |
+| P4 · Review, pricing, capital | The ops manager approves the wording; management approves any price outside the guardrails | The report goes out from its template with the same figures; prices stay fixed | 1.1, 1.4, 1.5 |
+| P5 · Content slot | The curator publishes, or discards — there is no automated publish path | The curator scans the week's clips themselves, which is today's process | 1.7 |
+| P6 · Census | The keeper's count is the census of record | The population ledger and a manual count | 3.4 |
 
 ---
 
@@ -288,6 +297,14 @@ The proposal removes the estate's blindness — where people are, how animals ar
 - **Replace people.** The vet decides, the keeper identifies the animal, the ops manager approves the roster and the daily report, management sets prices; ≈ 17–26 staff hours a week go into that ([who does what](hld/ai-platform/README.md#humans-in-the-loop-who-does-what)).
 - **Identify anyone.** No faces, no device tracking, no re-identification of visitors — or of meerkats, yet.
 - **Do HR, payroll or physical security.** Staff data is imported and plans exported (A12); CCTV for theft is not this system.
+
+## The number to challenge first
+
+If a reviewer has time to attack exactly one thing, it should be this: **sixteen must-have criteria are required from one ticketing vendor, and nine of them may not be offered together by anyone.**
+
+Adopt-not-build was decided on criteria, not on market facts ([ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md)). If the combination does not exist, the fallback matrix in [TODOS.md](TODOS.md) changes Phase 0's scope, turns the flywheel's second lever into a desk process, and moves the payback window right — the three things the rest of this proposal rests on. It is a two-to-three day landscape review and it is a prerequisite for Phase 0, not a footnote.
+
+Everything else that could move a conclusion is a [sensitivity point](hld/architecture-evaluation.md#sensitivity-points), with the prompt-cache share and persons-per-gate-scan the two sharpest.
 
 ## Risks
 

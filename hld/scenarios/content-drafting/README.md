@@ -3,7 +3,7 @@
 > The estate's growth needs new audiences, and the platform has always disclaimed them: "new audiences come from marketing, and the platform claims none of them." That is honest about attribution and useless as help. Meanwhile 110 cameras watch the most photogenic animals in the county all day.
 
 **Moves:** OKR 1.7 (draft approval rate; earned reach as an estimate, never as attributed attendance)
-**Process:** [P6 · the weekly content slot](../../../README.md#where-ai-sits-in-the-working-day)
+**Process:** [P5 · the weekly content slot](../../../README.md#where-ai-sits-in-the-working-day)
 **Phase:** 3 — after S1's vision is in production, because the highlight candidates are its features — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **ADRs:** [ADR-0006](../../../adrs/ADR-0006-edge-vs-cloud-inference.md) (features come from the edge, video never leaves), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (a human publishes), [ADR-0008](../../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) (evals and guardrails), [ADR-0009](../../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) (no visitor reaches a published frame)
 

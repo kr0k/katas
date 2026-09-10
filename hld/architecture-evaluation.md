@@ -84,7 +84,7 @@ One decision, two attributes moving in opposite directions. Each is a judgement,
 
 **Risks**, each carried in [requirements/07](../requirements/07-risks-and-mitigations.md) or TODOS with an owner:
 
-- **The vendor combination may not exist.** Adopt-not-build was decided on criteria, not on market facts; 16 must-haves together may be rare. The fallback matrix is a prerequisite for Phase 0, not a footnote (R9, [TODOS.md](../TODOS.md)).
+- **The vendor combination may not exist.** Adopt-not-build was decided on criteria, not on market facts; 16 must-haves together may be rare. The fallback matrix is a prerequisite for Phase 0 (R9, [TODOS.md](../TODOS.md)).
 - **Calibration depends on label volume we do not have yet.** The per-band calibration gate is only as good as the golden set behind it, and the golden set is built by the vet in Phase 1 (R2, R3, R13).
 - **Attribution is not provable.** The payback case rests on incremental visitor-days credited to the platform; only the nudged-vs-control cohort and the S5 discounted blocks are clean measurements (R20).
 - **The estate's physical capacity binds before the software does.** Not an architectural risk, and named as such: parking and lunch seating in year 1 (R17).

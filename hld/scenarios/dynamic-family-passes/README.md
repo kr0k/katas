@@ -10,7 +10,7 @@
 
 ## The goal: fill quiet days
 
-The estate's problem is not that Sundays are underpriced; it is that Wednesdays are empty. So the objective is **attendance on quiet days**, subject to **no loss of contribution per visitor-day below the finance-supplied floor (A15), and revenue per visitor-day (OKR 1.4) not falling**. Two decisions are deliberately *not* the model's:
+The estate's problem is not that Sundays are underpriced; it is that Wednesdays are empty. So the objective is **attendance on quiet days**, subject to **no loss of contribution per visitor-day below the finance-supplied floor (A15), and revenue per visitor-day (OKR 1.4) not falling**. Two decisions are *not* the model's:
 
 - **The base price** (the standard day and family-ticket price, which is also the ceiling) is set by management once a year from costs and the market. The model never proposes a price above it; "dynamic" here means *discount depth on quiet days*, never surcharges.
 - **The guardrails** — floor, ceiling, maximum daily change, fairness rules — are management policy.
@@ -64,9 +64,9 @@ The fairness rules are the reason a family trusts the price. They live in policy
 
 ## Fairness, and why it is enforced rather than promised
 
-A price that moves is the most reputationally exposed thing in this proposal, and the usual assurance —
-"we would never price by who is asking" — is a policy statement that survives exactly as long as the
-person who wrote it. Ours is mechanical instead.
+A price that moves is the most reputationally exposed part of the estate's offer, and the usual
+assurance — "we would never price by who is asking" — survives exactly as long as the person who wrote
+it. The rule here is mechanical instead.
 
 **Price is a function of day type and load, never of a person.** The elasticity model's feature set is an
 **allowlist** in the feature store: date attributes, day type, lead time, weather, capacity state,

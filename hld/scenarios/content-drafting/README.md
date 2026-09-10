@@ -1,6 +1,6 @@
 # S6 · Content drafting
 
-> The estate's growth needs new audiences, and the platform has always disclaimed them: "new audiences come from marketing, and the platform claims none of them." That is honest about attribution and useless as help. Meanwhile 110 cameras watch the most photogenic animals in the county all day.
+> The estate's growth needs new audiences, and they come from marketing rather than from the platform. Meanwhile 110 cameras watch the most photogenic animals in the county all day.
 
 **Moves:** OKR 1.7 (draft approval rate; earned reach as an estimate, never as attributed attendance)
 **Process:** [P5 · the weekly content slot](../../../README.md#where-ai-sits-in-the-working-day)
@@ -14,7 +14,7 @@ households, and marketing brings them. One curator writes the estate's posts. Th
 ideas but **noticing** — the piranha feeding that went unusually well, the cassowary chick's first day
 out, the plant that caught something at 14:40 while nobody was watching the monitor.
 
-So this scenario is deliberately the smallest useful thing: **the platform notices and drafts; a human
+So the scenario is the smallest useful thing: **the platform notices and drafts; a human
 publishes.** It is the only place the platform touches the third growth lever, and it still claims none
 of the outcome.
 
@@ -66,7 +66,7 @@ model in Guest Engagement.
 | Approval without edits | Rolling 50 drafts | ≥ 60% by the end of season 3, or the capability is cut |
 
 **Kill condition:** approval rate below 60% after a full season means the drafts are not saving the
-curator time, and the honest response is deletion rather than prompt tuning forever — it is on the
+curator time, and the response is deletion rather than prompt tuning — it is on the
 [kill-gate table](../../ai-platform/README.md#every-capability-has-a-review-date-and-a-cut-condition)
 with the rest.
 

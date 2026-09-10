@@ -2,7 +2,7 @@
 
 Rollback is wired ([ADR-0008](../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md)); this is the
 procedure around it, written down because at 07:00 on a Saturday nobody reconstructs a procedure from an
-architecture document. One page, and deliberately runnable by whoever is on site.
+architecture document. One page, runnable by whoever is on site.
 
 **What counts as an AI incident:** a guardrail trip, a capability producing something harmful or
 plainly wrong, an injection attempt that reached a tool, a cost anomaly, or a member of staff saying "the
@@ -34,7 +34,7 @@ guardrail held but how the content got in: the knowledge base is curated, so an 
 the page history. Fall back, preserve the trace, and treat the *source* as the incident rather than the
 model.
 
-## What is deliberately not here
+## What is not here
 
 Severity tiers, an on-call rota for models, and a paging tree. A team of five running a park has one
 rota, and it exists for the estate rather than for the AI. If a capability ever seems to need its own

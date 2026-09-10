@@ -21,7 +21,7 @@ Vision and anomaly models produce probabilities, not diagnoses. Acting on every 
 
 ## What an error costs, and what that sets
 
-Units are ours: the vet's minutes come from the [human roles table](../hld/ai-platform/README.md#humans-in-the-loop-who-does-what), the money from the [cost model](../appendix/cost-model.md). The ratios are arguments, not measurements — season 1 replaces them with observed outcomes, and that is exactly why they are written down where they can be challenged.
+Units are ours: the vet's minutes come from the [human roles table](../hld/ai-platform/README.md#humans-in-the-loop-who-does-what), the money from the [cost model](../appendix/cost-model.md). The ratios are arguments, not measurements: season 1 replaces them with observed outcomes.
 
 | Capability | A false negative costs | A false positive costs | Implied ratio | What that sets |
 | --- | --- | --- | --- | --- |
@@ -34,7 +34,7 @@ Units are ours: the vet's minutes come from the [human roles table](../hld/ai-pl
 | **Footfall forecast** | An under-staffed zone: queues, and OKR 2.2 missed | An over-staffed zone: idle hours, against OKR 2.4 | ≈ **2:1** against under-staffing | The optimiser is asked for plans that err high, and the ops manager's edits are the label |
 | **Quiet-day pricing** | Margin given away on a day that would have filled anyway | An empty Wednesday, which is the whole point of S5 | Asymmetric at the floor | Not a confidence band but a hard invariant on contribution per visitor-day, with the weekly guardrail pausing a discount level rather than a model |
 
-Two conclusions the table forces. **Where one side is unbounded or irreversible, the answer is not a stricter threshold but a different mechanism** — advisory-only, verbatim insertion, or a zero gate. And **the sensitive parameter is the ratio, not the boundary**: the bands move when the argument about cost moves, which is why they are policy owned by the vet rather than constants in code (§2).
+**Where one side is unbounded or irreversible, the answer is not a stricter threshold but a different mechanism** — advisory-only, verbatim insertion, or a zero gate. **The sensitive parameter is the ratio, not the boundary**: the bands move when the argument about cost moves, so they are policy owned by the vet rather than constants in code (§2).
 
 ## Alternatives considered
 | Option | Pros | Cons | Why not |

@@ -8,7 +8,7 @@
 
 ## Pain points (our decomposition)
 
-We rewrote each challenge as observable pain, because that is what an architecture can actually target.
+Each challenge is restated as observable pain, which is what an architecture can target.
 
 ### Operations & visitor experience
 - **Blind staffing.** Staff are allocated by habit; queues form at some rides while others sit empty. Nobody can say *when* a zone is busy, only that it "feels busy".

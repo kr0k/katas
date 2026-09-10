@@ -81,7 +81,7 @@ We do not build any of that. Routes, budgets and fallback chains are declarative
 
 ### What a capability declares
 
-The capability is the unit every consumer calls, so its registry entry is the contract — and one field in it is what keeps the delivery phases honest.
+The capability is the unit every consumer calls, so its registry entry is the contract.
 
 | Field | Why it is there |
 | --- | --- |
@@ -238,15 +238,16 @@ caption draft like a welfare decision wastes the only scarce resource we have, w
 | Audit retention | Standard | Standard | Welfare decisions 2–3 years (FR-5.1) |
 | Incident procedure | General | ✅ | ✅ with a named owner on call in hours |
 
-The autonomy classes other proposals need here — a driverless shuttle, predictive maintenance clearing a
-ride for service — do not appear because we do not build them ([ADR-0002](../../adrs/ADR-0002-mqtt-and-cellular-backhaul.md),
+The autonomy classes above these — a driverless shuttle, predictive maintenance clearing a ride for
+service — do not appear because the estate does not build them
+([ADR-0002](../../adrs/ADR-0002-mqtt-and-cellular-backhaul.md),
 [requirements/05](../../requirements/05-assumptions-and-constraints.md#out-of-scope)).
 
 ## Every capability has a review date and a cut condition
 
 An AI capability that delivers nothing for two seasons should be deleted, not carried. So each one
-carries a **kill gate** next to its promotion gate — the honest counterweight to a roadmap where two of
-seven scenarios only pay off in Phase 3.
+carries a **kill gate** next to its promotion gate, the counterweight to a roadmap where two of seven
+scenarios only pay off in Phase 3.
 
 | Capability | Reviewed | Cut if |
 | --- | --- | --- |

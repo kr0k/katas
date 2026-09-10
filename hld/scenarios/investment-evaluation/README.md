@@ -72,7 +72,7 @@ crosses to management is the readout a human presents.
 
 ## Validation & verification
 
-A causal estimate has no ground truth to score against, which is exactly why it needs stricter process
+A causal estimate has no ground truth to score against, so it needs stricter process
 discipline than a forecast does, not looser:
 
 | Check | How | Gate |
@@ -91,5 +91,5 @@ residue is the staggering advice, which does not need software to deliver.
 
 1. **Cloud + AI:** estimates with intervals, quarterly.
 2. **Cloud without AI:** the register and the raw before-and-after series, presented without a causal
-   claim — which is honestly most of the value, since the register is the part that did not exist.
+   claim — most of the value, since the register is the part that did not exist.
 3. **Estate-only:** nothing, and nothing is needed; this is a quarterly analytical job.

@@ -23,7 +23,6 @@
 - [Dealing with uncertainty in AI](#dealing-with-uncertainty-in-ai)
 - [Does it work? Validation & verification of AI](#does-it-work-validation--verification-of-ai)
 - [What this architecture does not do](#what-this-architecture-does-not-do)
-- [The number to challenge first](#the-number-to-challenge-first)
 - [Risks](#risks)
 - [Appendix](#appendix)
 - [Video](#video)
@@ -33,12 +32,6 @@
 ## How to read this repository
 
 **If you have fifteen minutes:** [why it pays back](#why-this-pays-back) → the [process table](#where-ai-sits-in-the-working-day) → the [diagram](#architecture-at-a-glance) → [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md) and [ADR-0013](adrs/ADR-0013-role-agents-on-typed-tools.md) → [how we used AI](how-we-used-ai.md). The rest of the repository is evidence for one of those five.
-
-**Where we were bold:**
-
-- **AI sits inside processes that already run the estate, rather than in a layer above them** — and with the layer switched off, all six of them still complete ([process table](#where-ai-sits-in-the-working-day), GD-19).
-- **Confidence bands are derived from what an error costs**, capability by capability; where one side of the error is unbounded, no band is set and a different mechanism owns the outcome ([ADR-0007 §0](adrs/ADR-0007-human-in-the-loop-confidence-bands.md#what-an-error-costs-and-what-that-sets)).
-- **Two agents and one read-only capability, not one agent per stakeholder** — coverage comes from typed tools instead of from more agents ([ADR-0013](adrs/ADR-0013-role-agents-on-typed-tools.md)).
 
 | Folder | What is inside | Start here if you are… |
 | --- | --- | --- |
@@ -80,12 +73,12 @@ The order of work:
 
 1. **Business first.** The brief rewritten as goals, pain points and [OKRs](requirements/06-suggested-okrs.md) with current and target values, so every scenario points at a number it should move.
 2. **Foundation second.** Patchy Wi-Fi is the dominant constraint, so the [core architecture](hld/core/README.md) is edge-first: a local MQTT broker with store-and-forward, cellular/LoRaWAN backhaul, offline ticket validation. Everything that keeps people and animals safe works without the cloud.
-3. **AI inside the decision, and only where the process needs a judgement a rule cannot make.** Each candidate had to answer: which OKR does it move, why is deterministic logic insufficient, how will we know it works, and what happens when it is wrong? Seven survived — [animal welfare monitoring](hld/scenarios/animal-welfare-monitoring/README.md) (the reference scenario, fully worked), [piranha counting](hld/scenarios/piranha-population-counting/README.md), [visitor flow forecasting](hld/scenarios/visitor-flow-forecasting/README.md), [guest companion](hld/scenarios/guest-companion/README.md), [dynamic family passes](hld/scenarios/dynamic-family-passes/README.md), [content drafting](hld/scenarios/content-drafting/README.md) and [investment evaluation](hld/scenarios/investment-evaluation/README.md). Two of the seven are deliberately small and carry the earliest kill gates.
+3. **AI inside the decision, and only where the process needs a judgement a rule cannot make.** Each candidate had to answer: which OKR does it move, why is deterministic logic insufficient, how will we know it works, and what happens when it is wrong? Seven survived — [animal welfare monitoring](hld/scenarios/animal-welfare-monitoring/README.md) (the reference scenario, fully worked), [piranha counting](hld/scenarios/piranha-population-counting/README.md), [visitor flow forecasting](hld/scenarios/visitor-flow-forecasting/README.md), [guest companion](hld/scenarios/guest-companion/README.md), [dynamic family passes](hld/scenarios/dynamic-family-passes/README.md), [content drafting](hld/scenarios/content-drafting/README.md) and [investment evaluation](hld/scenarios/investment-evaluation/README.md). Two of the seven are small and carry the earliest kill gates.
 4. **Uncertainty and verification as architecture.** An adopted [inference gateway](hld/ai-platform/README.md) isolates us from any single provider; one governance loop covers every model, rented or owned; confidence bands, evaluation gates and production monitoring are specified in [ADR-0007](adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0008](adrs/ADR-0008-ai-evaluation-and-production-monitoring.md) and [ADR-0005](adrs/ADR-0005-model-gateway-and-provider-independence.md).
 
 Three kinds of AI, treated differently: **classical ML** (forecasting, pricing) is deterministic given its inputs and tested like software; **computer vision** produces probabilities and gets confidence bands and human review; **generative AI** is grounded, constrained and continuously evaluated.
 
-AI also helped *write* this proposal, which the kata's theme makes fair game for scrutiny: what it did, the five places it was wrong, and the checks we added once we noticed are in [how we used AI](how-we-used-ai.md).
+AI also helped *write* this proposal: what it did, where it was wrong, and the checks added because of it are in [how we used AI](how-we-used-ai.md).
 
 ---
 
@@ -297,14 +290,6 @@ The proposal removes the estate's blindness — where people are, how animals ar
 - **Replace people.** The vet decides, the keeper identifies the animal, the ops manager approves the roster and the daily report, management sets prices; ≈ 17–26 staff hours a week go into that ([who does what](hld/ai-platform/README.md#humans-in-the-loop-who-does-what)).
 - **Identify anyone.** No faces, no device tracking, no re-identification of visitors — or of meerkats, yet.
 - **Do HR, payroll or physical security.** Staff data is imported and plans exported (A12); CCTV for theft is not this system.
-
-## The number to challenge first
-
-If a reviewer has time to attack exactly one thing, it should be this: **sixteen must-have criteria are required from one ticketing vendor, and nine of them may not be offered together by anyone.**
-
-Adopt-not-build was decided on criteria, not on market facts ([ADR-0012](adrs/ADR-0012-ticketing-platform-adopt-not-build.md)). If the combination does not exist, the fallback matrix in [TODOS.md](TODOS.md) changes Phase 0's scope, turns the flywheel's second lever into a desk process, and moves the payback window right — the three things the rest of this proposal rests on. It is a two-to-three day landscape review and it is a prerequisite for Phase 0, not a footnote.
-
-Everything else that could move a conclusion is a [sensitivity point](hld/architecture-evaluation.md#sensitivity-points), with the prompt-cache share and persons-per-gate-scan the two sharpest.
 
 ## Risks
 

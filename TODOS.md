@@ -56,7 +56,7 @@
 
 **What:** One table in `scripts/business_case.py`, alongside the platform payback: revenue from the cohort model minus every cost in requirements/08 §5 — parking or park-and-ride, F&B seating, gate lanes, marketing at a measured customer-acquisition cost per channel, step staffing at the estate's FTE cost, and the platform — once the site survey and procurement have turned the orders of magnitude into prices.
 
-**Why:** requirements/08 is deliberately the platform's payback, not an estate P&L; but the Countess's question (G1) is whether the estate pays at 15,000 a day, and that question needs an owner and a trigger rather than a footnote.
+**Why:** requirements/08 is the platform's payback, not an estate P&L; but the Countess's question (G1) is whether the estate pays at 15,000 a day, and that question needs an owner and a trigger rather than a footnote.
 
 **Context:** Inputs: price per parking space or park-and-ride contract, price per F&B seat, FTE cost, CAC by channel, vendor fees from the evaluation. Trigger: Phase 2 entry, together with the season-1 re-issue of requirements/08 (§6). Risk: read as a promise of profit — label it a scenario with the same assumption → measured-by discipline.
 
@@ -96,7 +96,7 @@
 
 **Why:** The failure mode is the dangerous shape: when GitHub stops force-running these actions on Node 24, the workflow does not go red — it stops running, and with it the gate that checks every link, id, count and derived number across 50 files. A gate that disappears is worse than one that fails.
 
-**Context:** Observed on run 34355341654 on this branch: *"Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, astral-sh/setup-uv@v5."* Both jobs pass today. Bump the two actions and confirm both jobs still pass; the `mermaid` job is the fragile one because it installs a Chromium at run time. Deliberately kept out of the content branch so the architecture diff stays readable.
+**Context:** Observed on run 34355341654 on this branch: *"Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, astral-sh/setup-uv@v5."* Both jobs pass today. Bump the two actions and confirm both jobs still pass; the `mermaid` job is the fragile one because it installs a Chromium at run time.
 
 **Effort:** S
 **Priority:** P2

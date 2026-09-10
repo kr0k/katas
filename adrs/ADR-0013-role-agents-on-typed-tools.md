@@ -12,10 +12,10 @@ the ops manager wants tomorrow's roster changed for one zone and to see what tha
 wants the follow-up question the daily report did not anticipate. Each of those is three or four lookups
 and a draft, and today each is a human stitching screens together.
 
-That is the gap between "AI in the architecture" and **AI inside the business process**, which is what
-this submission now claims. The brief points the same way with its own agent example. Meanwhile the
-failure modes are real and well-known: an agent that acts can be steered by content it retrieved, can
-loop, can duplicate an effect on a retry, and can learn from its own output until it quietly drifts.
+That is the gap between "AI in the architecture" and **AI inside the business process**. The brief
+points the same way with its own agent example. The failure modes are well-known: an agent that acts
+can be steered by content it retrieved, can loop, can duplicate an effect on a retry, and can learn
+from its own output until it quietly drifts.
 
 ## Decision
 1. **An agent is a model plus typed, least-privilege tools, and its output is a proposal.** Two agents
@@ -58,7 +58,7 @@ loop, can duplicate an effect on a retry, and can learn from its own output unti
 ## Alternatives considered
 | Option | Pros | Cons | Why not |
 | --- | --- | --- | --- |
-| **Four agents, one per stakeholder group** (the shape an earlier draft of this proposal took) | Complete coverage; a clean story per persona; more visible AI ambition | Four tool inventories, four eval suites, four budgets, four audit surfaces — and two of them would wrap processes that are already single-screen decisions (the vet's queue, the Countess's report) | Operability at five engineers (NFR-OPS-1, R9). Coverage is achieved by tools, not by multiplying agents |
+| **Four agents, one per stakeholder group** | Complete coverage; a clean story per persona; more visible AI ambition | Four tool inventories, four eval suites, four budgets, four audit surfaces — and two of them would wrap processes that are already single-screen decisions (the vet's queue, the Countess's report) | Operability at five engineers (NFR-OPS-1, R9). Coverage is achieved by tools, not by multiplying agents |
 | **Keep assistants only — no tools, no agency** | Nothing new to secure; today's design unchanged | The multi-step work stays manual, so the claim that AI sits inside the decision would be false. Answering "why is this animal flagged" needs three lookups, and a chat window that cannot do them is a search box | It is the claim we are making; declining it means dropping the claim |
 | **Agents with direct database or SQL access** | Fastest to build; answers anything | Bypasses per-context ownership and permissions, unauditable, and text-to-SQL over raw schemas invents joins and therefore invents numbers | Correctness and ADR-0004 §7; the metric layer exists precisely so a question resolves to a defined number or is refused |
 | **Fully autonomous agents that act** | No human in the loop, so no queue and no latency | Fails V&V: there is no evaluation that makes an unreviewed price change or welfare intervention acceptable, and the reputational exposure is asymmetric ([ADR-0007](ADR-0007-human-in-the-loop-confidence-bands.md)) | Safety and accountability. A human commits anything that moves money, rosters, prices or care |
@@ -86,5 +86,5 @@ regression testing statistical rather than exact; and the copilot can waste the 
 ## How we will know this was right
 Task success and human-override rate within their thresholds (OKR 5.4); tool-error rate falling after the
 first month; duplicate effects 0 and instructions-followed-from-content 0 across GD-17 to GD-20; the
-agentic layer under 5% of generative spend, asserted in the self-test; and the honest negative test — with
-the layer disabled, every one of the six processes still completes, which is checked in GD-19.
+agentic layer under 5% of generative spend, asserted in the self-test; and the negative test — with
+the layer disabled, every one of the six processes still completes (GD-19).

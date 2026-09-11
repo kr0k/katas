@@ -16,9 +16,11 @@ The foundation the AI scenarios stand on: edge tier, connectivity, ticketing, ev
 flowchart TB
     subgraph Estate["🏰 Estate — local network"]
         direction TB
-        GateDev["Gate readers<br/>(QR/NFC — ticketing platform's or ours)"]
-        Counters["Footfall / queue counters<br/>(LiDAR/IR, anonymous)"]
+        GateDev["Gate readers<br/>(QR/NFC + token — ticketing platform's or ours)"]
+        Counters["Footfall / queue counters<br/>(LiDAR/IR, anonymous — the instrument of record)"]
+        TokRd["Token readers<br/>(rides, outlets, zone boundaries)"]
         Encl["Enclosure sensors<br/>(scales, water, climate, door contacts, PIR/beam)"]
+        RideS["Ride condition sensors<br/>(cycles, current, temperature)"]
         Cams["Enclosure cameras"]
         EdgeAI["🤖 Edge inference nodes (2, N+1)<br/>visitor masking · S1 features (1-min windows) · S2 counting<br/>tier-1 safety advisory"]
         LNS["LoRaWAN network server<br/>(join server, decode → MQTT)"]
@@ -32,9 +34,13 @@ flowchart TB
         GateSvc -.-> Broker
         Broker -. "allow/revocation<br/>snapshots" .-> GateSvc
         Counters -. "LoRaWAN" .-> LNS
+        TokRd -.-> Broker
         Encl -. "LoRaWAN / wired" .-> LNS
+        RideS -. "LoRaWAN / PoE" .-> LNS
         Encl -.-> Broker
         LNS -.-> Broker
+        Remote["Remote enclosures 🏰<br/>bridge where line of sight exists,<br/>pickup for clips where it does not,<br/>cellular always for critical"]
+        Remote -.-> Broker
         Cams --> EdgeAI
         EdgeAI -.-> Broker
         Broker -.-> Rules
@@ -83,11 +89,19 @@ flowchart TB
             Raw[("Raw / bronze")]
             Cur[("Curated / silver-gold")]
             Feat[("Feature store")]
-            Vec[("Knowledge base<br/>(vector + structured)")]
+            Vec[("Knowledge base<br/>visitor tier + staff tier")]
+            Metrics["Metric layer + estate twin<br/>named definitions, one owner each"]
             Store[("Object storage<br/>(model artifacts, signed)")]
         end
         Bus -.-> Raw --> Cur --> Feat
         Cur --> Vec
+        Cur --> Metrics
+
+        Agents["🤖 Agentic layer<br/>typed tools, proposals only<br/>(inside the monolith and the BFF)"]
+        Metrics --> Agents
+        Vec --> Agents
+        Agents --> Mono
+        Agents --> AIP
 
         AIP["🤖 AI platform<br/>(see ai-platform/)"]
         Mono --> AIP
@@ -133,7 +147,10 @@ Legend: see [hld/README.md](../README.md#diagram-legend-used-in-every-diagram). 
 | **GPU / batch workers** | Training pipelines; scheduled S3 forecasts; S5 elasticity estimation | Cloud | Managed batch/GPU; bursty, scheduled |
 | **Downlink publisher** | Publishes retained snapshots and sequenced deltas of allow/revocation lists, policy parameters (bands, prices, hours) and desired edge model versions to the bridge | Cloud | [Edge & connectivity → Downlink](edge-and-connectivity.md#downlink-cloud--estate) |
 | **API gateway / BFF** | AuthN/Z, aggregation for web/mobile/dashboards, and the **inference quota** that keeps an anonymous caller from spending the companion's budget (NFR-SEC-3) | Cloud | Roles: keeper / vet / ops / management ([cross-cutting](#cross-cutting)) |
-| **Data platform** | Lakehouse: raw → curated → features; knowledge base for the companion; object storage for signed model artifacts | Cloud | Open table format for portability |
+| **Data platform** | Lakehouse: raw → curated → features; two-tier knowledge base; the metric layer and its twin projections; object storage for signed model artifacts | Cloud | Open table format for portability; the metric layer is the only surface an agent may query → [ADR-0015](../../adrs/ADR-0015-metric-layer-and-estate-twin.md) |
+| **Token readers** | Validate a token at gates and ride entrances against cached lists, take a cashless tap at outlets, and record a zone-boundary tap; offline-capable exactly as a QR reader is | Estate | FR-1.8; taps are aggregated before any analytical consumer sees them → [ADR-0018](../../adrs/ADR-0018-visitor-token-and-anonymised-paths.md) |
+| **Ride condition sensors** | Non-invasive telemetry per instrumented ride — cycle count, motor current, bearing and motor surface temperature, run hours — on the telemetry class | Estate | FR-2.9, A19; fitted only after a per-ride heritage assessment → [ADR-0022](../../adrs/ADR-0022-ride-condition-monitoring.md) |
+| **Agent runtime and tool layer** | Holds each agent's versioned prompt, tool whitelist and step budget; validates tool arguments against their schema, checks entitlement, emits a span per call; effectful tools emit commands to the owning context | Cloud — inside the monolith, and the BFF for the companion | **Not a deployment unit** (NFR-AGT-1) → [ADR-0013](../../adrs/ADR-0013-stakeholder-agents-on-typed-tools.md), [agents](../ai-platform/agents.md) |
 | **Ticketing platform (SaaS)** | External: catalogue, checkout and payments, passes, credentials, opt-in accounts, timed-entry slots, daily cap and pass-holder reservations, upgrade credit vouchers, sales reconciliation | Vendor | [ADR-0012](../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md); PCI scope stays here |
 | **POS / commerce** | External: F&B, retail and parking sales on the estate; per-transaction webhooks or export with the FR-2.6 fields; end-of-day totals for reconciliation | Vendor (the ticketing platform's own POS, or a separate system — A13) | Behind the same anti-corruption layer; never card data (NFR-SEC-2); R16 |
 | **Estate daily report** | Read model inside Park Operations: one screen of "how was today" for the Countess at 21:00, numbers verbatim, one rule-selected recommendation for tomorrow; optional phrasing by the S1 drafter capability after ops-manager approval | Cloud (monolith) | FR-2.7; not an AI scenario — [details below](#estate-daily-report) |
@@ -167,7 +184,9 @@ A module leaves the monolith only when it meets an extraction criterion in ADR-0
 - **Raw:** every event as received, immutable, partitioned by day — the audit trail and the source for retraining.
 - **Curated:** zone occupancy per 5 min, queue lengths, feeding per animal per day, enclosure climate, ticket sales, pass usage; **spend per zone per day** — Park Operations maps `pos_terminal_id` → zone in its own policy config, so the `PurchaseRecorded` event never carries another context's zone model; **daily report snapshots**, one per date, kept 3 years.
 - **Feature store:** the same features served to training and to online inference (footfall lags, weather, calendar, per-animal baselines) so models are not trained on one thing and served another.
-- **Knowledge base:** structured facts (animals, rides, opening hours, safety rules, prices) plus curated narrative content; the *only* source the companion may cite → [ADR-0010](../../adrs/ADR-0010-grounded-llm-with-guardrails.md).
+- **Knowledge base, in two tiers:** a **visitor tier** of structured facts (animals, rides, opening hours, safety rules, prices) plus curated narrative — the *only* source the companion may cite → [ADR-0010](../../adrs/ADR-0010-grounded-llm-with-guardrails.md) — and a **staff tier** of approved protocols and SOPs, returned verbatim with a document version and reachable only by the agents entitled to it ([ADR-0013](../../adrs/ADR-0013-stakeholder-agents-on-typed-tools.md)).
+- **Metric layer:** the named, versioned definitions everything else resolves against — one formula, one grain, one owner per metric — so that a dashboard, the daily report, a feature and an agent's answer cannot disagree about the same number. The **estate twin** is a family of gold projections over these same definitions: what is true right now, per zone, ride, enclosure and animal → [ADR-0015](../../adrs/ADR-0015-metric-layer-and-estate-twin.md).
+- **Agent memory:** a TTL'd session and shift tier over the above, written back only as typed derivatives through a write-guard → [ADR-0014](../../adrs/ADR-0014-two-tier-agent-memory-with-a-write-guard.md).
 - **Personal data: none here by construction.** Events carry pseudonymous subject ids, never names, contacts or device identifiers; the schema registry's CI check enforces it ([ADR-0004](../../adrs/ADR-0004-event-driven-backbone.md) §6). The few unavoidable personal fields are encrypted with a per-subject key and **crypto-shredded** on erasure; a `SubjectErased` event removes the subject from read models, the feature store and golden sets ([ADR-0009](../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §7).
 
 ## Topic contract
@@ -240,4 +259,4 @@ Purchases and the daily report are business data and get the same treatment as t
 - **Observability:** OpenTelemetry everywhere; AI calls carry `capability`, `model_version`, `confidence`, `cost` attributes.
 - **Infrastructure as code & GitOps:** everything — including model versions in the registry — is declared in Git and reconciled.
 - **Degradation ladder:** (1) cloud + AI, (2) cloud without AI (rules/heuristics), (3) estate-only (gates, safety, buffering). Every scenario names where it sits on this ladder.
-- **Resilience validation:** sixteen scripted game days with expected behaviour, metric, cadence and owner → [resilience-validation.md](resilience-validation.md).
+- **Resilience validation:** twenty scripted game days with expected behaviour, metric, cadence and owner → [resilience-validation.md](resilience-validation.md).

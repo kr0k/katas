@@ -2,7 +2,7 @@
 
 Order-of-magnitude CAPEX and OPEX so that NFR-COST-2 can be checked and the Countess can see what she is buying. Procurement figures, not architecture: every number is an assumption to be replaced by a quote. The architectural constraint it serves is the per-visitor ceiling in [requirements/04](../requirements/04-non-functional-requirements.md#cost-model-tco-50), and the [business-case model](business-case-model.md) uses this table as its OPEX curve.
 
-Order-of-magnitude figures so that NFR-COST-2 can be checked and so the Countess sees what she is buying. All numbers are assumptions to be replaced by quotes. The business case — payback, growth, what the estate must fund besides the platform — is in [08](../requirements/08-business-case.md), which uses this table as a curve: **OPEX(V) ≈ €580k fixed + €0.165 per visitor-day**, within ≈ 2% of both columns below, so that every cumulative figure there follows the ladder rather than two end points.
+Order-of-magnitude figures so that NFR-COST-2 can be checked and so the Countess sees what she is buying. All numbers are assumptions to be replaced by quotes. The business case — payback, growth, what the estate must fund besides the platform — is in [08](../requirements/08-business-case.md), which uses this table as a curve: **OPEX(V) = €562k fixed + €0.182 per visitor-day**, fitted to the two columns below rather than asserted, so it reproduces the 5,000/day column to the euro and the 15,000/day column within 0.1% — and so every cumulative figure there follows the ladder rather than two end points. The fit is checked by `business_case.py`'s self-test; if a line below moves, the curve is re-fitted rather than the column rounded.
 
 **CAPEX** (one-off, mostly Phase 0–1)
 
@@ -16,19 +16,29 @@ Order-of-magnitude figures so that NFR-COST-2 can be checked and so the Countess
 | LoRaWAN gateways (3) | €5k | 0 |
 | DECT base stations and 40 handsets/pagers | €15k | 0 |
 | Cabling, installation, site survey | €60k | 0 |
-| **Total CAPEX** | **≈ €310k** (≈ €62k/yr over 5 years) | |
+| Token readers (≈ 40: ride entrances, outlets and the twelve zone boundaries; the gate lanes use the gate readers above) + issuance and encoding at the gates | €25k | 0 |
+| Directional radio bridges (4 links, incl. mast, power and survey) | €12k | 0–1 |
+| Ride condition sensors (≈ 20 instrumentable rides × ≈ €600: cycle counter, current clamp, 2 temperature probes, radio node) | €12k | 1 |
+| Delay-tolerant pickup collector on the land train — **conditional**, bought only if the survey finds a site whose link carries alerts and telemetry but not clips, with no line of sight for a bridge ([ADR-0019](../adrs/ADR-0019-reach-for-remote-enclosures.md) §4) | €8k | 1 |
+| **Total CAPEX** | **≈ €369k** (≈ €74k/yr over 5 years) | |
+
+The last four lines are what the merged AI portfolio added: ≈ €57k, or 18% on the original CAPEX. The collector is carried in the total although it may not be bought, which overstates the bill by €8k rather than hiding it. The land train itself is **not** here — it is an estate asset bought out of the accessibility and capacity case (A18), and the platform pays only for the collector it carries ([ADR-0020](../adrs/ADR-0020-internal-transport-and-autonomy.md) §1).
 
 **OPEX** (per year)
 
 | Component | At 5,000/day | At 15,000/day | Notes |
 | --- | --- | --- | --- |
 | Cloud: event backbone, databases, object storage, IoT ingestion, own-model hosting | €40k | €70k | Ingestion itself ≈ $600/yr ([capacity table](../hld/core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class)) |
-| Hosted LLMs + open-weight endpoint (planned spend) | €10k | €50k | **Token arithmetic behind the €50k: ≈ €34,300/yr** of model calls at 15,000/day, leaving a 46% overrun before the line is exceeded, so the top of the ±50% price band is not inside it ([generative cost](generative-cost.md)). Phase 1 runs FAQ answers only; day planning arrives in Phase 2, which is what grows the line. Cap is 2% of revenue (≈ €600k at €30M); the plan sits far below the cap |
-| Cellular (2 operators) + fixed-line fallback | €4k | €4k | |
+| Hosted LLMs + open-weight endpoint (planned spend) | €10k | €50k | **Token arithmetic behind the €50k: ≈ €34,800/yr** of model calls at 15,000/day, leaving a 44% overrun before the line is exceeded, so the top of the ±50% price band is not inside it ([generative cost](generative-cost.md)). Phase 1 runs FAQ answers only; day planning arrives in Phase 2, which is what grows the line. Cap is 2% of revenue (≈ €600k at €30M); the plan sits far below the cap |
+| Cellular (2 operators) + fixed-line fallback + per-remote-site critical-class links | €6k | €6k | Each remote enclosure keeps its own cellular link for the critical class alone, which is kilobytes a day ([ADR-0019](../adrs/ADR-0019-reach-for-remote-enclosures.md)) |
+| Visitor tokens: replacement stock, issuance and hygiene | €12k | €30k | Scales with admissions; tokens are returned and recycled, so this is loss and cleaning rather than a tag per visitor |
+| Metric layer, agent traces and token-tap storage | €5k | €12k | Observability and storage on top of the base cloud line; the agents' own token spend is inside the LLM line at ≈ €508/yr |
 | Ticketing platform fees (assumed €0.15/ticket or 1.5–3% of ticket revenue) | €225k | €675k | Largest line after the team; a selection criterion in [ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md) |
 | Team: 5 engineers, loaded | €500k | €500k | Does not grow with attendance — the point of adopt-not-build |
-| Hardware maintenance and spares (10% of CAPEX) | €30k | €30k | |
-| **Total OPEX** | **≈ €810k** | **≈ €1.33M** | |
+| Hardware maintenance and spares (10% of CAPEX) | €37k | €37k | |
+| **Total OPEX** | **≈ €835k** | **≈ €1.38M** | |
 
-**Per visitor** (CAPEX/5 + OPEX ÷ visitors/yr at 300 open days): ≈ **€0.58** at 5,000/day, ≈ **€0.31** at 15,000/day — inside NFR-COST-2 with the ±50% band. Ticketing fees and the team are ~85% of the total; the AI is not the expensive part.
+Both totals are the column added up, not a rounded curve: €835k and €1,380k against the model's €835k and €1,381k.
+
+**Per visitor** (CAPEX/5 + OPEX ÷ visitors/yr at 300 open days): ≈ **€0.61** at 5,000/day, ≈ **€0.32** at 15,000/day — inside NFR-COST-2 with the ±50% band. Ticketing fees and the team are 85–87% of the total (€725k of €835k today, €1,175k of €1,380k at target); the AI is not the expensive part, and the four agents are ≈ €508 of it.
 

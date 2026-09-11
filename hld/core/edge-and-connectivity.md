@@ -9,6 +9,8 @@ Patchy Wi-Fi shapes everything on the estate. This is the detailed view.
 | **Gate readers** | QR/NFC at 4–6 entry points | MQTT over Wi-Fi/Ethernet to local broker | ≈ 2,940 scans in the peak hour of a peak day (≈ 5,900 persons at 2 per scan; ≈ 29,400 visitor-days, [capacity check](../../appendix/business-case-model.md#1-capacity-reality-check)); an average day is far lower | Wired where possible |
 | **Anonymous counters** | LiDAR / thermal / IR beam counters at zone boundaries and queue lines | MQTT (small payloads) | 1 msg / min / device (in/out deltas), ~150 devices; queue-line counters that need 30 s resolution are PoE | Battery + LoRaWAN, or PoE |
 | **Enclosure sensors** | feed scales, water quality (pH, temp, turbidity), climate, door contacts, PIR/beam dry-zone detectors | MQTT (small payloads) | 1 msg / min / sensor, ~300 sensors | LoRaWAN or Wi-Fi; door contacts and PIR/beam wired |
+| **Token readers** | passive RFID at ride entrances, outlets and zone boundaries (gates use the gate readers) | MQTT (small payloads) | a tap per event, ≈ 0.7/s at the target run rate across ~40 readers | PoE where they sit on power, LoRaWAN at zone boundaries that do not |
+| **Ride condition sensors** | cycle counter, clamp-on current transformer, bearing and motor surface temperature, run-hours | MQTT (small payloads) | 1 msg / min / sensor, ~80 sensors across the instrumented rides (A19) | LoRaWAN, or PoE where the ride already has mains |
 | **Cameras** | 1–2 per enclosure, IR for nocturnal | RTSP to edge node (never MQTT, never cloud) | 55–110 streams | Wired PoE |
 | **Edge inference nodes** | 2 GPU servers in the estate server room, sized N+1 | Publish 1-min feature windows, clips, advisories via MQTT; pull model artifacts over HTTPS | ~3 msg/s | Mains + UPS |
 | **Staff alert devices** | DECT handsets / pagers (primary), smartphones or rugged handhelds (secondary) | DECT base stations on the estate LAN; push over the local broker | | Independent of Wi-Fi coverage |
@@ -18,6 +20,37 @@ Patchy Wi-Fi shapes everything on the estate. This is the detailed view.
 - **Wi-Fi/Ethernet** where there is power and coverage (gates, cameras, server room).
 - **LoRaWAN** for low-bandwidth sensors and counters spread across a large estate: kilometre-range, years of battery, does not care about Wi-Fi coverage. Three LoRaWAN gateways (main building plus two estate edges — count is an assumption until the site survey in [`TODOS.md`](../../TODOS.md)) feed a **LoRaWAN network server** container on the estate, which decodes payloads and republishes them into the MQTT broker.
 - **Cellular** for the backhaul to the cloud (primary); a second SIM from another operator as failover. If cellular is unavailable (assumption A2 wrong), the same bridge runs over fixed line or satellite.
+
+## Reach at a remote site
+
+The link types above cover the estate that Wi-Fi, LoRaWAN and a cellular backhaul can actually reach.
+Four to eight enclosures sit beyond all three (A17), and for a battery sensor that is fine — for one
+that needs a **camera**, the edge node has to be on site and its output has to get back. That is a
+reach problem, not a bandwidth problem: the whole estate aggregates to ≈ 0.1 Mbps, and nothing below
+changes that.
+
+**Cellular is the default and usually the whole answer.** A remote camera site makes a few megabytes a
+day, and a link carrying all of it costs ≈ €400 a year, which no alternative here beats on money
+([ADR-0019](../../adrs/ADR-0019-reach-for-remote-enclosures.md) §4). What the alternatives buy is
+coverage where there is none. So the channel is chosen per traffic class **and per measured signal**,
+never per site:
+
+| Class at a remote site | Channel | Latency | Why not just cellular |
+| --- | --- | --- | --- |
+| **Critical** | **Cellular** wherever there is usable coverage; the bridge where there is none. A site with neither cannot host an edge node at all and stays on LoRaWAN sensors and the keeper's round | Seconds | Nothing, where coverage exists — this class is kilobytes a day and cellular carries it. A venomous-animal alert may not wait for a vehicle or for a bridge to re-align, so the site with no coverage is exactly the site that needs the bridge, and no vehicle is ever this class's link |
+| **Telemetry** | **Cellular** where coverage carries it; a **directional radio bridge** (PtP/PtMP) where it does not | Seconds | A weak or variable link is the problem, not the bill: a bridge is bought for reach at a fixed point, and it is ≈ €3k against ≈ €400 a year, so it never pays for itself |
+| **Clips** | **Cellular** where coverage carries it; the **bridge** where there is line of sight; **delay-tolerant pickup** where the link carries the two classes above but would be metered into overage by clips, and no bridge can reach — the land train's collector pulls the site's clip buffer as it passes and uploads at a stop with connectivity | Hours | The bulky class is where a thin or metered link actually hurts, and the only class that tolerates a vehicle's round |
+
+The pickup path reuses the machinery already here — the same per-class queues, the same
+`(device_id, boot_id, seq)` idempotency key, the same at-least-once contract — so a missed round is a
+delay rather than a loss. Each mule-served site buffers three rounds, its missed-round counter is a
+metric, and a site missed twice raises an ops ticket and pushes its clips onto its own thin link until
+the route is fixed. Game day GD-19 drops a bridge and misses a round at the same time. If the survey
+finds coverage good enough everywhere, the collector is not bought and this row never runs — which is
+the outcome we expect and would prefer.
+
+Nothing here touches the safety tier: tier-0 rules run on the local broker at the site as everywhere
+else, so reach decides when the cloud finds out, never whether a keeper is paged.
 
 **Transport rule.** A device goes on LoRaWAN only if it sends ≤ 1 message per minute, its payload fits in ≤ 20 bytes, and the survey places it at spreading factor SF7–SF10. Anything faster, larger or further goes PoE or Wi-Fi. This keeps every device under the 1% duty-cycle limit and keeps the [airtime budget](#lorawan-airtime) honest.
 
@@ -196,9 +229,11 @@ Assumptions: 450 sensors and counters at 1–2 msg/min (≈ 15 msg/s in total); 
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Critical | 30,000 gate scans, ~100 alerts and advisories with acks, 12,000 heartbeats | avg 0.5/s; peak day: up to 29,400 scans, 0.8/s in the peak hour | 0.5 KB | 21 MB | 63 MB | 1.3 M | ≈ $1 |
 | Telemetry — sensors & counters | 450 devices, ≈ 15 msg/s | 15/s | 0.2 KB | 260 MB | 0.8 GB | 39 M | ≈ $40 |
+| Telemetry — ride condition sensors | ~80 sensors across the instrumented rides (A19), 1/min | 1.3/s | 0.2 KB | 23 MB | 69 MB | 3.5 M | ≈ $4 |
+| Telemetry — token taps | ≈ 60,000 taps/day across gates, rides, outlets and zone boundaries | 0.7/s | 0.2 KB | 12 MB | 36 MB | 1.8 M | ≈ $2 |
 | Telemetry — S1 feature windows (1-min) | 200 × 1/min | 3.3/s | 2 KB | 576 MB | 1.7 GB | 8.6 M | ≈ $9 |
 | Clips | 100 events × (10 s clip ≈ 1.25 MB + ±5 min raw features ≈ 120 KB) | 100/day | 1.4 MB | 140 MB | 0.4 GB | 0.003 M | ≈ $0 (stored as objects) |
-| **Total** | | **≈ 19 msg/s** | | **≈ 1.0 GB** | **≈ 3.0 GB** | **≈ 49 M** | **≈ $50** |
+| **Total** | | **≈ 21 msg/s** | | **≈ 1.0 GB** | **≈ 3.1 GB** | **≈ 54 M** | **≈ $56** |
 | *Counterfactual: raw 1 Hz features per animal, no aggregation* | *200 × 1/s* | *200/s* | *0.2 KB* | *3.5 GB* | *10 GB* | *520 M* | *≈ $520* |
 
 The counterfactual row is an order of magnitude worse on every column, which is why edge aggregation is a design decision in S1 rather than a later optimisation.

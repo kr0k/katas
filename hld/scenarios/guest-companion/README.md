@@ -5,7 +5,7 @@
 **Moves:** OKR 1.2 (returning share of households 10% → 10% base / 25% stretch → 40% target, model ≈ 32%), 1.3 (passes 20% → 19% / 40% → ≥ 50% target, model ≈ 41%), 1.6 (season-pass renewal, with the ticketing platform), 2.2 (queue time via load spreading)
 **Phase:** 1 (FAQ answers via the gateway) → 2 (day planning with live queues and forecast) → 3 (return-visit nudges) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-4.1, FR-4.2, FR-4.7, FR-1.6, FR-5.1, FR-5.3
-**ADRs:** [ADR-0005](../../../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (staff escalation)
+**ADRs:** [ADR-0005](../../../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (staff escalation), [ADR-0018](../../../adrs/ADR-0018-visitor-token-and-anonymised-paths.md) (the token a household is recognised by)
 
 ## Why generative AI here (and only here)
 This is a language problem: a parent typing "we have a 3-year-old who's scared of loud rides and we need lunch by 12" needs an answer, not a filter form. An LLM turns that into a plan — but **every fact it uses comes from our structured knowledge base and live queue data**, not from the model's memory. Safety facts ("can we touch it?") are never generated; they are looked up.

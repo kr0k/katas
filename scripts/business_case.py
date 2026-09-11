@@ -97,11 +97,13 @@ class Assumptions:
     ticketing_fee: float = 0.15        # A15 — per credential; already inside OPEX(V)
     credentials_per_visitor_day: float = 1.0  # conservative: one per person-admission, as in requirements/04
 
-    # Platform cost (requirements/04 cost model)
-    capex: float = 367_000
+    # Platform cost (requirements/04 cost model). The curve is fitted to the two columns of
+    # appendix/cost-model.md, which is the source: €835k at 5,000/day and ≈ €1.38M at 15,000/day.
+    capex: float = 369_000
     depreciation_years: int = 5
-    opex_fixed: float = 595_000        # team, cellular, maintenance, base cloud and LLM
-    opex_per_visitor_day: float = 0.177  # ticketing fee 0.15 + cloud and LLM 0.015 + visitor tokens 0.012
+    opex_fixed: float = 562_000        # team, cellular, maintenance, and the fixed part of cloud, LLM, tokens and the metric layer
+    opex_per_visitor_day: float = 0.182  # ticketing fee 0.15 + cloud 0.010 + LLM 0.0133 + tokens 0.006 + metric layer 0.0023
+    opex_team: float = 500_000         # 5 engineers, loaded — the largest fixed line, quoted in 08 §4
 
     # Generative-AI cost (hld/ai-platform → what the generative capabilities cost).
     # Token counts are per call as (input, of which cacheable session prefix, output).
@@ -953,7 +955,7 @@ def expected_tokens(a: Assumptions = A) -> list[tuple[Path, str, str]]:
         (DOC_08, r"^## 4\. ", f"{n(a.incremental_rows[2])} incremental visitor-days"),
         (DOC_08, r"^## 4\. ", f"{pct(a.incremental_rows[2] / growth)} of the year-2-to-year-3 growth"),
         (DOC_08, r"^## 4\. ", f"{pct(savings_rate(36, a) / opex(rr_V, a))} of running cost"),
-        (DOC_08, r"^## 4\. ", f"{pct(a.opex_fixed * 500 / 580 / opex(rr_V, a))} of OPEX"),
+        (DOC_08, r"^## 4\. ", f"{pct(a.opex_team / opex(rr_V, a))} of OPEX"),
         (DOC_08, r"^## 5\. ", f"≈ {share_today} of revenue today"),
         (DOC_08, r"^## 5\. ", f"{pct(opex(rr_V, a) / (y3.gross * rr_V / y3.V), 1)} at target"),
         (DOC_08, r"^## 5\. ", f"×{cs[3].H / cs[0].H:.1f} unique households"),
@@ -1086,7 +1088,7 @@ def self_test(a: Assumptions = A) -> None:
     # hand-computable anchors
     assert round(weekend_day(5_000, 0.35)) == 9_333
     assert round(weekend_day(15_000, 0.60)) == 21_000
-    assert opex(1_500_000, a) == 860_500
+    assert opex(1_500_000, a) == 835_000  # the 5,000/day column of appendix/cost-model.md, to the euro
     assert round(contribution(a)[0], 2) == 16.85 and round(contribution(a)[1], 2) == 10.85
     assert round(contribution(a, include_fee=False)[0], 2) == 17.0 and round(contribution(a, include_fee=False)[1], 2) == 11.0
     assert capacity(a)[0].holds_until == 15_000

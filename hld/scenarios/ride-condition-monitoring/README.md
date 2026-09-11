@@ -4,7 +4,7 @@
 
 **Moves:** OKR 2.5 (unplanned downtime hours per instrumented ride), 2.2 (p90 queue time, through closures that do not surprise the forecast)
 **Phase:** 1 (threshold rules on run-in baselines) → 3 (condition model, after twelve months of history) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
-**Requirements:** FR-2.5, FR-2.9, FR-3.1, FR-5.1
+**Requirements:** FR-2.5, FR-2.9, FR-5.1
 **ADRs:** [ADR-0016](../../../adrs/ADR-0016-cost-of-error-sets-the-bands.md), [ADR-0022](../../../adrs/ADR-0022-ride-condition-monitoring.md), [ADR-0023](../../../adrs/ADR-0023-rules-first-model-second.md)
 
 ## The one thing to read first

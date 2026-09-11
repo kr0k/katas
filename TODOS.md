@@ -26,9 +26,9 @@
 
 ### Line-of-sight survey for the remote enclosures
 
-**What:** As part of the Phase 0 site survey: identify which enclosures lie beyond LoRaWAN and Wi-Fi reach, and for each, whether a directional bridge has Fresnel clearance with a margin for vegetation growth and new structures. Output: the remote-site count, the bridge count and placement, and the list that falls to delay-tolerant pickup.
+**What:** As part of the Phase 0 site survey, and for each enclosure beyond LoRaWAN and Wi-Fi reach, measure **two** things: the cellular signal actually available at the enclosure, over a day and in leaf-on conditions, and whether a directional bridge has Fresnel clearance with a margin for vegetation growth and new structures. Output: the remote-site count, the coverage reading per site, the bridge count and placement, and the list — possibly empty — of thin-link sites without line of sight, which is the only case the pickup collector exists for.
 
-**Why:** A17 is an assumption with a 4-to-8 range, and it decides whether the estate operates two delivery channels or three ([SP-9](hld/architecture-evaluation.md#sensitivity-points), [ADR-0019](adrs/ADR-0019-reach-for-remote-enclosures.md) §4). Below two no-line-of-sight sites the pickup collector is not bought at all.
+**Why:** coverage decides the channel, not the site count and not a cost break-even ([ADR-0019](adrs/ADR-0019-reach-for-remote-enclosures.md) §4, [SP-9](hld/architecture-evaluation.md#sensitivity-points)). A site whose cellular carries its classes buys nothing beyond its €400 subscription; only a measured gap justifies the €3k bridge, and only a thin-link site without line of sight justifies the €8k collector, which the cost model carries as conditional until this survey says otherwise.
 
 **Effort:** S (plan) / M (field work)
 **Priority:** P2 — same visit as the LoRaWAN survey below

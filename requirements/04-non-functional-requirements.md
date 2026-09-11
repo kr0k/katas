@@ -60,9 +60,9 @@ This table is the summary. The evaluation behind it — the utility tree of qual
 
 ## Cost model (TCO, ±50%)
 
-CAPEX ≈ **€367k** (edge servers N+1, broker and LoRaWAN hosts, gate readers, 110 cameras, 450 sensors and counters, DECT, cabling, plus the merged portfolio's additions: token readers, radio bridges, ride sensors and the pickup collector), depreciated over 5 years. OPEX ≈ **€860k/yr at 5,000 visitors/day** rising to ≈ **€1.39M at 15,000/day**.
+CAPEX ≈ **€369k** (edge servers N+1, broker and LoRaWAN hosts, gate readers, 110 cameras, 450 sensors and counters, DECT, cabling, plus the merged portfolio's additions: token readers, radio bridges, ride sensors and the conditional pickup collector), depreciated over 5 years. OPEX ≈ **€835k/yr at 5,000 visitors/day** rising to ≈ **€1.38M at 15,000/day**.
 
-Per visitor that is ≈ **€0.62** today and ≈ **€0.33** at the target run rate — inside NFR-COST-2 with the ±50% band. **Ticketing fees and the team are ≈ 82% of the total; the AI is not the expensive part** (hosted LLMs ≈ €50k of ≈ €1.39M, [generative cost](../appendix/generative-cost.md)), and the four agents of [ADR-0013](../adrs/ADR-0013-stakeholder-agents-on-typed-tools.md) are ≈ €508 of that — [why the layer is nearly free](../hld/ai-platform/agents.md#cost-and-why-the-layer-is-nearly-free).
+Per visitor that is ≈ **€0.61** today and ≈ **€0.32** at the target run rate — inside NFR-COST-2 with the ±50% band. **Ticketing fees and the team are 85–87% of the total; the AI is not the expensive part** (hosted LLMs ≈ €50k of ≈ €1.38M, [generative cost](../appendix/generative-cost.md)), and the four agents of [ADR-0013](../adrs/ADR-0013-stakeholder-agents-on-typed-tools.md) are ≈ €508 of that — [why the layer is nearly free](../hld/ai-platform/agents.md#cost-and-why-the-layer-is-nearly-free).
 
 Two consequences for the design: cost-efficiency cannot be bought back by squeezing AI spend, and OPEX must stay flat in headcount as attendance triples — which is what adopt-not-build ([ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [ADR-0003](../adrs/ADR-0003-cloud-provider-selection.md)) is for.
 

@@ -9,7 +9,7 @@ Patchy Wi-Fi shapes everything on the estate. This is the detailed view.
 | **Gate readers** | QR/NFC at 4–6 entry points | MQTT over Wi-Fi/Ethernet to local broker | ≈ 2,940 scans in the peak hour of a peak day (≈ 5,900 persons at 2 per scan; ≈ 29,400 visitor-days, [capacity check](../../appendix/business-case-model.md#1-capacity-reality-check)); an average day is far lower | Wired where possible |
 | **Anonymous counters** | LiDAR / thermal / IR beam counters at zone boundaries and queue lines | MQTT (small payloads) | 1 msg / min / device (in/out deltas), ~150 devices; queue-line counters that need 30 s resolution are PoE | Battery + LoRaWAN, or PoE |
 | **Enclosure sensors** | feed scales, water quality (pH, temp, turbidity), climate, door contacts, PIR/beam dry-zone detectors | MQTT (small payloads) | 1 msg / min / sensor, ~300 sensors | LoRaWAN or Wi-Fi; door contacts and PIR/beam wired |
-| **Token readers** | passive RFID at ride entrances, outlets and zone boundaries (gates use the gate readers) | MQTT (small payloads) | a tap per event, ≈ 0.7/s at the target run rate across ~34 readers | PoE where they sit on power, LoRaWAN at zone boundaries that do not |
+| **Token readers** | passive RFID at ride entrances, outlets and zone boundaries (gates use the gate readers) | MQTT (small payloads) | a tap per event, ≈ 0.7/s at the target run rate across ~40 readers | PoE where they sit on power, LoRaWAN at zone boundaries that do not |
 | **Ride condition sensors** | cycle counter, clamp-on current transformer, bearing and motor surface temperature, run-hours | MQTT (small payloads) | 1 msg / min / sensor, ~80 sensors across the instrumented rides (A19) | LoRaWAN, or PoE where the ride already has mains |
 | **Cameras** | 1–2 per enclosure, IR for nocturnal | RTSP to edge node (never MQTT, never cloud) | 55–110 streams | Wired PoE |
 | **Edge inference nodes** | 2 GPU servers in the estate server room, sized N+1 | Publish 1-min feature windows, clips, advisories via MQTT; pull model artifacts over HTTPS | ~3 msg/s | Mains + UPS |
@@ -29,20 +29,25 @@ that needs a **camera**, the edge node has to be on site and its output has to g
 reach problem, not a bandwidth problem: the whole estate aggregates to ≈ 0.1 Mbps, and nothing below
 changes that.
 
-So the channel is chosen per traffic class at each remote site, never per site
-([ADR-0019](../../adrs/ADR-0019-reach-for-remote-enclosures.md)):
+**Cellular is the default and usually the whole answer.** A remote camera site makes a few megabytes a
+day, and a link carrying all of it costs ≈ €400 a year, which no alternative here beats on money
+([ADR-0019](../../adrs/ADR-0019-reach-for-remote-enclosures.md) §4). What the alternatives buy is
+coverage where there is none. So the channel is chosen per traffic class **and per measured signal**,
+never per site:
 
-| Class at a remote site | Channel | Latency | Why not something cheaper |
+| Class at a remote site | Channel | Latency | Why not just cellular |
 | --- | --- | --- | --- |
-| **Critical** | **Cellular, always**, at every remote site | Seconds | A venomous-animal alert may not wait for a vehicle or for a bridge to re-align. The class is kilobytes a day, so per-site cellular for it alone is cheap |
-| **Telemetry** | **Directional radio bridge** (PtP/PtMP) where line of sight exists; otherwise the same cellular link | Seconds | A bridge is a one-off cost with no monthly bill and carries an edge node's whole output; it is bought for reach, not for throughput |
-| **Clips** | **Delay-tolerant pickup** where a bridge is not possible: the land train's collector pulls the site's clip buffer as it passes and uploads at a stop with connectivity | Hours | The bulky class and the only one that genuinely tolerates a round |
+| **Critical** | **Cellular** wherever there is usable coverage; the bridge where there is none. A site with neither cannot host an edge node at all and stays on LoRaWAN sensors and the keeper's round | Seconds | Nothing, where coverage exists — this class is kilobytes a day and cellular carries it. A venomous-animal alert may not wait for a vehicle or for a bridge to re-align, so the site with no coverage is exactly the site that needs the bridge, and no vehicle is ever this class's link |
+| **Telemetry** | **Cellular** where coverage carries it; a **directional radio bridge** (PtP/PtMP) where it does not | Seconds | A weak or variable link is the problem, not the bill: a bridge is bought for reach at a fixed point, and it is ≈ €3k against ≈ €400 a year, so it never pays for itself |
+| **Clips** | **Cellular** where coverage carries it; the **bridge** where there is line of sight; **delay-tolerant pickup** where the link carries the two classes above but would be metered into overage by clips, and no bridge can reach — the land train's collector pulls the site's clip buffer as it passes and uploads at a stop with connectivity | Hours | The bulky class is where a thin or metered link actually hurts, and the only class that tolerates a vehicle's round |
 
 The pickup path reuses the machinery already here — the same per-class queues, the same
 `(device_id, boot_id, seq)` idempotency key, the same at-least-once contract — so a missed round is a
 delay rather than a loss. Each mule-served site buffers three rounds, its missed-round counter is a
-metric, and a site missed twice falls back to cellular for its clip class until it is fixed. Game day
-GD-19 drops a bridge and misses a round at the same time.
+metric, and a site missed twice raises an ops ticket and pushes its clips onto its own thin link until
+the route is fixed. Game day GD-19 drops a bridge and misses a round at the same time. If the survey
+finds coverage good enough everywhere, the collector is not bought and this row never runs — which is
+the outcome we expect and would prefer.
 
 Nothing here touches the safety tier: tier-0 rules run on the local broker at the site as everywhere
 else, so reach decides when the cloud finds out, never whether a keeper is paged.

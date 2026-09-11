@@ -2,7 +2,7 @@
 
 > The estate's three decision-makers each spend more time assembling a question than answering it. The keeper opens four screens before deciding whether an enclosure needs a visit, the ops manager reads a forecast and a labour rule and a roster to move one shift, and the Countess reads a report that answers yesterday's question rather than today's.
 
-**Moves:** OKR 2.3 (forecast used rather than read), 2.4 (staff hours in empty zones), 3.1 (anomaly → vet review), 5.4 (agent task success)
+**Moves:** OKR 2.3 (forecast used rather than read), 2.4 (staff hours in empty zones), 2.6 (investments with a measured effect and a stated interval), 3.1 (anomaly → vet review), 5.4 (agent task success)
 **Phase:** 2 (`agent:ops-copilot`) → 3 (`agent:animal`, `agent:management`) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
 **Requirements:** FR-2.8, FR-2.4, FR-3.5, FR-5.1, FR-5.4
 **ADRs:** [ADR-0013](../../../adrs/ADR-0013-stakeholder-agents-on-typed-tools.md), [ADR-0014](../../../adrs/ADR-0014-two-tier-agent-memory-with-a-write-guard.md), [ADR-0015](../../../adrs/ADR-0015-metric-layer-and-estate-twin.md)

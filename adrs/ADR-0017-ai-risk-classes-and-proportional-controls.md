@@ -5,7 +5,7 @@
 **Related:** ADR-0005, ADR-0007, ADR-0008, ADR-0013, ADR-0016, ADR-0022
 
 ## Context
-With four agents and a portfolio of fifteen AI applications, the controls are no longer few enough to
+With four agents and a portfolio of twenty-three AI applications, the controls are no longer few enough to
 carry in one head. They also already exist and are scattered: calibration gates and golden sets in
 [ADR-0008](ADR-0008-ai-evaluation-and-production-monitoring.md), bands and review queues in
 [ADR-0007](ADR-0007-human-in-the-loop-confidence-bands.md), fallbacks and budgets in
@@ -24,9 +24,9 @@ licence goes out with a caption drafter's rigour.
 
    | Class | What puts a capability here | Mandatory controls on top of the baseline |
    | --- | --- | --- |
-   | **High** | A wrong output can injure a person, kill an animal, or invalidate a certification. Today: S1 welfare scoring, S8 ride condition, the tier-1 safety advisory | A named human decides every case — no automatic band ([ADR-0016](ADR-0016-cost-of-error-sets-the-bands.md) §5); a cost-of-error row; a game day; delayed ground truth joined monthly; a documented incident path; the capability cannot be its own safety guarantee, and a deterministic rule must stand behind it |
-   | **Medium** | A wrong output moves money, a roster, a visitor's day or an animal's routine, and a human can still catch it. Today: S3 forecasting and staffing, S5 pricing, S4 companion, S7 content, the four agents | Human approval on anything effectful; confidence bands; drift and business guardrails with automatic rollback; per-capability budget; the fairness check where a price or a person is involved |
-   | **Low** | A wrong output wastes a human's minute. Today: report phrasing, sentiment themes, the FAQ tier of the companion | Baseline only: eval gate, monitoring, a named fallback, an owner |
+   | **High** | A wrong output can injure a person, kill an animal, or invalidate a certification. Today: S1 welfare scoring, S8 ride condition, the tier-1 safety advisory | **No automatic band may act on the world**: a named human decides the consequential outcome — whether an animal is treated, whether a ride opens — and what a high-confidence band may do on its own is bounded to recording, ranking and routing ([ADR-0007](ADR-0007-human-in-the-loop-confidence-bands.md) §1, [ADR-0016](ADR-0016-cost-of-error-sets-the-bands.md) §3). Plus a cost-of-error row; a game day; delayed ground truth joined monthly; a documented incident path; the capability cannot be its own safety guarantee, and a deterministic rule must stand behind it. Where no band can be drawn safely at all — S8 — the capability has none at any confidence ([ADR-0022](ADR-0022-ride-condition-monitoring.md) §3) |
+   | **Medium** | A wrong output moves money, a roster, a visitor's day or an animal's routine, and a human can still catch it. Today: S3 forecasting and staffing, S5 pricing, S4 companion, S7 content, and the three agents that draft or create work (`ops-copilot`, `animal`, `companion`) | Human approval on anything effectful; confidence bands; drift and business guardrails with automatic rollback; per-capability budget; the fairness check where a price or a person is involved |
+   | **Low** | A wrong output wastes a human's minute. Today: report phrasing, S7 theme naming, the FAQ tier of the companion, and `agent:management`, which is read-only by construction | Baseline only: eval gate, monitoring, a named fallback, an owner |
 
 2. **The baseline is not optional at any class**: a versioned bundle in the registry, a passing eval
    suite, a named deterministic fallback (NFR-RES-2), an owner, and full decision logging (FR-5.1).

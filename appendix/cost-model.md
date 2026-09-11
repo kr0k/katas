@@ -2,7 +2,7 @@
 
 Order-of-magnitude CAPEX and OPEX so that NFR-COST-2 can be checked and the Countess can see what she is buying. Procurement figures, not architecture: every number is an assumption to be replaced by a quote. The architectural constraint it serves is the per-visitor ceiling in [requirements/04](../requirements/04-non-functional-requirements.md#cost-model-tco-50), and the [business-case model](business-case-model.md) uses this table as its OPEX curve.
 
-Order-of-magnitude figures so that NFR-COST-2 can be checked and so the Countess sees what she is buying. All numbers are assumptions to be replaced by quotes. The business case — payback, growth, what the estate must fund besides the platform — is in [08](../requirements/08-business-case.md), which uses this table as a curve: **OPEX(V) ≈ €595k fixed + €0.177 per visitor-day**, within ≈ 2% of both columns below, so that every cumulative figure there follows the ladder rather than two end points.
+Order-of-magnitude figures so that NFR-COST-2 can be checked and so the Countess sees what she is buying. All numbers are assumptions to be replaced by quotes. The business case — payback, growth, what the estate must fund besides the platform — is in [08](../requirements/08-business-case.md), which uses this table as a curve: **OPEX(V) = €562k fixed + €0.182 per visitor-day**, fitted to the two columns below rather than asserted, so it reproduces the 5,000/day column to the euro and the 15,000/day column within 0.1% — and so every cumulative figure there follows the ladder rather than two end points. The fit is checked by `business_case.py`'s self-test; if a line below moves, the curve is re-fitted rather than the column rounded.
 
 **CAPEX** (one-off, mostly Phase 0–1)
 
@@ -16,13 +16,13 @@ Order-of-magnitude figures so that NFR-COST-2 can be checked and so the Countess
 | LoRaWAN gateways (3) | €5k | 0 |
 | DECT base stations and 40 handsets/pagers | €15k | 0 |
 | Cabling, installation, site survey | €60k | 0 |
-| Token readers (≈ 40: rides, outlets, zone boundaries) + issuance and encoding at the gates | €25k | 0 |
+| Token readers (≈ 40: ride entrances, outlets and the twelve zone boundaries; the gate lanes use the gate readers above) + issuance and encoding at the gates | €25k | 0 |
 | Directional radio bridges (4 links, incl. mast, power and survey) | €12k | 0–1 |
 | Ride condition sensors (≈ 20 instrumentable rides × ≈ €600: cycle counter, current clamp, 2 temperature probes, radio node) | €12k | 1 |
-| Delay-tolerant pickup collector on the land train (one unit for the estate) | €8k | 1 |
-| **Total CAPEX** | **≈ €367k** (≈ €73k/yr over 5 years) | |
+| Delay-tolerant pickup collector on the land train — **conditional**, bought only if the survey finds a site whose link carries alerts and telemetry but not clips, with no line of sight for a bridge ([ADR-0019](../adrs/ADR-0019-reach-for-remote-enclosures.md) §4) | €8k | 1 |
+| **Total CAPEX** | **≈ €369k** (≈ €74k/yr over 5 years) | |
 
-The last four lines are what the merged AI portfolio added: ≈ €57k, or 18% on the original CAPEX. The land train itself is **not** here — it is an estate asset bought out of the accessibility and capacity case (A18), and the platform pays only for the collector it carries ([ADR-0020](../adrs/ADR-0020-internal-transport-and-autonomy.md) §1).
+The last four lines are what the merged AI portfolio added: ≈ €57k, or 18% on the original CAPEX. The collector is carried in the total although it may not be bought, which overstates the bill by €8k rather than hiding it. The land train itself is **not** here — it is an estate asset bought out of the accessibility and capacity case (A18), and the platform pays only for the collector it carries ([ADR-0020](../adrs/ADR-0020-internal-transport-and-autonomy.md) §1).
 
 **OPEX** (per year)
 
@@ -36,7 +36,9 @@ The last four lines are what the merged AI portfolio added: ≈ €57k, or 18% o
 | Ticketing platform fees (assumed €0.15/ticket or 1.5–3% of ticket revenue) | €225k | €675k | Largest line after the team; a selection criterion in [ADR-0012](../adrs/ADR-0012-ticketing-platform-adopt-not-build.md) |
 | Team: 5 engineers, loaded | €500k | €500k | Does not grow with attendance — the point of adopt-not-build |
 | Hardware maintenance and spares (10% of CAPEX) | €37k | €37k | |
-| **Total OPEX** | **≈ €860k** | **≈ €1.39M** | |
+| **Total OPEX** | **≈ €835k** | **≈ €1.38M** | |
 
-**Per visitor** (CAPEX/5 + OPEX ÷ visitors/yr at 300 open days): ≈ **€0.62** at 5,000/day, ≈ **€0.33** at 15,000/day — inside NFR-COST-2 with the ±50% band. Ticketing fees and the team are ~82% of the total; the AI is not the expensive part, and the four agents are ≈ €508 of it.
+Both totals are the column added up, not a rounded curve: €835k and €1,380k against the model's €835k and €1,381k.
+
+**Per visitor** (CAPEX/5 + OPEX ÷ visitors/yr at 300 open days): ≈ **€0.61** at 5,000/day, ≈ **€0.32** at 15,000/day — inside NFR-COST-2 with the ±50% band. Ticketing fees and the team are 85–87% of the total (€725k of €835k today, €1,175k of €1,380k at target); the AI is not the expensive part, and the four agents are ≈ €508 of it.
 

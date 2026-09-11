@@ -203,7 +203,7 @@ Hours per week by role and phase, all of them roles the estate already has. **La
 | Certified engineer (estate) | Decide every ride condition flag and record the inspection finding (S8) | — | — | 2 h/wk | The finding is the delayed ground truth |
 | Agent owners (ops manager, vet, AI platform) | Review 20 agent traces a week per live agent, and the write-guard reject log monthly (S6) | — | 1 h/wk | 2 h/wk | Trace reviews and overrides |
 | Platform engineers (of the 5) | Model promotions, game days, on-call; re-issue of [requirements/08](../../requirements/08-business-case.md) with the ops manager (1 day/yr, from Phase 2 entry); the quarterly risk-class control audit ([ADR-0017](../../adrs/ADR-0017-ai-risk-classes-and-proportional-controls.md) §6) | 1 day/quarter + rota | same + 1 day/yr | same + 1 day/yr + 1 day/quarter | — |
-| **Total estate-staff hours on AI** | | **≈ 17 h/wk** | **≈ 28 h/wk** | **≈ 31 h/wk** | Phase 2 carries the language-approval spike; Phase 3 carries the merged portfolio's three new human gates — the curator, the engineer and the agent owners. Each is a role the estate already has, and each is what makes its capability safe rather than fast |
+| **Total estate-staff hours on AI** | | **≈ 17 h/wk** | **≈ 28 h/wk** | **≈ 35 h/wk** | Each column is its own rows added up, including the bounded labelling spike and excluding the platform engineers, who are not estate staff; the translator's ≈ 1 h/mo rounds to zero. Phase 2 carries the language-approval spike; Phase 3 carries the merged portfolio's three new human gates — the curator (3), the engineer (2) and the agent owners (2). Each is a role the estate already has, and each is what makes its capability safe rather than fast |
 
 Workload per role is a tracked metric; a phase gate slips before a role is overloaded (R13, NFR-OPS-1).
 
@@ -225,9 +225,9 @@ is not optional at any class.
 
 | Class | Today | On top of the baseline |
 | --- | --- | --- |
-| **High** | S1 welfare scoring, the tier-1 advisory, S8 ride condition | A named human decides every case, with **no automatic band**; a cost-of-error row; a game day; delayed ground truth joined monthly; a deterministic rule standing behind it. **AI never issues a clearance** |
-| **Medium** | S3 forecasting and staffing, S5 pricing, S4 companion, S7 content, the four agents | Human approval on anything effectful; confidence bands; drift and business guardrails with automatic rollback; a per-capability budget |
-| **Low** | Report phrasing, S7 theme naming, the companion's FAQ tier, `agent:management` | The baseline only |
+| **High** | S1 welfare scoring, the tier-1 advisory, S8 ride condition | **No automatic band may act on the world**: a named human decides the consequential outcome, and a high-confidence band is bounded to recording, ranking and routing ([ADR-0007](../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) §1). S8 has no band at any confidence. Plus a cost-of-error row; a game day; delayed ground truth joined monthly; a deterministic rule standing behind it. **AI never issues a clearance** |
+| **Medium** | S3 forecasting and staffing, S5 pricing, S4 companion, S7 content, and the three agents that draft or create work | Human approval on anything effectful; confidence bands; drift and business guardrails with automatic rollback; a per-capability budget |
+| **Low** | Report phrasing, S7 theme naming, the companion's FAQ tier, `agent:management` (read-only by construction) | The baseline only |
 
 A quarterly audit reads the registry and reports any production capability whose class controls are
 incomplete — the same job that reports capabilities without a passing eval (OKR 5.3). Autonomy above
@@ -244,4 +244,4 @@ and the class exists so that the boundary is stated rather than assumed.
 | The gateway itself is a dependency | It is adopted OSS with declarative config; the resolver isolates services; only hosted generative capabilities depend on it — vision, counting and forecasting never do. |
 | How do we know it works? | Nothing is promoted without passing its golden set; shadow before live; guardrails with auto-rollback after — all numbers in one table. |
 | How do we know it *stopped* working? | Drift monitors + business-metric guardrails + human override rate, alerting the capability owner. |
-| Who does all the reviewing? | Existing estate roles, ≈ 17–31 h/week in total, with labels captured as a side-effect of their normal decisions. |
+| Who does all the reviewing? | Existing estate roles, ≈ 17–35 h/week in total across eight of them, with labels captured as a side-effect of their normal decisions. |

@@ -61,7 +61,7 @@ the place a judge may reasonably say the proposal was too conservative.
 | --- | --- |
 | The route changes and a mule-served site falls off it | Route and mule-served sites are one configuration with one owner; a route change re-runs the channel decision in [ADR-0019](ADR-0019-reach-for-remote-enclosures.md) §4 for the affected sites |
 | Autonomy is added later without the safety case (R24) | §4's five preconditions are the gate, and [ADR-0017](ADR-0017-ai-risk-classes-and-proportional-controls.md) §5 places the class outside scope until they hold |
-| The estate never buys the train, and the mule has no carrier | A18 states the dependency; if it fails, remote sites without line of sight fall back to cellular for the clip class and the collector is not purchased |
+| The estate never buys the train, and the mule has no carrier | A18 states the dependency; if it fails the collector is not purchased, and the thin-link site it existed for ([ADR-0019](ADR-0019-reach-for-remote-enclosures.md) §4) sends its clips over its own cellular link and accepts the overage, or the same unit rides a utility cart — §6 keeps the two purchases independent for exactly this reason |
 
 ## How we will know this was right
 Mule-served sites passed three times a day through a season; step-free access measured to every

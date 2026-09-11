@@ -55,10 +55,11 @@ Every row has a deterministic fallback, because loss of AI may never block a cor
 | 22 | Feedback theme clustering with quotes | classical + generative | batch | [S7](../scenarios/content-and-visitor-voice/README.md) | 2 | Low | Reading the sentences |
 | 23 | Ride condition flagging from non-invasive telemetry | classical | cloud | [S8](../scenarios/ride-condition-monitoring/README.md) | 3 | High | Threshold rule on the ride's run-in baseline |
 
-Two things fall out of the table. **Five of the twenty-three are generative**, and none of them decides
-anything — they phrase, plan, answer and draft. And **nine run at the edge**, which is what keeps 110
-camera streams off a 0.1 Mbps backhaul and is the reason the inference gateway is on the path of only
-one column.
+Two things fall out of the table. **Five of the twenty-three are generative** — 7, 12, 13, 14 and 21,
+with the naming half of 22 as a sixth — and none of them decides anything; they phrase, plan, answer
+and draft. And **seven run at the edge** — 2, 3, 4, 5, 6, 8 and 20 — which is what keeps 110 camera
+streams off a 0.1 Mbps backhaul and is the reason the inference gateway is on the path of only one
+column.
 
 ## Reuse, which is why twenty-three is affordable
 

@@ -4,7 +4,7 @@
 
 **Moves:** OKR 2.2 (p90 queue ≤ 20 min), 2.3 (next-day MAPE ≤ 25%), 2.4 (idle staff hours −30%), 1.5 (fill weekdays)
 **Phase:** 1 (live occupancy dashboard, heuristic staffing) → 2 (forecasting + optimiser, after ≥ 1 season of data per A6/R7) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
-**Requirements:** FR-2.1, FR-2.2, FR-2.3, FR-2.4, FR-5.3; feeds FR-1.7 (timed-entry cap) and shows FR-2.6 (spend per zone)
+**Requirements:** FR-2.1, FR-2.2, FR-2.3, FR-2.10, FR-5.3; feeds FR-1.7 (timed-entry cap) and shows FR-2.6 (spend per zone); FR-2.4's estimate is worked in [S6](../operations-copilot/README.md)
 **ADRs:** [ADR-0009](../../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md), [ADR-0008](../../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (manager approves plans), [ADR-0004](../../../adrs/ADR-0004-event-driven-backbone.md) (`StaffingPlanApproved`, not the forecast, crosses contexts)
 
 ## Two problems, two tools
@@ -51,7 +51,17 @@ flowchart LR
 | Staffing plan proposal | Human approves; edits captured as feedback; `StaffingPlanApproved` published — the forecast itself never leaves Park Operations | Human |
 
 ## Investment analytics (FR-2.4)
-Curated footfall + a register of changes (new ride opened, enclosure refurbished, price change) → before/after comparison with seasonally matched controls. Simple, transparent, and what the Countess actually needs to decide where money goes.
+Curated footfall + a register of changes (new ride opened, enclosure refurbished, price change) is the input; the estimate itself — a synthetic control over comparable zones, with an interval, and the verdict "cannot be told apart from the season" when that interval spans zero — is worked in [S6](../operations-copilot/README.md#investment-effect-the-question-the-copilot-cannot-answer-alone). It lives there because it is the question `agent:management` is most often asked and the one most easily answered wrongly.
+
+## The order of a visit, from token taps (FR-2.10)
+The counters above answer *how many*. They cannot answer *in what order*, and "where do families go after the piranha tank" is behind half the investment decisions the register records.
+
+Taps from the [visitor token](../../../adrs/ADR-0018-visitor-token-and-anonymised-paths.md) answer it for the cohort that carries one, and the honesty is in the weighting rather than in the map:
+
+- **Counters stay the instrument of record.** Per zone and hour, the tap cohort is weighted to the counter total, so the carry rate is *measured* — published beside every figure, with its error.
+- **A zone below a 15% carry rate is reported as "paths not representative"** and no flow is drawn for it. A missing answer beats a confident wrong one.
+- **Aggregation happens before anything analytical sees the data:** zone-to-zone flows and dwell distributions only, suppressed below 20 tokens in a cell, no path shorter than a zone. Park Operations never receives an individual sequence.
+- The quarterly exit survey (A14) is the independent check on *who* carries a token, which is the assumption (A16) the whole weighting rests on.
 
 ## Capacity and spend on the dashboard (FR-1.7, FR-2.6)
 Two lines the ops dashboard gains from the [business case](../../../requirements/08-business-case.md):

@@ -4,6 +4,11 @@ Shared infrastructure every AI scenario uses. It answers two questions once, rat
 
 Two halves, easy to confuse. **Model governance** (registry, evaluation, monitoring) covers *every* model we run — rented, own, cloud, edge or batch. The **inference gateway** is a runtime proxy for *hosted* models only, and we adopt it rather than build it. → [ADR-0005](../../adrs/ADR-0005-model-gateway-and-provider-independence.md)
 
+A third piece sits above both: the **agentic layer**, four agents that compose the capabilities below into the multi-step work the estate cannot staff. It owns no data and is no deployable → [agents.md](agents.md), [ADR-0013](../../adrs/ADR-0013-stakeholder-agents-on-typed-tools.md).
+
+- **What AI is in this proposal, and why each piece earns its place:** [the portfolio](ai-portfolio.md) — twenty-three applications across eight scenarios, with what each falls back to and what is deliberately absent.
+- **How the agents work, and how they fail safely:** [agents.md](agents.md).
+
 ## Components
 
 ```mermaid
@@ -35,11 +40,23 @@ flowchart LR
         OW(["Open-weight model<br/>(managed hosting, downgrade path)"])
     end
 
+    subgraph Agentic["Agentic layer — proposals only"]
+        Ag["🤖 4 agents on typed tools"]
+        Guard["Write-guard<br/>schema · provenance · dedup"]
+        Mem[("Session & shift memory, TTL'd")]
+        Ag --> Guard --> Mem
+        Mem --> Ag
+    end
+
     HITL["Review queue service 👤<br/>confidence bands · SLAs · audit"]
     Train["Training pipelines<br/>(vision & tabular models)"]
+    Class["Risk class per capability<br/>high · medium · low"]
 
     Ops & Welfare & Guest --> Res
     Cons --> Res
+    Ag --> Res
+    Ag -. "drafts" .-> HITL
+    Class -.-> Reg
     Res --> GW
     GW --> P1 & P2 & OW
     Res --> Own
@@ -80,7 +97,8 @@ We do not build any of that. Routes, budgets and fallback chains are declarative
 | `answer-question`, `plan-visit`, `summarise-daily-welfare-report`, `summarise-estate-day`, nudge wording | Rented generative; open-weight on managed hosting as downgrade | Capability resolver → **inference gateway** → provider or managed endpoint | Registry · eval gate · monitoring |
 | `detect-feeding-anomaly`, `score-enclosure-activity` | Own tabular / time-series, cloud | AI consumer on the backbone → **own model endpoint** (managed hosting); no gateway | same |
 | `extract-enclosure-features`, `mask-visitors`, `count-piranha`, `flag-aggressive-behaviour` (tier-1 advisory) | Own vision, edge | **Edge inference node**; artifact pulled from the registry over the downlink ([ADR-0006](../../adrs/ADR-0006-edge-vs-cloud-inference.md)); node reports version and confidence stats | same |
-| `forecast-zone-footfall`, `estimate-price-elasticity` | Own tabular, batch | **Scheduled batch job** in the GPU/batch workers; results published as events | same |
+| `forecast-zone-footfall`, `estimate-price-elasticity`, `score-ride-condition`, `estimate-investment-effect`, `cluster-feedback-themes` | Own tabular, batch | **Scheduled batch job** in the GPU/batch workers; results published as events | same |
+| `agent:ops-copilot`, `agent:animal`, `agent:management`, `agent:companion` | Rented generative, plus the capabilities above as tools | Agent runtime → capability resolver → **inference gateway**; each agent is its own versioned artifact ([agents](agents.md)) | Registry · eval gate · monitoring · risk class · agent-level task metrics |
 
 The gateway is on the path of the first row only. The other three rows never touch a hosted provider and never depend on the gateway — but they cannot be promoted or served without passing through governance.
 
@@ -90,10 +108,11 @@ Generative spend is the one platform cost that grows with success — five-fold 
 
 | Figure | Consequence for the design |
 | --- | --- |
-| ≈ €34,300 a year at 15,000 visitors/day — ≈ €0.04 per companion household visit, ≈ €0.01 per visitor-day | Inside the €50k line in the [cost model](../../requirements/04-non-functional-requirements.md#cost-model-tco-50) with a 46% overrun absorbed, at ≈ 0.04% of revenue against NFR-COST-1's 2% ceiling. Squeezing AI spend buys nothing; a worst-case price move is caught by the per-capability budget rather than by the line |
+| ≈ €34,800 a year at 15,000 visitors/day — ≈ €0.04 per companion household visit, ≈ €0.01 per visitor-day | Inside the €50k line in the [cost model](../../requirements/04-non-functional-requirements.md#cost-model-tco-50) with a 44% overrun absorbed, at ≈ 0.04% of revenue against NFR-COST-1's 2% ceiling. Squeezing AI spend buys nothing; a worst-case price move is caught by the per-capability budget rather than by the line |
 | Planning and re-planning ≈ 90% of the bill | Routing is tiered, and a re-plan touches only the affected stops |
-| ≈ €67,100 without the FAQ cache and prompt caching | The caches are a design condition, not an optimisation — the same shape as the [ingestion counterfactual](../core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class) |
+| ≈ €67,800 without the FAQ cache and prompt caching | The caches are a design condition, not an optimisation — the same shape as the [ingestion counterfactual](../core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class) |
 | Peak day 2.0× an average one | Load is bounded by households present, not by concurrency, so the budget is seasonal rather than a flat twelfth |
+| The four agents together: **≈ €508 a year, 1.5% of the bill** | Generative cost scales with the audience, not with the ambition — three of the four serve a few dozen staff. A self-test fails the build if the layer passes 5% of generative spend → [why the layer is nearly free](agents.md#cost-and-why-the-layer-is-nearly-free) |
 
 Per-request-class arithmetic, tier prices, the counterfactual and the escalation sensitivity: [appendix · generative-AI cost model](../../appendix/generative-cost.md), generated by [`scripts/business_case.py`](../../scripts/business_case.py) and checked by lint.
 
@@ -154,6 +173,13 @@ Production re-measures these from sampled human-labelled data on the same defini
 | **S3 staffing optimiser** (deterministic) | Hard-constraint violations = 0 in property-based tests | Violations = 0 on every proposal, checked by an independent validator before it is shown | Ops manager approves every plan; edits logged as labels | Ops manager |
 | **S4 companion** — `answer-question`, `plan-visit` | Factuality ≥ 0.95; constraint violations 0; safety refusals 100%; **indirect prompt-injection resistance 100%** on a 100-case set; **ungrounded-block false positives ≤ 5%** on 300 answerable questions; NFR-PRF-1 latency budgets met in a 500-session load test; offline itinerary end-to-end test passes; **per-language safety-field fidelity 100% and unapproved-language handoff 100%** (NFR-LNG-1); **read-aloud meaning preserved on 20 cases** (NFR-ACC-1); 2-week shadow | Thumbs-down > 5%; ungrounded-block rate doubling week-on-week; judge/human disagreement > 10%; any safety-critical wrong statement → rollback + alert | Weekly: 50 sessions reviewed by the guest team; knowledge base curated daily by ops | Guest team |
 | **S5 pricing** — `estimate-price-elasticity` + policy engine | Backtest: contribution on held-out weeks ≥ fixed pricing; invariant violations = 0 in property-based tests, incl. the contribution constraint with the A15 parameters | Conversion drop > 10% vs. control → revert to fixed price; **weekly: contribution per visitor-day on discounted blocks < 0% blocks − 10% → pause that discount level**; complaint rate > 0.5% of buyers → review; floor/ceiling hit frequency monitored; invariant violations = 0 | Management approves every out-of-guardrail price; monthly readout vs. fixed-price counterfactual; year-1 experiment readout after one season | Management |
+| **S6 agents** — `agent:ops-copilot`, `agent:animal`, `agent:management`, and the `agent:companion` tool turn | Task success ≥ 0.80 on a 60-task golden set per agent, judged by LLM-as-judge calibrated against the domain expert's labels on the same set; **tool-argument schema violations = 0**; **indirect prompt-injection resistance 100%** on a 50-case set; protocol answers returned verbatim with a correct document version 100%; `agent:management` refuses rather than invents on 30 unanswerable questions at 100%; 2-week shadow on real tasks | Task success below target for two cycles → **agent rollback** (prompt, whitelist, step budget), separate from any model rollback; tool-error rate triaged as integration first; human-override rate read together with queue depth; steps and cost per task against NFR-AGT-1 budgets; copilot-origin review items tracked apart from model-origin ones | Weekly: 20 traces reviewed by the agent's owner. Quarterly: GD-17 and GD-18 | AI platform |
+| **S6 agent memory** — the write-back path | Write-guard rejects every malformed, out-of-range and out-of-provenance write in a seeded set, at 100%; a derivative batch is revertible by provenance alone | **Accepted anomalous writes = 0** — any occurrence is an incident; derivative PSI < 0.2; the share of self-generated against human-verified labels flat or falling; write-reject rate monitored as a signal, not a silent drop | Monthly review of the reject log by the AI platform owner | AI platform |
+| **S6 investment effect** — `estimate-investment-effect` | Placebo test on pre-investment periods: false effects at the 95% level ≤ 5%; the synthetic control's pre-period fit within its stated band | Any estimate whose interval spans zero is reported as "cannot be told apart from the season", never as a small effect | Quarterly readout with management | Ops manager |
+| **S7 content** — `draft-caption` | Facts inserted verbatim = 100% and invented facts = 0 on a 150-draft set; brand-voice eval against the curator's examples; **drafts containing an unmasked person region = 0** on the same staged 500-frame set the masking gate uses | **Unedited acceptance rate** — below 40% at the end of the first season is the capability's kill gate; a published item with a wrong species fact is an incident, not a metric | The curator reviews every draft — there is no automated publish path | Curator |
+| **S7 feedback themes** — `cluster-feedback-themes` | Cluster stability on unchanged input ≥ 0.90 (adjusted Rand index); theme names grounded in their own cluster 100% on a 50-cluster review; quotes containing a name or a contact = 0 on an adversarial set | A season with no costed change traceable to a theme is the kill gate; counts always published against submissions, never as a share of opinion | Weekly ops review reads the quotes, which is what makes the clustering self-auditing | Guest team |
+| **S8 ride condition** — `score-ride-condition` | 12 months of history and a measured downtime baseline before a model is considered; recall ≥ 0.80 on findings-confirmed events; **must beat the threshold rule on the same window**; lead time ≥ 7 days on at least half of confirmed findings; **flags whose only evidence is an unhealthy sensor = 0**; one full season in shadow | **Rides opened or closed on a model's output = 0**, enforced by a contract test on the registry's writers rather than by policy; inspections that found nothing, as a rate, trending down; unplanned downtime hours per instrumented ride per season (OKR 2.5) | Certified engineer decides every flag; no automatic band at any confidence | Ops + certified engineer |
+| **Token path analytics** — the weighting, not a model | Weighting reproduces held-out counter totals within ±10 points on a season of data | Carry rate published with every figure; a zone below 15% reports "paths not representative"; cells below 20 tokens suppressed (NFR-PRV-3) | Quarterly against the exit survey (A14) | Ops manager |
 | **LLM drafters** — `summarise-daily-welfare-report`, `summarise-estate-day` | Inserted figures verbatim = 100% and invented numbers = 0 on the "numeric fidelity" set (200 snapshots); format and tone evals; a human approves the wording before anything is sent (for the estate day: the ops manager between 20:30 and 21:00, numbers inserted verbatim at 21:00) | Post-generation verbatim check on the final numbers fails → template-only sent + alert, bundle is a rollback candidate; approval rate and edits per report tracked weekly | Weekly sample of 10 reports by the owner (vet for the welfare briefing, ops manager for the estate day) | Vet · Ops manager |
 | **Business guardrails** (alert only — no model is rolled back on a business number; every figure comes from a KPI read model that is itself tested with fixture event streams, [hld/core → Verification](../../appendix/data-health-and-verification.md#verification-purchases-cap-and-the-daily-report)) | — | Season-pass renewal: cohort-over-cohort decline > 10 points before month 36 (earliest signal month 24), below 60% after → alert Guest team and management. On-site spend per visitor-day — all guests, `PurchaseRecorded` ÷ Σ `persons_admitted` — 10% below the modelled €6.00 on-site spend per visitor-day, seasonally adjusted (A6) → alert. Pass share of admissions (credential type on `GateEntered`) more than 5 points below the ladder for a quarter → alert management. Contribution per pass visit is **derived** from those two and the A15 parameters by `business_case.py` and labelled *model* — never a raw metric, because purchases carry no subject without consent ([ADR-0009](../../adrs/ADR-0009-visitor-privacy-anonymous-counting.md) §7). Cohort rates (adoption, opt-in, nudge reach, return, pass conversion, pass renewal, account retention — [08 §3](../../appendix/business-case-model.md#3-the-membership-flywheel)) more than 20% below the table for 2 months → alert Guest team | Monthly readout with the OKRs; yearly re-issue of requirements/08 with measured values | Guest team · Management |
 | **Platform** | Every production capability has a passing eval and a named non-AI fallback (OKR 5.3) | Budget alerts at 70% / 90%, downgrade at 100% (NFR-COST-1); model swap ≤ 1 day (OKR 5.2) | Monthly shadow run of the secondary provider and the open-weight bundle; quarterly game days GD-9/GD-10 | AI platform |
@@ -172,8 +198,12 @@ Hours per week by role and phase, all of them roles the estate already has. **La
 | Guest team | Review 50 sessions; curate knowledge base; triage thumbs-down | 3 + 5 h/wk | 4 + 5 h/wk | 4 + 5 h/wk | Reviews, KB fixes |
 | Guest team + a contracted translator | **Approve the safety, allergen and price fields per language** (NFR-LNG-1) — a bounded set that changes only when a rule, a price or an animal changes, not a per-answer task | — | 2 h/wk while a language is added, then ≈ 1 h/mo | ≈ 1 h/mo per language | Explicit approval per field and language |
 | Management | Out-of-guardrail price approvals; experiment readout | — | — | 1 h/wk | Approval reason codes |
-| Platform engineers (of the 5) | Model promotions, game days, on-call; re-issue of [requirements/08](../../requirements/08-business-case.md) with the ops manager (1 day/yr, from Phase 2 entry) | 1 day/quarter + rota | same + 1 day/yr | same + 1 day/yr | — |
-| **Total estate-staff hours on AI** | | **≈ 17 h/wk** | **≈ 26 h/wk** | **≈ 25 h/wk** | Phase 2 carries the language-approval spike; it falls away once a language is live |
+| Guest team | Feedback themes: read the ranked list and its quotes in the weekly ops review (S7) | — | 1 h/wk | 1 h/wk | Disagreement with a cluster is a label |
+| Curator (guest team) | Publish or discard every content draft — there is no automated publish path (S7) | — | — | 3 h/wk | Publish, discard, and the edits in between |
+| Certified engineer (estate) | Decide every ride condition flag and record the inspection finding (S8) | — | — | 2 h/wk | The finding is the delayed ground truth |
+| Agent owners (ops manager, vet, AI platform) | Review 20 agent traces a week per live agent, and the write-guard reject log monthly (S6) | — | 1 h/wk | 2 h/wk | Trace reviews and overrides |
+| Platform engineers (of the 5) | Model promotions, game days, on-call; re-issue of [requirements/08](../../requirements/08-business-case.md) with the ops manager (1 day/yr, from Phase 2 entry); the quarterly risk-class control audit ([ADR-0017](../../adrs/ADR-0017-ai-risk-classes-and-proportional-controls.md) §6) | 1 day/quarter + rota | same + 1 day/yr | same + 1 day/yr + 1 day/quarter | — |
+| **Total estate-staff hours on AI** | | **≈ 17 h/wk** | **≈ 28 h/wk** | **≈ 31 h/wk** | Phase 2 carries the language-approval spike; Phase 3 carries the merged portfolio's three new human gates — the curator, the engineer and the agent owners. Each is a role the estate already has, and each is what makes its capability safe rather than fast |
 
 Workload per role is a tracked metric; a phase gate slips before a role is overloaded (R13, NFR-OPS-1).
 
@@ -183,7 +213,26 @@ Workload per role is a tracked metric; a phase gate slips before a role is overl
 | --- | --- | --- | --- | --- |
 | Classical ML | forecasting, pricing | Deterministic given inputs | Backtests, MAPE/RMSE thresholds; invariant suites for the policy around them | Error vs. actuals, drift, invariant violations = 0 |
 | Computer vision | welfare anomalies, piranha count | Probabilistic | Precision/recall on golden footage | Confidence bands, override rate, audits per the thresholds table |
-| Generative | companion, report summaries | Non-deterministic | Factuality, safety, format evals; adversarial and indirect-injection sets | Sampled judge + human, thumbs-down, escalation rate |
+| Generative | companion, report summaries, captions, theme names | Non-deterministic | Factuality, safety, format evals; adversarial and indirect-injection sets | Sampled judge + human, thumbs-down, escalation rate |
+| Agent (an orchestrator over the other three) | ops-copilot, animal, management, companion | Non-deterministic in its *path*, not only its words | Task success on a golden set of recorded tasks; schema violations 0; injection resistance 100% | Task success, tool-error rate, human-override rate — and rollback of the agent, separately from the model ([agents](agents.md)) |
+
+## Risk classes: which controls a capability owes
+
+Every capability and every agent carries a class in the registry, and the class decides its mandatory
+controls ([ADR-0017](../../adrs/ADR-0017-ai-risk-classes-and-proportional-controls.md)). The baseline —
+a versioned bundle, a passing eval, a named deterministic fallback, an owner, full decision logging —
+is not optional at any class.
+
+| Class | Today | On top of the baseline |
+| --- | --- | --- |
+| **High** | S1 welfare scoring, the tier-1 advisory, S8 ride condition | A named human decides every case, with **no automatic band**; a cost-of-error row; a game day; delayed ground truth joined monthly; a deterministic rule standing behind it. **AI never issues a clearance** |
+| **Medium** | S3 forecasting and staffing, S5 pricing, S4 companion, S7 content, the four agents | Human approval on anything effectful; confidence bands; drift and business guardrails with automatic rollback; a per-capability budget |
+| **Low** | Report phrasing, S7 theme naming, the companion's FAQ tier, `agent:management` | The baseline only |
+
+A quarterly audit reads the registry and reports any production capability whose class controls are
+incomplete — the same job that reports capabilities without a passing eval (OKR 5.3). Autonomy above
+the high class — a driverless vehicle, a model that clears a ride — is out of scope in this submission,
+and the class exists so that the boundary is stated rather than assumed.
 
 ## The uncertainty questions, answered
 
@@ -195,4 +244,4 @@ Workload per role is a tracked metric; a phase gate slips before a role is overl
 | The gateway itself is a dependency | It is adopted OSS with declarative config; the resolver isolates services; only hosted generative capabilities depend on it — vision, counting and forecasting never do. |
 | How do we know it works? | Nothing is promoted without passing its golden set; shadow before live; guardrails with auto-rollback after — all numbers in one table. |
 | How do we know it *stopped* working? | Drift monitors + business-metric guardrails + human override rate, alerting the capability owner. |
-| Who does all the reviewing? | Existing estate roles, ≈ 17–26 h/week in total, with labels captured as a side-effect of their normal decisions. |
+| Who does all the reviewing? | Existing estate roles, ≈ 17–31 h/week in total, with labels captured as a side-effect of their normal decisions. |

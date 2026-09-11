@@ -4,7 +4,7 @@
 
 **Moves:** OKR 1.2 (returning share of households 10% → 10% base / 25% stretch → 40% target, model ≈ 32%), 1.3 (passes 20% → 19% / 40% → ≥ 50% target, model ≈ 41%), 1.6 (season-pass renewal, with the ticketing platform), 2.2 (queue time via load spreading)
 **Phase:** 1 (FAQ answers via the gateway) → 2 (day planning with live queues and forecast) → 3 (return-visit nudges) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
-**Requirements:** FR-4.1, FR-4.2, FR-1.6, FR-5.1, FR-5.3
+**Requirements:** FR-4.1, FR-4.2, FR-4.7, FR-1.6, FR-5.1, FR-5.3
 **ADRs:** [ADR-0005](../../../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (staff escalation)
 
 ## Why generative AI here (and only here)
@@ -53,6 +53,28 @@ flowchart TB
 - **Offline-tolerant:** the itinerary and map are cached on the device; when Wi-Fi is patchy the visitor still has their plan; live re-planning resumes on reconnect.
 - **Upgrade to a pass:** shown only to day-ticket holders without a pass whose ticket was scanned in today, from the pass state the orchestrator already fetches. Tapping it issues a **credit voucher** under invariant P-I7, whose rules the ticketing platform executes ([ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [appendix](../../../appendix/ticketing-rules.md)); idempotency key = ticket id; offline the prompt reads "available at the exit and at the gate POS"; the next-day nudge reminds about the outstanding voucher, it does not create a new one.
 - **Return nudges (opt-in):** "The cassowary chick you saw is on show from Saturday", "You saw 31 of 55 enclosures — finish your collection", "Quiet-day family offer this Wednesday" (S5's standing or experimental offer, surfaced here), "Your upgrade voucher is valid until Sunday", "Saturday is a capacity-managed day — reserve your pass holders' slot" (FR-1.7). Content templates are curated; the LLM personalises within them; frequency caps apply.
+
+## Personalisation, and the line it does not cross (FR-4.7)
+
+A household recognised by a [token](../../../adrs/ADR-0018-visitor-token-and-anonymised-paths.md) or an
+account gets a day built around what they did last time: the enclosures they lingered at, the rides
+they skipped, the suggestions they declined. This is the flywheel's mechanism, not decoration — a
+second visit that feels like a different day is the whole argument for a season pass.
+
+The rule that keeps it safe is a single sentence: **personalisation changes what is suggested, never
+what is asserted.** Opening hours, prices, allergens, height limits and "may we touch it" come from the
+approved field for that language whoever is asking, and the model composes around them without
+restating them ([ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md) §2). Two families
+may be routed differently; they may never be told different facts.
+
+Three consequences follow. Personalisation is **off by default** and is part of the account or token
+consent, not a side effect of using the companion. The history it reads is the household's own, never a
+segment inferred from other visitors. And it is a `SubjectErased` subject like everything else — erase
+the token or the account and the next visit starts from the same blank plan as a first-time family's.
+
+When `agent:companion` adds its tool-selection turn ([agents](../../ai-platform/agents.md#agentcompanion)),
+none of this changes: the history is one more read tool, and the only effectful tool in the whitelist
+still ends at the vendor's own checkout with the visitor paying.
 
 ## Containers
 | Container | Responsibility | AI? |

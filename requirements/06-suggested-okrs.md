@@ -10,10 +10,13 @@
 | | 1.4 Revenue per visitor-day (admission + on-site, cash)²; second line: revenue per unique household per year (estimate) | baseline | ≥ baseline | not below baseline; per household +30% | S4, S5 |
 | | 1.5 Weekday / weekend attendance ratio³ (fill quiet days) — S5's primary objective | 0.35 | 0.38 / 0.5 | 0.6 | S5, S3 |
 | | 1.6 Season-pass renewal rate (households renewing ÷ households whose pass expired)⁴ | n/a | baseline (first cohort) | ≥ 70% (ambitious) | S4, S5 |
+| | 1.7 Published items per week, and their reach⁵ | ~0.5 | 3 | 5 | S7 |
 | **2. Run the park on data, not guesswork** | 2.1 Zones with live popularity data | 0% | 100% | 100% | Core |
 | | 2.2 p90 queue time on top-10 rides | unknown | ≤ 20 min | ≤ 15 min | S3, S4 |
 | | 2.3 Forecast accuracy, zone footfall next day (MAPE) | n/a | ≤ 25% | ≤ 15% | S3 |
 | | 2.4 Staff hours in zones with no visitors | unknown | −30% | −50% | S3 |
+| | 2.5 Unplanned downtime hours **per instrumented ride** per season⁶ | unknown | baseline (first season) | −25% vs. baseline | S8 |
+| | 2.6 Investments with a measured effect and a stated interval (FR-2.4) | 0 | 1 | every recorded investment | S6 |
 | **3. Healthy animals at lower cost** | 3.1 Time from first anomaly to vet review | days | ≤ 4 h | ≤ 1 h | S1 |
 | | 3.2 Veterinary cost per animal per year | baseline | −15% | −30% | S1 |
 | | 3.3 Feeding events logged automatically | 0% | 90% | 98% | S1 |
@@ -23,11 +26,16 @@
 | | 4.2 Safety incidents involving animals | 0 | 0 | 0 | Core |
 | **5. Keep the platform affordable and evolvable** | 5.1 AI spend as share of revenue | n/a | ≤ 2% | ≤ 1.5% | AI platform |
 | | 5.2 Time to swap a model/provider for a capability | n/a | ≤ 1 day | ≤ 1 day | AI platform |
-| | 5.3 AI capabilities with a passing eval suite | n/a | 100% | 100% | AI platform |
+| | 5.3 AI capabilities with a passing eval suite **and a complete control set for their risk class** | n/a | 100% | 100% | AI platform |
+| | 5.4 Agent task success, with human-override rate falling release over release⁷ | n/a | ≥ 0.80 | ≥ 0.85 | S6, S4 |
 
 ¹ Measured per credential and account from the ticketing platform's export and `GateEntered`; anonymous day tickets are covered by a quarterly exit survey — a self-report, not a link across visits — and labelled as an estimate (A14). The growth model works in households; persons only via the party size of 3.5 ([08 §0](../appendix/business-case-model.md#0-how-to-read-the-numbers)). A household holding both a pass and an account is counted once.
 ² Primary line: cash revenue from `TicketPurchased` + `PurchaseRecorded` (FR-2.6) ÷ Σ `GateEntered.persons_admitted` — numerator and denominator from the same population, so a growing opt-in share cannot move it. Second line: the same cash ÷ the model's estimate of unique households ([08 §3](../appendix/business-case-model.md#3-the-membership-flywheel)), reported as an estimate; revenue of identified households ÷ identified households is a segment metric, not this OKR. Admissions never appear as purchases — there is no admission category — so nothing is double-counted. **OKR = year, guardrail = week:** the S5 experiment cannot wait for an annual figure and uses its own weekly operational guardrail — contribution per visitor-day on discounted blocks not below the 0% blocks − 10% ([thresholds table](../hld/ai-platform/README.md#thresholds-and-cadences-source-of-truth)).
 ³ r = average weekday visitor-days ÷ average weekend-day visitor-days, per open day. Weekly visitor-days = W(5r + 2), W the weekend-day average ([08 §0](../appendix/business-case-model.md#0-how-to-read-the-numbers)).
 ⁴ Measured from `PassRenewed` ÷ passes expiring, which exists from Phase 0: the first cohort's renewal is measurable at month 12 and targeted from Phase 3. It covers pass holders only; repeaters without a pass have their own retention rate in the model ([08 §3](../appendix/business-case-model.md#3-the-membership-flywheel)). Zoo-membership renewal norms are 50–70% ([PassPlay 2026](https://passplay.io/blog/posts/what-museum-and-zoo-members-want-from-membership-in-2026)), so 70% is labelled ambitious.
+
+⁵ Counted from the curator's publish action, so it measures what was actually released rather than what was drafted. Reach is the platform's own figure where it exists and the network's where it does not; visits caused by reach are **not** claimed, because they are not measurable (R20). This is the key result behind S7's kill gate.
+⁶ Per **instrumented** ride, never averaged over the estate: coverage is partial by construction (A19), and an average over partial coverage means nothing. The denominator is published with the figure.
+⁷ Task success is judged by LLM-as-judge on a sample, calibrated weekly against human labels on the same sample. Human-override rate is read as the leading indicator — trust falls before any business metric moves — and always alongside queue depth, since the same rise means the model with a normal queue and the staffing with a full one ([agents](../hld/ai-platform/agents.md#evaluation-in-production-and-rolling-back-the-agent-rather-than-the-model)).
 
 Each scenario's README states which key results it moves and how we will measure it.

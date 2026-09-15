@@ -4,8 +4,8 @@
 
 **Moves:** OKR 1.2 (returning share of households 10% → 10% base / 25% stretch → 40% target, model ≈ 32%), 1.3 (passes 20% → 19% / 40% → ≥ 50% target, model ≈ 41%), 1.6 (season-pass renewal, with the ticketing platform), 2.2 (queue time via load spreading)
 **Phase:** 1 (FAQ answers via the gateway) → 2 (day planning with live queues and forecast) → 3 (return-visit nudges) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
-**Requirements:** FR-4.1, FR-4.2, FR-1.6, FR-5.1, FR-5.3
-**ADRs:** [ADR-0005](../../../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (staff escalation)
+**Requirements:** FR-4.1, FR-4.2, FR-4.7, FR-1.6, FR-5.1, FR-5.3
+**ADRs:** [ADR-0005](../../../adrs/ADR-0005-model-gateway-and-provider-independence.md), [ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md) (staff escalation), [ADR-0018](../../../adrs/ADR-0018-visitor-token-and-anonymised-paths.md) (the token a household is recognised by)
 
 ## Why generative AI here (and only here)
 This is a language problem: a parent typing "we have a 3-year-old who's scared of loud rides and we need lunch by 12" needs an answer, not a filter form. An LLM turns that into a plan — but **every fact it uses comes from our structured knowledge base and live queue data**, not from the model's memory. Safety facts ("can we touch it?") are never generated; they are looked up.
@@ -31,7 +31,7 @@ Two more depend on the account this scenario creates: pass conversion (repeaters
 
 ```mermaid
 flowchart TB
-    V["👨‍👩‍👧 Visitor<br/>mobile web / kiosk"] --> BFF["API gateway"]
+    V["👨‍👩‍👧 Visitor<br/>PWA (mobile web) / kiosk"] --> BFF["API gateway"]
     BFF --> Orch["Companion orchestrator<br/>session · tools · policy"]
     Orch --> GW["Inference gateway 🤖<br/>capability: plan-visit / answer-question"]
     GW --> LLM(["LLM provider<br/>(interchangeable)"])
@@ -47,12 +47,46 @@ flowchart TB
     Esc["👤 Staff escalation"] --- Orch
 ```
 
+**The surface is a progressive web app, not an app-store download.** A family visiting for one day will
+not install anything, so the companion opens from the QR code on the ticket, adds to the home screen if
+they want it there, and keeps the itinerary, the map and the last answers in a service-worker cache for
+the parts of the estate where Wi-Fi is patchy. The kiosks run the same application in a locked-down
+browser, which is why there is one surface to make accessible rather than three.
+
+That obligation is NFR-ACC-1 and it is a release gate, not an intention: WCAG 2.2 AA, keyboard
+navigation, labelled controls, contrast and target sizes checked by axe-core in CI, plus one manual
+screen-reader pass per phase. It also constrains the model's output — a companion answer is routinely
+spoken aloud, so meaning may not live in layout, colour or an emoji, and the read-aloud cases in
+[validation](#validation--verification) gate that.
+
 ## What it does
 - **Plan the day:** builds an itinerary from constraints (children's ages, interests, time, accessibility) using forecast and live queues; re-plans when a ride closes or a queue spikes; **steers lunch times** ("the terrace café is quiet until 12:30") because F&B seating is the second constraint to bind ([08 §1](../../../appendix/business-case-model.md#1-capacity-reality-check)).
 - **Answer questions:** grounded on the knowledge base — "Where is the axolotl?", "Is the Ferris wheel OK for a 4-year-old?", "When is the piranha feeding?" — with citations to the source fact.
 - **Offline-tolerant:** the itinerary and map are cached on the device; when Wi-Fi is patchy the visitor still has their plan; live re-planning resumes on reconnect.
 - **Upgrade to a pass:** shown only to day-ticket holders without a pass whose ticket was scanned in today, from the pass state the orchestrator already fetches. Tapping it issues a **credit voucher** under invariant P-I7, whose rules the ticketing platform executes ([ADR-0012](../../../adrs/ADR-0012-ticketing-platform-adopt-not-build.md), [appendix](../../../appendix/ticketing-rules.md)); idempotency key = ticket id; offline the prompt reads "available at the exit and at the gate POS"; the next-day nudge reminds about the outstanding voucher, it does not create a new one.
 - **Return nudges (opt-in):** "The cassowary chick you saw is on show from Saturday", "You saw 31 of 55 enclosures — finish your collection", "Quiet-day family offer this Wednesday" (S5's standing or experimental offer, surfaced here), "Your upgrade voucher is valid until Sunday", "Saturday is a capacity-managed day — reserve your pass holders' slot" (FR-1.7). Content templates are curated; the LLM personalises within them; frequency caps apply.
+
+## Personalisation, and the line it does not cross (FR-4.7)
+
+A household recognised by a [token](../../../adrs/ADR-0018-visitor-token-and-anonymised-paths.md) or an
+account gets a day built around what they did last time: the enclosures they lingered at, the rides
+they skipped, the suggestions they declined. This is the flywheel's mechanism, not decoration — a
+second visit that feels like a different day is the whole argument for a season pass.
+
+The rule that keeps it safe is a single sentence: **personalisation changes what is suggested, never
+what is asserted.** Opening hours, prices, allergens, height limits and "may we touch it" come from the
+approved field for that language whoever is asking, and the model composes around them without
+restating them ([ADR-0010](../../../adrs/ADR-0010-grounded-llm-with-guardrails.md) §2). Two families
+may be routed differently; they may never be told different facts.
+
+Three consequences follow. Personalisation is **off by default** and is part of the account or token
+consent, not a side effect of using the companion. The history it reads is the household's own, never a
+segment inferred from other visitors. And it is a `SubjectErased` subject like everything else — erase
+the token or the account and the next visit starts from the same blank plan as a first-time family's.
+
+When `agent:companion` adds its tool-selection turn ([agents](../../ai-platform/agents.md#agentcompanion)),
+none of this changes: the history is one more read tool, and the only effectful tool in the whitelist
+still ends at the vendor's own checkout with the visitor paying.
 
 ## Containers
 | Container | Responsibility | AI? |

@@ -4,8 +4,8 @@
 
 **Moves:** OKR 3.1 (anomaly → vet review ≤ 4 h), 3.2 (vet cost −15%), 3.3 (feeding auto-logged 90%), 3.5 (override rate ≤ 40%)
 **Phase:** 1 (feeding-by-scale rules + tabular anomaly) → 2 (per-enclosure activity, camera features in shadow) → 3 (per-animal vision for solitary/tagged animals) — see [roadmap](../../../README.md#delivery-roadmap-what-we-build-when-and-what-we-buy)
-**Requirements:** FR-3.1, FR-3.2, FR-3.3, FR-3.5, FR-3.6, FR-3.7, FR-5.1
-**ADRs:** [ADR-0006](../../../adrs/ADR-0006-edge-vs-cloud-inference.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0008](../../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md)
+**Requirements:** FR-3.1, FR-3.2, FR-3.3, FR-3.5, FR-3.6, FR-3.7, FR-3.8, FR-5.1
+**ADRs:** [ADR-0006](../../../adrs/ADR-0006-edge-vs-cloud-inference.md), [ADR-0007](../../../adrs/ADR-0007-human-in-the-loop-confidence-bands.md), [ADR-0008](../../../adrs/ADR-0008-ai-evaluation-and-production-monitoring.md), [ADR-0024](../../../adrs/ADR-0024-plant-collection-on-the-welfare-pipeline.md)
 
 ## Why AI, and why not just rules?
 
@@ -128,6 +128,26 @@ All numbers below are copies of the [thresholds & cadences table](../../ai-platf
 - **Drift:** camera image statistics (lighting, occlusion), feature distributions per animal or enclosure; seasonal recalibration of baselines.
 
 **Kill switch:** the capability owner can set any anomaly type to "review everything" (band = 0) or switch off scoring entirely; rules and rounds continue.
+
+## The plant collection, on the same pipeline
+
+The brief names the carnivorous plant collection once, and names it as the asset the Countess would
+have to **sell** if the estate does not become profitable. Mechanically it is an enclosure: climate and
+water within a band, a feeding regime, and a condition that degrades slowly and visibly. So it is one,
+with the curator in the vet's seat at the review queue — same IoT classes, same anomaly capability,
+same bands, no new domain and no new model class (FR-3.8,
+[ADR-0024](../../../adrs/ADR-0024-plant-collection-on-the-welfare-pipeline.md)).
+
+It has one property no animal enclosure has. A trap closing on a fly is a repeatable, photogenic event
+that visitors will stand and wait for, and the same feature extractor that scores a lizard's activity
+detects it. A detected feeding publishes into Park Operations, lands on the day's programme as
+"expected today" — the plant keeps its own schedule, not the programme's — and may become a candidate
+clip for [S7](../content-and-visitor-voice/README.md). That is the whole monetisation mechanism: the
+estate sells attention to something it already owns.
+
+Phase 1 is climate and moisture rules, which is most of the care value. The feeding detector is Phase 3
+behind its own golden set of labelled closures, and it is switched off without ceremony if the
+demonstration draws no audience.
 
 ## Trade-offs we accepted
 - **Features at edge, scoring in cloud** — one more hop and one more dependency, in exchange for keeping 110 video streams off the backhaul and improving scoring models without touching edge hardware. Aggregating to 1-minute windows cuts feature traffic from ~200 to ~3 messages per second and the 72 h buffer from ~10 GB to ~3 GB ([capacity table](../../core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class)); hourly anomaly scoring needs no sub-minute resolution, and the raw 1 Hz trace still ships around events. Detections that must be instant are rules running locally, not models.

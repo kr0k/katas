@@ -2,15 +2,37 @@
 
 ## Architecture
 
-### Ride downtime analytics spike (Phase 4+)
+### Heritage assessment per ride, before any sensor is fitted
 
-**What:** Spike, not a scenario: on cycle counters alone, can downtime and scheduling analytics beat the current maintenance calendar? Entry threshold before any model: 12 months of `RideStatusChanged` and cycle counts, and a measurable baseline (unplanned downtime hours per ride per season). Predictive maintenance on vibration stays out until A10 is retested per ride.
+**What:** Walk all 40 rides with the conservation officer and the certified engineer and record, per ride, which of the four non-invasive sensor classes may be fitted and how (cycle counter, clamp-on current, surface temperature, run-hours from the controller). Output: an instrumentable count, a fitting method per ride, and the refusals with their reasons.
 
-**Why:** The scope question is now answered in the submission — [requirements/05 "Out of scope"](requirements/05-assumptions-and-constraints.md#out-of-scope) states why the 40 rides carry one event and no AI (A10 blocks the instrumentation; ride safety is certified inspection, with no tier-1 equivalent), and the roadmap carries FR-2.5 at Phase 4+. What remains is the analytics itself.
+**Why:** A19 assumes roughly half the forty can take sensors, and [S8](hld/scenarios/ride-condition-monitoring/README.md)'s whole coverage and its CAPEX line follow from that number. Below about ten instrumented rides the capability is not worth its sensors and the threshold rules stand alone ([SP-11](hld/architecture-evaluation.md#sensitivity-points)).
 
-**Effort:** M
-**Priority:** P3
-**Depends on:** 12 months of ride status events; A10 retested per ride; roadmap Phase 4+ entry.
+**Context:** Vibration spectra are out of scope by A10 and should not be re-litigated here; the question is only which of the four classes each ride can take. The result also fixes the ride-sensor line in the [cost model](appendix/cost-model.md).
+
+**Effort:** S (plan) / M (field work)
+**Priority:** P2 — before Phase 1 procurement
+**Depends on:** Conservation officer's availability; certified engineer; the Phase 0 site visit.
+
+### Token support as a ticketing-vendor criterion, and the issuance process
+
+**What:** Add passive RFID as a credential form factor to the vendor evaluation below — can the platform issue, validate offline and revoke a token against the same credential as a QR code, and does its POS take a token tap settled by card-on-file? Separately, design the gate process: issuance, return, recycling and re-keying, hygiene, and what happens when a family loses one mid-visit.
+
+**Why:** [ADR-0018](adrs/ADR-0018-visitor-token-and-anonymised-paths.md) treats the token as a second form factor for the vendor's credential rather than a second ticketing system, and that only holds if the vendor supports it. The gate process is a queue the estate now owns, and it is the most likely place for the token to fail in practice rather than in design.
+
+**Effort:** S (criterion) / M (process)
+**Priority:** P1 — the criterion is part of the vendor evaluation; the process before Phase 0 go-live
+**Depends on:** Ticketing vendor evaluation; DPIA update for the tap consent.
+
+### Line-of-sight survey for the remote enclosures
+
+**What:** As part of the Phase 0 site survey, and for each enclosure beyond LoRaWAN and Wi-Fi reach, measure **two** things: the cellular signal actually available at the enclosure, over a day and in leaf-on conditions, and whether a directional bridge has Fresnel clearance with a margin for vegetation growth and new structures. Output: the remote-site count, the coverage reading per site, the bridge count and placement, and the list — possibly empty — of thin-link sites without line of sight, which is the only case the pickup collector exists for.
+
+**Why:** coverage decides the channel, not the site count and not a cost break-even ([ADR-0019](adrs/ADR-0019-reach-for-remote-enclosures.md) §4, [SP-9](hld/architecture-evaluation.md#sensitivity-points)). A site whose cellular carries its classes buys nothing beyond its €400 subscription; only a measured gap justifies the €3k bridge, and only a thin-link site without line of sight justifies the €8k collector, which the cost model carries as conditional until this survey says otherwise.
+
+**Effort:** S (plan) / M (field work)
+**Priority:** P2 — same visit as the LoRaWAN survey below
+**Depends on:** Physical access to the estate; A18's decision on the land train.
 
 ### Per-animal re-identification in group enclosures (Phase 3+)
 

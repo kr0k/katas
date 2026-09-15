@@ -14,16 +14,22 @@ Token counts per call and the two tier prices are assumptions — list-price ban
 | Nudge wording (Phase 3) | 3,471,429 | 1,500 / 0 / 200 | small | €1,200 |
 | LLM-as-judge on a sample | 92,571 | 3,000 / 0 / 100 | large | €972 |
 | `summarise-*` report drafters | 900 | 4,000 / 0 / 500 | large | €18 |
+| `agent:ops-copilot` — keeper and ops tasks | 15,000 | 5,000 / 2,000 / 500 | large | €256 |
+| `agent:animal` — review-queue assistance | 6,000 | 5,000 / 2,000 / 500 | large | €103 |
+| `agent:management` — ask the estate | 3,750 | 5,000 / 2,000 / 500 | large | €64 |
+| `agent:companion` — tool-selection turn | 578,571 | 1,200 / 600 / 80 | small | €85 |
+| `draft-caption` — S7 content drafts | 312 | 2,500 / 0 / 300 | large | €4 |
+| `summarise-feedback-themes` — S7, weekly | 52 | 12,000 / 0 / 1,200 | large | €3 |
 | Shadow runs before promotion | — | — | as production | €4,300 |
-| **Total, planned spend at the target run rate** |  |  |  | **€34,300 / yr** |
-| *Counterfactual: no FAQ cache, no prompt caching* | *6,942,857* | *same tokens, none cached* | *same* | *€67,100 / yr* |
+| **Total, planned spend at the target run rate** |  |  |  | **€34,800 / yr** |
+| *Counterfactual: no FAQ cache, no prompt caching* | *6,942,857* | *same tokens, none cached* | *same* | *€67,800 / yr* |
 <!-- /business-case:llm-cost -->
 
 **Reading the table.**
 
-- **Planned spend ≈ €34,300 a year at 15,000 visitors/day**: ≈ €0.04 per companion household visit, or ≈ €0.01 per visitor-day against ≈ €19 of gross revenue per visitor-day. Against total revenue at that run rate it is ≈ 0.04%, well under NFR-COST-1's 2% ceiling — [ticketing fees and the team](../requirements/04-non-functional-requirements.md#cost-model-tco-50) are the expensive lines.
-- **The €50k OPEX line absorbs a 46% overrun on this estimate, not the full ±50% price band.** At the top of the band the token spend alone reaches ≈ €51,400, before the open-weight endpoint has billed anything — a managed endpoint costs money while idle. A worst-case price move therefore lands slightly over the line, and what holds then is NFR-COST-1's per-capability budget: alerts at 70/90% and automatic downgrade at 100%.
-- **The two caches are what keep it there.** Without the daily FAQ cache and prompt caching of the session prefix, the same traffic costs ≈ €67,100 — outside the line. Same shape as the [ingestion counterfactual](../hld/core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class): the two designs differ by a factor, not a rounding.
+- **Planned spend ≈ €34,800 a year at 15,000 visitors/day**: ≈ €0.04 per companion household visit, or ≈ €0.01 per visitor-day against ≈ €19 of gross revenue per visitor-day. Against total revenue at that run rate it is ≈ 0.04%, well under NFR-COST-1's 2% ceiling — [ticketing fees and the team](../requirements/04-non-functional-requirements.md#cost-model-tco-50) are the expensive lines.
+- **The €50k OPEX line absorbs a 44% overrun on this estimate, not the full ±50% price band.** At the top of the band the token spend alone reaches ≈ €52,200, before the open-weight endpoint has billed anything — a managed endpoint costs money while idle. A worst-case price move therefore lands slightly over the line, and what holds then is NFR-COST-1's per-capability budget: alerts at 70/90% and automatic downgrade at 100%.
+- **The two caches are what keep it there.** Without the daily FAQ cache and prompt caching of the session prefix, the same traffic costs ≈ €67,800 — outside the line. Same shape as the [ingestion counterfactual](../hld/core/edge-and-connectivity.md#capacity-check-at-15000-visitorsday-by-traffic-class): the two designs differ by a factor, not a rounding.
 - **Day planning and re-planning are ≈ 90% of the bill.** A plan is a large-tier call with a long input and a long output, and a family triggers three of them; FAQ answers are the cheap majority of calls. Hence tiered routing, and re-planning that touches only the affected stops.
 - **A peak day** (≈ 29,400 visitor-days) costs ≈ €182 against ≈ €93 on an average day — **2.0×**, because load is bounded by households present rather than by concurrency. Thirty such days would be ≈ €5,400 against ≈ €2,900 for an average month, so the budget is seasonal rather than a flat twelfth.
 - **Escalation sensitivity.** 15% of FAQ answers route to the large tier on low confidence. At 40% — a Saturday with more first-time families — the yearly bill rises ≈ €4,600, inside the headroom and visible in per-capability cost telemetry before it reaches an invoice.

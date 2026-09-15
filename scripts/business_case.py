@@ -97,11 +97,13 @@ class Assumptions:
     ticketing_fee: float = 0.15        # A15 — per credential; already inside OPEX(V)
     credentials_per_visitor_day: float = 1.0  # conservative: one per person-admission, as in requirements/04
 
-    # Platform cost (requirements/04 cost model)
-    capex: float = 310_000
+    # Platform cost (requirements/04 cost model). The curve is fitted to the two columns of
+    # appendix/cost-model.md, which is the source: €835k at 5,000/day and ≈ €1.38M at 15,000/day.
+    capex: float = 369_000
     depreciation_years: int = 5
-    opex_fixed: float = 580_000        # team, cellular, maintenance, base cloud and LLM
-    opex_per_visitor_day: float = 0.165  # ticketing fee 0.15 + cloud and LLM scaling 0.015
+    opex_fixed: float = 562_000        # team, cellular, maintenance, and the fixed part of cloud, LLM, tokens and the metric layer
+    opex_per_visitor_day: float = 0.182  # ticketing fee 0.15 + cloud 0.010 + LLM 0.0133 + tokens 0.006 + metric layer 0.0023
+    opex_team: float = 500_000         # 5 engineers, loaded — the largest fixed line, quoted in 08 §4
 
     # Generative-AI cost (hld/ai-platform → what the generative capabilities cost).
     # Token counts are per call as (input, of which cacheable session prefix, output).
@@ -120,6 +122,21 @@ class Assumptions:
     judge_sample: float = 0.02          # share of answers scored by the LLM judge (ADR-0008 §5)
     nudges_per_account_year: float = 6.0
     reports_per_day: float = 3.0        # welfare daily + estate day draft and final
+
+    # The agentic layer (ADR-0013). Staff-facing volumes are set by how many people
+    # there are, not by how many visitors, which is why the layer is cheap.
+    ops_tasks_per_day: float = 20.0      # agent:ops-copilot — keepers, head keeper, ops manager
+    vet_tasks_per_day: float = 8.0       # agent:animal — review-queue assistance
+    mgmt_questions_per_day: float = 5.0  # agent:management — ask the estate
+    steps_per_agent_task: float = 2.5    # model calls per task: tool selection, then synthesis
+    tok_agent: tuple = (5_000, 2_000, 500)
+    companion_tool_turn_share: float = 0.75  # of companion visits needing a tool-selection turn
+    tok_tool_select: tuple = (1_200, 600, 80)
+    captions_per_week: float = 6.0       # S7 content drafts into the curator's queue
+    tok_caption: tuple = (2_500, 0, 300)
+    feedback_runs_per_year: float = 52.0  # S7 theme clustering summary
+    tok_feedback: tuple = (12_000, 0, 1_200)
+    agentic_share_cap: float = 0.05      # the layer must stay under this share of generative spend
     price_small: tuple = (0.15, 0.60)   # € per million input / output tokens
     price_large: tuple = (3.00, 15.00)
     cache_read_share: float = 0.10      # cached input costs this share of the input price
@@ -554,8 +571,12 @@ def companion_households(a: Assumptions = A, visitor_days: float | None = None) 
     return visitor_days / a.party_size * a.adoption[2]
 
 
-def llm_rows(a: Assumptions = A, cached: bool = True) -> list[tuple[str, float, str, float]]:
-    """(request class, calls per year, tier, € per year) at the target run rate."""
+def llm_rows(a: Assumptions = A, cached: bool = True) -> list[tuple[str, float, str, float, bool]]:
+    """(request class, calls per year, tier, € per year, is it the agentic layer) at the target run rate.
+
+    The last field is declared per row rather than matched on the label, so a capability
+    added under an unexpected name cannot quietly fall outside the agentic-layer budget.
+    """
     using = companion_households(a)
     hit = a.faq_cache_hit if cached else 0.0
     faq = using * a.faq_per_visit * (1 - hit)
@@ -565,23 +586,43 @@ def llm_rows(a: Assumptions = A, cached: bool = True) -> list[tuple[str, float, 
     nudges = accounts * a.nudges_per_account_year
     judged = (faq + plans + replans) * a.judge_sample
     reports = a.reports_per_day * a.open_days
+    ops = a.ops_tasks_per_day * a.open_days * a.steps_per_agent_task
+    vet = a.vet_tasks_per_day * a.open_days * a.steps_per_agent_task
+    mgmt = a.mgmt_questions_per_day * a.open_days * a.steps_per_agent_task
+    turns = using * a.companion_tool_turn_share
+    captions = a.captions_per_week * 52
     rows = [
-        ("`answer-question` — FAQ, small tier", faq_small, "small", call_cost(a.tok_faq, a.price_small, faq_small, cached, a)),
-        ("`answer-question` — escalated on low confidence", faq_large, "large", call_cost(a.tok_faq, a.price_large, faq_large, cached, a)),
-        ("`plan-visit` — the day plan", plans, "large", call_cost(a.tok_plan, a.price_large, plans, cached, a)),
-        ("`plan-visit` — re-plan on a closure or a queue spike", replans, "large", call_cost(a.tok_replan, a.price_large, replans, cached, a)),
-        ("Nudge wording (Phase 3)", nudges, "small", call_cost(a.tok_nudge, a.price_small, nudges, cached, a)),
-        ("LLM-as-judge on a sample", judged, "large", call_cost(a.tok_judge, a.price_large, judged, cached, a)),
-        ("`summarise-*` report drafters", reports, "large", call_cost(a.tok_report, a.price_large, reports, cached, a)),
+        ("`answer-question` — FAQ, small tier", faq_small, "small", call_cost(a.tok_faq, a.price_small, faq_small, cached, a), False),
+        ("`answer-question` — escalated on low confidence", faq_large, "large", call_cost(a.tok_faq, a.price_large, faq_large, cached, a), False),
+        ("`plan-visit` — the day plan", plans, "large", call_cost(a.tok_plan, a.price_large, plans, cached, a), False),
+        ("`plan-visit` — re-plan on a closure or a queue spike", replans, "large", call_cost(a.tok_replan, a.price_large, replans, cached, a), False),
+        ("Nudge wording (Phase 3)", nudges, "small", call_cost(a.tok_nudge, a.price_small, nudges, cached, a), False),
+        ("LLM-as-judge on a sample", judged, "large", call_cost(a.tok_judge, a.price_large, judged, cached, a), False),
+        ("`summarise-*` report drafters", reports, "large", call_cost(a.tok_report, a.price_large, reports, cached, a), False),
+        ("`agent:ops-copilot` — keeper and ops tasks", ops, "large", call_cost(a.tok_agent, a.price_large, ops, cached, a), True),
+        ("`agent:animal` — review-queue assistance", vet, "large", call_cost(a.tok_agent, a.price_large, vet, cached, a), True),
+        ("`agent:management` — ask the estate", mgmt, "large", call_cost(a.tok_agent, a.price_large, mgmt, cached, a), True),
+        ("`agent:companion` — tool-selection turn", turns, "small", call_cost(a.tok_tool_select, a.price_small, turns, cached, a), True),
+        ("`draft-caption` — S7 content drafts", captions, "large", call_cost(a.tok_caption, a.price_large, captions, cached, a), False),
+        ("`summarise-feedback-themes` — S7, weekly", a.feedback_runs_per_year, "large", call_cost(a.tok_feedback, a.price_large, a.feedback_runs_per_year, cached, a), False),
     ]
     visitor_facing = sum(r[3] for r in rows[:4])
     shadow = visitor_facing * a.promotions_per_year * a.shadow_weeks / 52
-    rows.append(("Shadow runs before promotion", 0.0, "as production", shadow))
+    rows.append(("Shadow runs before promotion", 0.0, "as production", shadow, False))
     return rows
 
 
 def llm_total(a: Assumptions = A, cached: bool = True) -> float:
     return sum(r[3] for r in llm_rows(a, cached))
+
+
+def agentic_total(a: Assumptions = A) -> float:
+    """Yearly generative spend of the four agents of ADR-0013."""
+    return sum(r[3] for r in llm_rows(a) if r[4])
+
+
+def agentic_share(a: Assumptions = A) -> float:
+    return agentic_total(a) / llm_total(a)
 
 
 def llm_headroom(a: Assumptions = A) -> float:
@@ -800,9 +841,15 @@ def t_llm_cost(a: Assumptions = A) -> str:
         "Nudge wording (Phase 3)": a.tok_nudge,
         "LLM-as-judge on a sample": a.tok_judge,
         "`summarise-*` report drafters": a.tok_report,
+        "`agent:ops-copilot` — keeper and ops tasks": a.tok_agent,
+        "`agent:animal` — review-queue assistance": a.tok_agent,
+        "`agent:management` — ask the estate": a.tok_agent,
+        "`agent:companion` — tool-selection turn": a.tok_tool_select,
+        "`draft-caption` — S7 content drafts": a.tok_caption,
+        "`summarise-feedback-themes` — S7, weekly": a.tok_feedback,
     }
     rows = []
-    for label, calls, tier, cost in llm_rows(a):
+    for label, calls, tier, cost, _agentic in llm_rows(a):
         rows.append([label, n(calls) if calls else "—", tok(toks[label]) if label in toks else "—", tier, eur_round(cost)])
     rows.append(["**Total, planned spend at the target run rate**", "", "", "", f"**{eur_round(llm_total(a))} / yr**"])
     rows.append([
@@ -908,7 +955,7 @@ def expected_tokens(a: Assumptions = A) -> list[tuple[Path, str, str]]:
         (DOC_08, r"^## 4\. ", f"{n(a.incremental_rows[2])} incremental visitor-days"),
         (DOC_08, r"^## 4\. ", f"{pct(a.incremental_rows[2] / growth)} of the year-2-to-year-3 growth"),
         (DOC_08, r"^## 4\. ", f"{pct(savings_rate(36, a) / opex(rr_V, a))} of running cost"),
-        (DOC_08, r"^## 4\. ", f"{pct(a.opex_fixed * 500 / 580 / opex(rr_V, a))} of OPEX"),
+        (DOC_08, r"^## 4\. ", f"{pct(a.opex_team / opex(rr_V, a))} of OPEX"),
         (DOC_08, r"^## 5\. ", f"≈ {share_today} of revenue today"),
         (DOC_08, r"^## 5\. ", f"{pct(opex(rr_V, a) / (y3.gross * rr_V / y3.V), 1)} at target"),
         (DOC_08, r"^## 5\. ", f"×{cs[3].H / cs[0].H:.1f} unique households"),
@@ -1026,7 +1073,8 @@ def invariants(a: Assumptions) -> None:
         assert not missing and text == render_all(a, tables), "table generation must be idempotent"
     # generative-AI cost: caching can only help, and the plan must dominate a FAQ answer
     assert llm_total(a) < llm_total(a, cached=False), "caching must not cost more than no caching"
-    assert llm_total(a) > 0 and all(cost >= 0 for *_, cost in llm_rows(a))
+    assert llm_total(a) > 0 and all(r[3] >= 0 for r in llm_rows(a))
+    assert 0 < agentic_share(a) < a.agentic_share_cap, "the agentic layer must stay a rounding error on the bill"
     assert call_cost(a.tok_plan, a.price_large, 1, True, a) > call_cost(a.tok_faq, a.price_small, 1, True, a)
     assert llm_day_cost(a, a.run_rate[3] * a.peak_factor) > llm_day_cost(a), "a bigger day cannot cost less"
     assert llm_escalation_sensitivity(a) > 0, "escalating more answers to the large tier cannot be cheaper"
@@ -1040,7 +1088,7 @@ def self_test(a: Assumptions = A) -> None:
     # hand-computable anchors
     assert round(weekend_day(5_000, 0.35)) == 9_333
     assert round(weekend_day(15_000, 0.60)) == 21_000
-    assert opex(1_500_000, a) == 827_500
+    assert opex(1_500_000, a) == 835_000  # the 5,000/day column of appendix/cost-model.md, to the euro
     assert round(contribution(a)[0], 2) == 16.85 and round(contribution(a)[1], 2) == 10.85
     assert round(contribution(a, include_fee=False)[0], 2) == 17.0 and round(contribution(a, include_fee=False)[1], 2) == 11.0
     assert capacity(a)[0].holds_until == 15_000
@@ -1049,7 +1097,8 @@ def self_test(a: Assumptions = A) -> None:
     # one hand-computable generative call: 1,500 full + 4,500 cached input, 800 output, large tier
     assert round(call_cost(a.tok_plan, a.price_large, 1, True, a), 6) == round((1_500 * 3.0 + 4_500 * 0.3 + 800 * 15.0) / 1e6, 6)
     assert round(companion_households(a)) == 771_429
-    assert round(llm_headroom(a) * 100) == 46  # the line absorbs 46%, not the full ±50% band
+    assert round(llm_headroom(a) * 100) == 44  # the line absorbs 44%, not the full ±50% band
+    assert round(agentic_total(a)) == 508 and round(agentic_share(a) * 100, 1) == 1.5
     # invariants under three assumption sets
     for alt in (a, PESSIMISTIC, OPTIMISTIC):
         invariants(alt)
